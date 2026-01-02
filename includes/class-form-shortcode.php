@@ -159,14 +159,25 @@ class AICRMFORM_Form_Shortcode {
 	private function generate_custom_styles( $form_id, $form_config ) {
 		$styles     = $form_config['styles'] ?? [];
 		$custom_css = $form_config['custom_css'] ?? '';
+		$settings   = get_option( 'aicrmform_settings', [] );
 		$css        = '';
 
-		// Only generate if there are styles or custom CSS.
-		if ( empty( $styles ) && empty( $custom_css ) ) {
-			return '';
-		}
+		// Get default styling from settings.
+		$font_family       = $styles['font_family'] ?? $settings['default_font_family'] ?? '';
+		$font_size         = $styles['font_size'] ?? $settings['default_font_size'] ?? '16px';
+		$background_color  = $styles['background_color'] ?? $settings['default_background_color'] ?? '#ffffff';
 
 		$selector = '.aicrmform-wrapper-' . $form_id;
+
+		// Font family from Google Fonts.
+		if ( ! empty( $font_family ) ) {
+			$css .= $selector . ' { font-family: "' . esc_attr( $font_family ) . '", sans-serif; }';
+		}
+
+		// Font size.
+		if ( ! empty( $font_size ) && '16px' !== $font_size ) {
+			$css .= $selector . ' { font-size: ' . esc_attr( $font_size ) . '; }';
+		}
 
 		// Form width.
 		if ( ! empty( $styles['form_width'] ) ) {
@@ -174,8 +185,8 @@ class AICRMFORM_Form_Shortcode {
 		}
 
 		// Background color.
-		if ( ! empty( $styles['background_color'] ) && '#ffffff' !== $styles['background_color'] ) {
-			$css .= $selector . ' .aicrmform-form { background-color: ' . esc_attr( $styles['background_color'] ) . '; padding: 24px; border-radius: 8px; }';
+		if ( ! empty( $background_color ) && '#ffffff' !== $background_color ) {
+			$css .= $selector . ' .aicrmform-form { background-color: ' . esc_attr( $background_color ) . '; padding: 24px; border-radius: 8px; }';
 		}
 
 		// Text color.

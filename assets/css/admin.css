@@ -2090,3 +2090,147 @@
 		grid-template-columns: repeat(2, 1fr);
 	}
 }
+
+/* ============================
+   COLOR PICKER
+   ============================ */
+
+.aicrmform-color-picker-wrapper {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.aicrmform-color-input {
+	width: 50px;
+	height: 40px;
+	padding: 2px;
+	border: 1px solid var(--aicrmform-gray-300);
+	border-radius: 6px;
+	cursor: pointer;
+	background: #fff;
+}
+
+.aicrmform-color-input::-webkit-color-swatch-wrapper {
+	padding: 2px;
+}
+
+.aicrmform-color-input::-webkit-color-swatch {
+	border-radius: 4px;
+	border: none;
+}
+
+.aicrmform-color-text {
+	width: 100px !important;
+	text-transform: uppercase;
+	font-family: monospace;
+}
+
+/* Icon color variations */
+.aicrmform-card-header-icon-blue {
+	background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+}
+
+.aicrmform-card-header-icon-purple {
+	background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+}
+
+.aicrmform-card-header-icon-gray {
+	background: linear-gradient(135deg, #6b7280 0%, #374151 100%);
+}
+
+.aicrmform-card-header-icon-green {
+	background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+/* ============================
+   ALERT MODAL (Custom Popup)
+   ============================ */
+
+.aicrmform-alert-modal {
+	position: fixed;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.5);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 100001;
+	opacity: 0;
+	visibility: hidden;
+	transition: opacity 0.2s, visibility 0.2s;
+}
+
+.aicrmform-alert-modal.active {
+	opacity: 1;
+	visibility: visible;
+}
+
+.aicrmform-alert-content {
+	background: #fff;
+	border-radius: 12px;
+	padding: 24px;
+	max-width: 400px;
+	width: 90%;
+	box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+	text-align: center;
+}
+
+.aicrmform-alert-icon {
+	width: 48px;
+	height: 48px;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin: 0 auto 16px;
+}
+
+.aicrmform-alert-icon.warning {
+	background: #fef3c7;
+	color: #d97706;
+}
+
+.aicrmform-alert-icon.error {
+	background: #fee2e2;
+	color: #dc2626;
+}
+
+.aicrmform-alert-icon.success {
+	background: #d1fae5;
+	color: #059669;
+}
+
+.aicrmform-alert-icon.info {
+	background: #dbeafe;
+	color: #2563eb;
+}
+
+.aicrmform-alert-icon .dashicons {
+	font-size: 24px;
+	width: 24px;
+	height: 24px;
+}
+
+.aicrmform-alert-title {
+	font-size: 18px;
+	font-weight: 600;
+	color: var(--aicrmform-gray-900);
+	margin: 0 0 8px;
+}
+
+.aicrmform-alert-message {
+	font-size: 14px;
+	color: var(--aicrmform-gray-600);
+	margin: 0 0 20px;
+	line-height: 1.5;
+}
+
+.aicrmform-alert-actions {
+	display: flex;
+	gap: 12px;
+	justify-content: center;
+}
+
+.aicrmform-alert-actions .button {
+	min-width: 100px;
+}
