@@ -24,8 +24,18 @@ class AICRMFORM_Admin_Settings {
 			$this->save_settings();
 		}
 
-		$settings = get_option( 'aicrmform_settings', [] );
+		$settings    = get_option( 'aicrmform_settings', [] );
 		$has_api_key = ! empty( $settings['api_key'] );
+
+		// Check if forms exist for Quick Start widget.
+		$generator  = new AICRMFORM_Form_Generator();
+		$forms      = $generator->get_all_forms();
+		$has_forms  = ! empty( $forms );
+
+		// Determine step states.
+		$step1_class = $has_api_key ? 'completed' : 'current';
+		$step2_class = $has_forms ? 'completed' : ( $has_api_key ? 'current' : '' );
+		$step3_class = $has_forms ? 'current' : '';
 		?>
 		<div class="wrap aicrmform-admin aicrmform-settings-page-pro">
 			<!-- Page Header -->
@@ -120,13 +130,13 @@ class AICRMFORM_Admin_Settings {
 						</div>
 
 						<!-- Form Styling -->
-						<div class="aicrmform-card">
-							<div class="aicrmform-card-header">
-								<div class="aicrmform-card-header-icon aicrmform-card-header-icon-purple">
+						<div class="aicrmform-card" style="border: 2px solid #8b5cf6;">
+							<div class="aicrmform-card-header" style="background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);">
+								<div class="aicrmform-card-header-icon" style="background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);">
 									<span class="dashicons dashicons-art"></span>
 								</div>
 								<div>
-									<h2><?php esc_html_e( 'Form Styling', 'ai-crm-form' ); ?></h2>
+									<h2><?php esc_html_e( 'Form Styling', 'ai-crm-form' ); ?> <span style="color: #8b5cf6;">✨</span></h2>
 									<p><?php esc_html_e( 'Default styling options for forms', 'ai-crm-form' ); ?></p>
 								</div>
 							</div>
@@ -246,19 +256,35 @@ class AICRMFORM_Admin_Settings {
 							<div class="aicrmform-card-body">
 								<h3><?php esc_html_e( 'Quick Start', 'ai-crm-form' ); ?></h3>
 								<ol class="aicrmform-steps">
-									<li class="<?php echo $has_api_key ? 'completed' : 'current'; ?>">
+									<li class="<?php echo esc_attr( $step1_class ); ?>">
 										<?php esc_html_e( 'Add your API key', 'ai-crm-form' ); ?>
+										<?php if ( $has_api_key ) : ?>
+											<span class="aicrmform-step-check">✓</span>
+										<?php endif; ?>
 									</li>
-									<li>
+									<li class="<?php echo esc_attr( $step2_class ); ?>">
 										<?php esc_html_e( 'Create your first form', 'ai-crm-form' ); ?>
+										<?php if ( $has_forms ) : ?>
+											<span class="aicrmform-step-check">✓</span>
+										<?php endif; ?>
 									</li>
-									<li>
+									<li class="<?php echo esc_attr( $step3_class ); ?>">
 										<?php esc_html_e( 'Embed using shortcode', 'ai-crm-form' ); ?>
 									</li>
 								</ol>
-								<a href="<?php echo esc_url( admin_url( 'admin.php?page=ai-crm-form-generator' ) ); ?>" class="button button-secondary" style="width: 100%; justify-content: center;">
-									<?php esc_html_e( 'Create Form', 'ai-crm-form' ); ?>
-								</a>
+								<?php if ( $has_forms ) : ?>
+									<a href="<?php echo esc_url( admin_url( 'admin.php?page=ai-crm-form-forms' ) ); ?>" class="button button-primary" style="width: 100%; justify-content: center;">
+										<?php esc_html_e( 'View Forms & Get Shortcode', 'ai-crm-form' ); ?>
+									</a>
+								<?php elseif ( $has_api_key ) : ?>
+									<a href="<?php echo esc_url( admin_url( 'admin.php?page=ai-crm-form-generator' ) ); ?>" class="button button-primary" style="width: 100%; justify-content: center;">
+										<?php esc_html_e( 'Create Your First Form', 'ai-crm-form' ); ?>
+									</a>
+								<?php else : ?>
+									<p class="aicrmform-step-hint" style="margin: 0; font-size: 12px; color: #6b7280; text-align: center;">
+										<?php esc_html_e( 'Add your API key above to get started', 'ai-crm-form' ); ?>
+									</p>
+								<?php endif; ?>
 							</div>
 						</div>
 					</div>
@@ -603,6 +629,39 @@ class AICRMFORM_Admin_Settings {
 						</div>
 						<div class="aicrmform-card-body" style="display: none;">
 							<div class="aicrmform-style-grid">
+								<div class="aicrmform-form-row">
+									<label for="style-font-family"><?php esc_html_e( 'Font Family', 'ai-crm-form' ); ?></label>
+									<select id="style-font-family" class="aicrmform-input">
+										<option value=""><?php esc_html_e( 'System Default', 'ai-crm-form' ); ?></option>
+										<optgroup label="<?php esc_attr_e( 'Sans-serif', 'ai-crm-form' ); ?>">
+											<option value="Inter">Inter</option>
+											<option value="Roboto">Roboto</option>
+											<option value="Open Sans">Open Sans</option>
+											<option value="Lato">Lato</option>
+											<option value="Poppins">Poppins</option>
+											<option value="Montserrat">Montserrat</option>
+											<option value="Source Sans Pro">Source Sans Pro</option>
+											<option value="Nunito">Nunito</option>
+										</optgroup>
+										<optgroup label="<?php esc_attr_e( 'Serif', 'ai-crm-form' ); ?>">
+											<option value="Merriweather">Merriweather</option>
+											<option value="Playfair Display">Playfair Display</option>
+											<option value="Lora">Lora</option>
+										</optgroup>
+									</select>
+								</div>
+								<div class="aicrmform-form-row">
+									<label for="style-font-size"><?php esc_html_e( 'Font Size', 'ai-crm-form' ); ?></label>
+									<select id="style-font-size" class="aicrmform-input">
+										<option value="14px"><?php esc_html_e( '14px - Small', 'ai-crm-form' ); ?></option>
+										<option value="16px" selected><?php esc_html_e( '16px - Default', 'ai-crm-form' ); ?></option>
+										<option value="18px"><?php esc_html_e( '18px - Large', 'ai-crm-form' ); ?></option>
+									</select>
+								</div>
+								<div class="aicrmform-form-row">
+									<label for="style-background-color"><?php esc_html_e( 'Background Color', 'ai-crm-form' ); ?></label>
+									<input type="color" id="style-background-color" class="aicrmform-color-input" value="#ffffff">
+								</div>
 								<div class="aicrmform-form-row">
 									<label for="style-primary-color"><?php esc_html_e( 'Button Color', 'ai-crm-form' ); ?></label>
 									<input type="color" id="style-primary-color" class="aicrmform-color-input" value="#0073aa">

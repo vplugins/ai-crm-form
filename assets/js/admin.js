@@ -714,6 +714,9 @@
 			success_message: $('#success-message').val() || 'Thank you for your submission!',
 			error_message: $('#error-message').val() || 'Something went wrong.',
 			styles: {
+				font_family: $('#style-font-family').val(),
+				font_size: $('#style-font-size').val(),
+				background_color: $('#style-background-color').val(),
 				primary_color: $('#style-primary-color').val(),
 				border_radius: $('#style-border-radius').val(),
 				label_position: $('#style-label-position').val(),
@@ -1017,17 +1020,82 @@
 	}
 
 	function showFormEditModal(form) {
+		const styles = form.form_config?.styles || {};
+		const customCss = form.form_config?.custom_css || '';
+		
 		let html = '<div class="aicrmform-modal-overlay" id="form-edit-modal">';
-		html += '<div class="aicrmform-modal aicrmform-modal-lg">';
+		html += '<div class="aicrmform-modal aicrmform-modal-lg" style="max-width: 700px;">';
 		html += '<div class="aicrmform-modal-header"><h3>Edit: ' + escapeHtml(form.name) + '</h3></div>';
-		html += '<div class="aicrmform-modal-body">';
+		html += '<div class="aicrmform-modal-body" style="max-height: 70vh; overflow-y: auto;">';
+		
+		// Basic Info Section
+		html += '<h4 style="margin: 0 0 12px; color: #374151;">Basic Information</h4>';
+		html += '<div class="aicrmform-style-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">';
 		html += '<div class="aicrmform-form-row"><label>Form Name *</label><input type="text" id="edit-form-name" class="aicrmform-input" value="' + escapeHtml(form.name) + '"></div>';
-		html += '<div class="aicrmform-form-row"><label>CRM Form ID *</label><input type="text" id="edit-crm-form-id" class="aicrmform-input" value="' + escapeHtml(form.crm_form_id) + '"></div>';
 		html += '<div class="aicrmform-form-row"><label>Status</label><select id="edit-form-status" class="aicrmform-input"><option value="active"' + (form.status === 'active' ? ' selected' : '') + '>Active</option><option value="inactive"' + (form.status === 'inactive' ? ' selected' : '') + '>Inactive</option></select></div>';
+		html += '</div>';
+		html += '<div class="aicrmform-form-row" style="margin-bottom: 20px;"><label>CRM Form ID *</label><input type="text" id="edit-crm-form-id" class="aicrmform-input" value="' + escapeHtml(form.crm_form_id) + '"></div>';
+		
+		// Styling Section
+		html += '<h4 style="margin: 0 0 12px; color: #374151; border-top: 1px solid #e5e7eb; padding-top: 20px;">Styling</h4>';
+		html += '<div class="aicrmform-style-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">';
+		
+		// Font Family
+		html += '<div class="aicrmform-form-row"><label>Font Family</label><select id="edit-font-family" class="aicrmform-input">';
+		html += '<option value=""' + (!styles.font_family ? ' selected' : '') + '>System Default</option>';
+		html += '<optgroup label="Sans-serif">';
+		['Inter', 'Roboto', 'Open Sans', 'Lato', 'Poppins', 'Montserrat', 'Source Sans Pro', 'Nunito'].forEach(function(font) {
+			html += '<option value="' + font + '"' + (styles.font_family === font ? ' selected' : '') + '>' + font + '</option>';
+		});
+		html += '</optgroup><optgroup label="Serif">';
+		['Merriweather', 'Playfair Display', 'Lora'].forEach(function(font) {
+			html += '<option value="' + font + '"' + (styles.font_family === font ? ' selected' : '') + '>' + font + '</option>';
+		});
+		html += '</optgroup></select></div>';
+		
+		// Font Size
+		html += '<div class="aicrmform-form-row"><label>Font Size</label><select id="edit-font-size" class="aicrmform-input">';
+		html += '<option value="14px"' + (styles.font_size === '14px' ? ' selected' : '') + '>14px - Small</option>';
+		html += '<option value="16px"' + (!styles.font_size || styles.font_size === '16px' ? ' selected' : '') + '>16px - Default</option>';
+		html += '<option value="18px"' + (styles.font_size === '18px' ? ' selected' : '') + '>18px - Large</option>';
+		html += '</select></div>';
+		
+		// Background Color
+		html += '<div class="aicrmform-form-row"><label>Background Color</label><input type="color" id="edit-background-color" class="aicrmform-color-input" value="' + (styles.background_color || '#ffffff') + '"></div>';
+		
+		// Button Color
+		html += '<div class="aicrmform-form-row"><label>Button Color</label><input type="color" id="edit-primary-color" class="aicrmform-color-input" value="' + (styles.primary_color || '#0073aa') + '"></div>';
+		
+		// Border Radius
+		html += '<div class="aicrmform-form-row"><label>Border Radius</label><select id="edit-border-radius" class="aicrmform-input">';
+		html += '<option value="0"' + (styles.border_radius === '0' ? ' selected' : '') + '>None</option>';
+		html += '<option value="4px"' + (!styles.border_radius || styles.border_radius === '4px' ? ' selected' : '') + '>Small</option>';
+		html += '<option value="8px"' + (styles.border_radius === '8px' ? ' selected' : '') + '>Medium</option>';
+		html += '<option value="12px"' + (styles.border_radius === '12px' ? ' selected' : '') + '>Large</option>';
+		html += '</select></div>';
+		
+		// Label Position
+		html += '<div class="aicrmform-form-row"><label>Label Position</label><select id="edit-label-position" class="aicrmform-input">';
+		html += '<option value="top"' + (!styles.label_position || styles.label_position === 'top' ? ' selected' : '') + '>Top</option>';
+		html += '<option value="left"' + (styles.label_position === 'left' ? ' selected' : '') + '>Inline</option>';
+		html += '<option value="hidden"' + (styles.label_position === 'hidden' ? ' selected' : '') + '>Hidden</option>';
+		html += '</select></div>';
+		
+		// Button Width
+		html += '<div class="aicrmform-form-row"><label>Button Width</label><select id="edit-button-width" class="aicrmform-input">';
+		html += '<option value="auto"' + (!styles.button_width || styles.button_width === 'auto' ? ' selected' : '') + '>Auto</option>';
+		html += '<option value="full"' + (styles.button_width === 'full' ? ' selected' : '') + '>Full Width</option>';
+		html += '</select></div>';
+		
+		html += '</div>';
+		
+		// Custom CSS
+		html += '<div class="aicrmform-form-row" style="margin-top: 16px;"><label>Custom CSS</label><textarea id="edit-custom-css" class="aicrmform-textarea" rows="3" placeholder="/* Your custom styles */">' + escapeHtml(customCss) + '</textarea></div>';
+		
 		html += '</div>';
 		html += '<div class="aicrmform-modal-footer">';
 		html += '<button type="button" class="button" id="cancel-edit">Cancel</button>';
-		html += '<button type="button" class="button button-primary" id="save-edit" data-form-id="' + form.id + '">Save</button>';
+		html += '<button type="button" class="button button-primary" id="save-edit" data-form-id="' + form.id + '">Save Changes</button>';
 		html += '</div></div></div>';
 
 		const $modal = $(html);
@@ -1040,7 +1108,19 @@
 		$modal.find('#cancel-edit').on('click', function() { $modal.remove(); });
 		$modal.find('#save-edit').on('click', function() {
 			const formId = $(this).data('form-id');
-			const formConfig = $modal.data('form-config');
+			let formConfig = $modal.data('form-config') || {};
+			
+			// Update styles in form config
+			formConfig.styles = {
+				font_family: $modal.find('#edit-font-family').val(),
+				font_size: $modal.find('#edit-font-size').val(),
+				background_color: $modal.find('#edit-background-color').val(),
+				primary_color: $modal.find('#edit-primary-color').val(),
+				border_radius: $modal.find('#edit-border-radius').val(),
+				label_position: $modal.find('#edit-label-position').val(),
+				button_width: $modal.find('#edit-button-width').val()
+			};
+			formConfig.custom_css = $modal.find('#edit-custom-css').val();
 			
 			$.ajax({
 				url: aicrmformAdmin.restUrl + 'forms/' + formId,
@@ -1057,10 +1137,14 @@
 				})
 			}).done(function(response) {
 				if (response.success) {
-					showToast('Form updated.', 'success');
+					showToast('Form updated successfully!', 'success');
 					$modal.remove();
 					location.reload();
+				} else {
+					showToast('Failed to update form.', 'error');
 				}
+			}).fail(function() {
+				showToast('Failed to update form.', 'error');
 			});
 		});
 	}

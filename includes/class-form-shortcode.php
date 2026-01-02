@@ -92,6 +92,13 @@ class AICRMFORM_Form_Shortcode {
 
 		$html = '';
 
+		// Load Google Font if specified for this form.
+		$font_family = $styles['font_family'] ?? '';
+		if ( ! empty( $font_family ) ) {
+			$font_slug = str_replace( ' ', '+', $font_family );
+			$html     .= '<link href="https://fonts.googleapis.com/css2?family=' . esc_attr( $font_slug ) . ':wght@400;500;600;700&display=swap" rel="stylesheet">';
+		}
+
 		// Add custom styles.
 		if ( ! empty( $custom_styles ) ) {
 			$html .= '<style>' . $custom_styles . '</style>';
@@ -171,12 +178,15 @@ class AICRMFORM_Form_Shortcode {
 
 		// Font family from Google Fonts.
 		if ( ! empty( $font_family ) ) {
-			$css .= $selector . ' { font-family: "' . esc_attr( $font_family ) . '", sans-serif; }';
+			$css .= $selector . ' { font-family: "' . esc_attr( $font_family ) . '", sans-serif !important; }';
+			$css .= $selector . ' *, ' . $selector . ' input, ' . $selector . ' select, ' . $selector . ' textarea, ' . $selector . ' button { font-family: inherit !important; }';
 		}
 
 		// Font size.
-		if ( ! empty( $font_size ) && '16px' !== $font_size ) {
-			$css .= $selector . ' { font-size: ' . esc_attr( $font_size ) . '; }';
+		if ( ! empty( $font_size ) ) {
+			$css .= $selector . ' { font-size: ' . esc_attr( $font_size ) . ' !important; }';
+			$css .= $selector . ' .aicrmform-field label { font-size: ' . esc_attr( $font_size ) . ' !important; }';
+			$css .= $selector . ' .aicrmform-field input, ' . $selector . ' .aicrmform-field select, ' . $selector . ' .aicrmform-field textarea { font-size: ' . esc_attr( $font_size ) . ' !important; }';
 		}
 
 		// Form width.
@@ -186,30 +196,30 @@ class AICRMFORM_Form_Shortcode {
 
 		// Background color.
 		if ( ! empty( $background_color ) && '#ffffff' !== $background_color ) {
-			$css .= $selector . ' .aicrmform-form { background-color: ' . esc_attr( $background_color ) . '; padding: 24px; border-radius: 8px; }';
+			$css .= $selector . ' .aicrmform-form { background-color: ' . esc_attr( $background_color ) . ' !important; padding: 24px !important; border-radius: 8px !important; }';
 		}
 
 		// Text color.
 		if ( ! empty( $styles['text_color'] ) && '#333333' !== $styles['text_color'] ) {
-			$css .= $selector . ' { color: ' . esc_attr( $styles['text_color'] ) . '; }';
-			$css .= $selector . ' .aicrmform-field label { color: ' . esc_attr( $styles['text_color'] ) . '; }';
+			$css .= $selector . ' { color: ' . esc_attr( $styles['text_color'] ) . ' !important; }';
+			$css .= $selector . ' .aicrmform-field label { color: ' . esc_attr( $styles['text_color'] ) . ' !important; }';
 		}
 
 		// Border color.
 		if ( ! empty( $styles['border_color'] ) && '#dddddd' !== $styles['border_color'] ) {
-			$css .= $selector . ' .aicrmform-field input, ' . $selector . ' .aicrmform-field select, ' . $selector . ' .aicrmform-field textarea { border-color: ' . esc_attr( $styles['border_color'] ) . '; }';
+			$css .= $selector . ' .aicrmform-field input, ' . $selector . ' .aicrmform-field select, ' . $selector . ' .aicrmform-field textarea { border-color: ' . esc_attr( $styles['border_color'] ) . ' !important; }';
 		}
 
 		// Border radius.
 		if ( ! empty( $styles['border_radius'] ) && '4px' !== $styles['border_radius'] ) {
-			$css .= $selector . ' .aicrmform-field input, ' . $selector . ' .aicrmform-field select, ' . $selector . ' .aicrmform-field textarea, ' . $selector . ' .aicrmform-button { border-radius: ' . esc_attr( $styles['border_radius'] ) . '; }';
+			$css .= $selector . ' .aicrmform-field input, ' . $selector . ' .aicrmform-field select, ' . $selector . ' .aicrmform-field textarea, ' . $selector . ' .aicrmform-button { border-radius: ' . esc_attr( $styles['border_radius'] ) . ' !important; }';
 		}
 
 		// Primary/Button color.
 		if ( ! empty( $styles['primary_color'] ) && '#0073aa' !== $styles['primary_color'] ) {
-			$css .= $selector . ' .aicrmform-button { background-color: ' . esc_attr( $styles['primary_color'] ) . '; border-color: ' . esc_attr( $styles['primary_color'] ) . '; }';
-			$css .= $selector . ' .aicrmform-button:hover { background-color: ' . $this->adjust_brightness( $styles['primary_color'], -20 ) . '; }';
-			$css .= $selector . ' .aicrmform-field input:focus, ' . $selector . ' .aicrmform-field select:focus, ' . $selector . ' .aicrmform-field textarea:focus { border-color: ' . esc_attr( $styles['primary_color'] ) . '; box-shadow: 0 0 0 3px ' . $this->hex_to_rgba( $styles['primary_color'], 0.15 ) . '; }';
+			$css .= $selector . ' .aicrmform-button { background-color: ' . esc_attr( $styles['primary_color'] ) . ' !important; border-color: ' . esc_attr( $styles['primary_color'] ) . ' !important; }';
+			$css .= $selector . ' .aicrmform-button:hover { background-color: ' . $this->adjust_brightness( $styles['primary_color'], -20 ) . ' !important; }';
+			$css .= $selector . ' .aicrmform-field input:focus, ' . $selector . ' .aicrmform-field select:focus, ' . $selector . ' .aicrmform-field textarea:focus { border-color: ' . esc_attr( $styles['primary_color'] ) . ' !important; box-shadow: 0 0 0 3px ' . $this->hex_to_rgba( $styles['primary_color'], 0.15 ) . ' !important; }';
 		}
 
 		// Append custom CSS (sanitized).
