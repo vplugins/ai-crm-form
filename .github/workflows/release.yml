@@ -53,7 +53,7 @@ jobs:
           zip -r ../ai-crm-form-${{ steps.get_version.outputs.VERSION }}.zip ai-crm-form
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: ai-crm-form-${{ steps.get_version.outputs.VERSION }}.zip
           generate_release_notes: true
