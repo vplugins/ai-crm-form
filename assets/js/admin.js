@@ -714,6 +714,9 @@
 			success_message: $('#success-message').val() || 'Thank you for your submission!',
 			error_message: $('#error-message').val() || 'Something went wrong.',
 			styles: {
+				font_family: $('#style-font-family').val(),
+				font_size: $('#style-font-size').val(),
+				background_color: $('#style-background-color').val(),
 				primary_color: $('#style-primary-color').val(),
 				border_radius: $('#style-border-radius').val(),
 				label_position: $('#style-label-position').val(),

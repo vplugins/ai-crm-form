@@ -604,6 +604,39 @@ class AICRMFORM_Admin_Settings {
 						<div class="aicrmform-card-body" style="display: none;">
 							<div class="aicrmform-style-grid">
 								<div class="aicrmform-form-row">
+									<label for="style-font-family"><?php esc_html_e( 'Font Family', 'ai-crm-form' ); ?></label>
+									<select id="style-font-family" class="aicrmform-input">
+										<option value=""><?php esc_html_e( 'System Default', 'ai-crm-form' ); ?></option>
+										<optgroup label="<?php esc_attr_e( 'Sans-serif', 'ai-crm-form' ); ?>">
+											<option value="Inter">Inter</option>
+											<option value="Roboto">Roboto</option>
+											<option value="Open Sans">Open Sans</option>
+											<option value="Lato">Lato</option>
+											<option value="Poppins">Poppins</option>
+											<option value="Montserrat">Montserrat</option>
+											<option value="Source Sans Pro">Source Sans Pro</option>
+											<option value="Nunito">Nunito</option>
+										</optgroup>
+										<optgroup label="<?php esc_attr_e( 'Serif', 'ai-crm-form' ); ?>">
+											<option value="Merriweather">Merriweather</option>
+											<option value="Playfair Display">Playfair Display</option>
+											<option value="Lora">Lora</option>
+										</optgroup>
+									</select>
+								</div>
+								<div class="aicrmform-form-row">
+									<label for="style-font-size"><?php esc_html_e( 'Font Size', 'ai-crm-form' ); ?></label>
+									<select id="style-font-size" class="aicrmform-input">
+										<option value="14px"><?php esc_html_e( '14px - Small', 'ai-crm-form' ); ?></option>
+										<option value="16px" selected><?php esc_html_e( '16px - Default', 'ai-crm-form' ); ?></option>
+										<option value="18px"><?php esc_html_e( '18px - Large', 'ai-crm-form' ); ?></option>
+									</select>
+								</div>
+								<div class="aicrmform-form-row">
+									<label for="style-background-color"><?php esc_html_e( 'Background Color', 'ai-crm-form' ); ?></label>
+									<input type="color" id="style-background-color" class="aicrmform-color-input" value="#ffffff">
+								</div>
+								<div class="aicrmform-form-row">
 									<label for="style-primary-color"><?php esc_html_e( 'Button Color', 'ai-crm-form' ); ?></label>
 									<input type="color" id="style-primary-color" class="aicrmform-color-input" value="#0073aa">
 								</div>
