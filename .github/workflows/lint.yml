@@ -1,0 +1,122 @@
+name: Lint
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  php-lint:
+    name: PHP Syntax Check
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        php: ['7.4', '8.0', '8.1', '8.2']
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          tools: parallel-lint
+
+      - name: Run PHP lint
+        run: parallel-lint --exclude vendor .
+
+  phpcs:
+    name: WordPress Coding Standards
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          tools: composer, cs2pr
+          coverage: none
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: ${{ runner.os }}-composer-${{ hashFiles('composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress
+
+      - name: Run PHPCS
+        id: phpcs
+        run: ./vendor/bin/phpcs --report=checkstyle | cs2pr
+        continue-on-error: true
+
+      - name: Annotate code with PHPCS results
+        if: steps.phpcs.outcome == 'failure'
+        run: exit 1
+
+  prettier:
+    name: Prettier (JS/CSS)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Prettier
+        run: npm run format:check
+
+  version-check:
+    name: Version Consistency Check
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check version consistency
+        run: |
+          # Extract versions
+          PLUGIN_VERSION=$(grep -oP "Version:\s*\K[0-9]+\.[0-9]+\.[0-9]+" ai-crm-form.php | head -1)
+          CONSTANT_VERSION=$(grep -oP "define\(\s*'AICRMFORM_VERSION',\s*'\K[0-9]+\.[0-9]+\.[0-9]+(?=')" ai-crm-form.php)
+          README_VERSION=$(grep -oP "Stable tag:\s*\K[0-9]+\.[0-9]+\.[0-9]+" readme.txt)
+          PACKAGE_VERSION=$(grep -oP '"version":\s*"\K[0-9]+\.[0-9]+\.[0-9]+(?=")' package.json)
+          COMPOSER_VERSION=$(grep -oP '"version":\s*"\K[0-9]+\.[0-9]+\.[0-9]+(?=")' composer.json)
+          
+          echo "Plugin header version: $PLUGIN_VERSION"
+          echo "Constant version: $CONSTANT_VERSION"
+          echo "readme.txt version: $README_VERSION"
+          echo "package.json version: $PACKAGE_VERSION"
+          echo "composer.json version: $COMPOSER_VERSION"
+          
+          # Check if all match
+          if [ "$PLUGIN_VERSION" != "$CONSTANT_VERSION" ] || \
+             [ "$PLUGIN_VERSION" != "$README_VERSION" ] || \
+             [ "$PLUGIN_VERSION" != "$PACKAGE_VERSION" ] || \
+             [ "$PLUGIN_VERSION" != "$COMPOSER_VERSION" ]; then
+            echo "::error::Version mismatch detected! Please ensure all version numbers are consistent."
+            exit 1
+          fi
+          
+          echo "✅ All versions match: $PLUGIN_VERSION"
+

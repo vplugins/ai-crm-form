@@ -1,0 +1,393 @@
+/**
+ * AI CRM Form - Frontend Styles
+ */
+
+/* Form Wrapper */
+.aicrmform-wrapper {
+	max-width: 600px;
+	margin: 0 auto;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+}
+
+.aicrmform-title {
+	margin: 0 0 10px 0;
+	font-size: 24px;
+	font-weight: 600;
+	color: #1a1a1a;
+}
+
+.aicrmform-description {
+	margin: 0 0 20px 0;
+	color: #666;
+	font-size: 15px;
+	line-height: 1.5;
+}
+
+/* Form */
+.aicrmform-form {
+	background: #fff;
+	border: 1px solid #e0e0e0;
+	border-radius: 8px;
+	padding: 30px;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* Fields */
+.aicrmform-field {
+	margin-bottom: 20px;
+}
+
+.aicrmform-field label {
+	display: block;
+	margin-bottom: 8px;
+	font-weight: 500;
+	font-size: 14px;
+	color: #333;
+}
+
+.aicrmform-required {
+	color: #dc3232;
+	margin-left: 3px;
+}
+
+/* Input Styles */
+.aicrmform-field input[type="text"],
+.aicrmform-field input[type="email"],
+.aicrmform-field input[type="tel"],
+.aicrmform-field input[type="url"],
+.aicrmform-field input[type="number"],
+.aicrmform-field input[type="date"],
+.aicrmform-field select,
+.aicrmform-field textarea {
+	width: 100%;
+	padding: 12px 16px;
+	border: 1px solid #ddd;
+	border-radius: 6px;
+	font-size: 15px;
+	font-family: inherit;
+	transition: border-color 0.2s, box-shadow 0.2s;
+	box-sizing: border-box;
+}
+
+.aicrmform-field input:focus,
+.aicrmform-field select:focus,
+.aicrmform-field textarea:focus {
+	outline: none;
+	border-color: #0073aa;
+	box-shadow: 0 0 0 3px rgba(0, 115, 170, 0.15);
+}
+
+.aicrmform-field input::placeholder,
+.aicrmform-field textarea::placeholder {
+	color: #999;
+}
+
+.aicrmform-field textarea {
+	resize: vertical;
+	min-height: 120px;
+	line-height: 1.5;
+}
+
+.aicrmform-field select {
+	appearance: none;
+	background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+	background-repeat: no-repeat;
+	background-position: right 12px center;
+	padding-right: 36px;
+}
+
+/* Checkbox & Radio */
+.aicrmform-checkbox-group,
+.aicrmform-radio-group {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.aicrmform-checkbox-label,
+.aicrmform-radio-label {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	cursor: pointer;
+	font-weight: normal;
+}
+
+.aicrmform-checkbox-label input,
+.aicrmform-radio-label input {
+	width: 18px;
+	height: 18px;
+	margin: 0;
+	cursor: pointer;
+}
+
+/* Submit Button */
+.aicrmform-submit {
+	margin-top: 25px;
+	display: flex;
+	align-items: center;
+	gap: 15px;
+}
+
+.aicrmform-button {
+	background: linear-gradient(135deg, #0073aa 0%, #005a87 100%);
+	color: #fff;
+	border: none;
+	padding: 14px 32px;
+	border-radius: 6px;
+	font-size: 16px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.aicrmform-button:hover {
+	transform: translateY(-1px);
+	box-shadow: 0 4px 12px rgba(0, 115, 170, 0.3);
+}
+
+.aicrmform-button:active {
+	transform: translateY(0);
+}
+
+.aicrmform-button:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+	transform: none;
+}
+
+/* Spinner */
+.aicrmform-spinner {
+	display: inline-block;
+	width: 24px;
+	height: 24px;
+	border: 3px solid #f3f3f3;
+	border-top: 3px solid #0073aa;
+	border-radius: 50%;
+	animation: aicrmform-spin 1s linear infinite;
+}
+
+@keyframes aicrmform-spin {
+	0% { transform: rotate(0deg); }
+	100% { transform: rotate(360deg); }
+}
+
+/* Success Message */
+.aicrmform-success {
+	background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+	border: 1px solid #28a745;
+	color: #155724;
+	padding: 30px;
+	border-radius: 12px;
+	text-align: center;
+}
+
+.aicrmform-success-icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 56px;
+	height: 56px;
+	margin: 0 auto 16px;
+	background: #28a745;
+	color: #fff;
+	font-size: 28px;
+	border-radius: 50%;
+	box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+.aicrmform-success p {
+	margin: 0;
+	font-size: 16px;
+	font-weight: 500;
+	line-height: 1.5;
+}
+
+/* Error Message */
+.aicrmform-error-message {
+	background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+	border: 1px solid #dc3545;
+	color: #721c24;
+	padding: 15px 20px;
+	border-radius: 6px;
+	margin-top: 15px;
+}
+
+.aicrmform-error {
+	color: #dc3232;
+	padding: 15px;
+	background: #fef7f7;
+	border: 1px solid #f5c6cb;
+	border-radius: 4px;
+}
+
+/* Field Error State */
+.aicrmform-field.error input,
+.aicrmform-field.error select,
+.aicrmform-field.error textarea {
+	border-color: #dc3545;
+}
+
+.aicrmform-field .field-error {
+	color: #dc3545;
+	font-size: 13px;
+	margin-top: 5px;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+	.aicrmform-form {
+		padding: 20px;
+	}
+
+	.aicrmform-field input[type="text"],
+	.aicrmform-field input[type="email"],
+	.aicrmform-field input[type="tel"],
+	.aicrmform-field input[type="url"],
+	.aicrmform-field input[type="number"],
+	.aicrmform-field input[type="date"],
+	.aicrmform-field select,
+	.aicrmform-field textarea {
+		padding: 10px 14px;
+		font-size: 16px; /* Prevents zoom on mobile */
+	}
+
+	.aicrmform-button {
+		width: 100%;
+		padding: 12px 24px;
+	}
+
+	.aicrmform-submit {
+		flex-direction: column;
+		align-items: stretch;
+	}
+}
+
+/* Label Positions */
+.aicrmform-labels-left .aicrmform-field {
+	display: grid;
+	grid-template-columns: 140px 1fr;
+	gap: 16px;
+	align-items: start;
+}
+
+.aicrmform-labels-left .aicrmform-field label {
+	text-align: right;
+	padding-top: 12px;
+	margin-bottom: 0;
+}
+
+.aicrmform-labels-left .aicrmform-field-checkbox,
+.aicrmform-labels-left .aicrmform-field-radio {
+	align-items: start;
+}
+
+.aicrmform-labels-hidden .aicrmform-field > label {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+.aicrmform-labels-hidden .aicrmform-field {
+	position: relative;
+}
+
+/* Field Spacing */
+.aicrmform-spacing-compact .aicrmform-field {
+	margin-bottom: 12px;
+}
+
+.aicrmform-spacing-compact .aicrmform-form {
+	padding: 20px;
+}
+
+.aicrmform-spacing-compact .aicrmform-field input,
+.aicrmform-spacing-compact .aicrmform-field select,
+.aicrmform-spacing-compact .aicrmform-field textarea {
+	padding: 8px 12px;
+}
+
+.aicrmform-spacing-normal .aicrmform-field {
+	margin-bottom: 20px;
+}
+
+.aicrmform-spacing-relaxed .aicrmform-field {
+	margin-bottom: 28px;
+}
+
+.aicrmform-spacing-relaxed .aicrmform-form {
+	padding: 36px;
+}
+
+.aicrmform-spacing-relaxed .aicrmform-field input,
+.aicrmform-spacing-relaxed .aicrmform-field select,
+.aicrmform-spacing-relaxed .aicrmform-field textarea {
+	padding: 16px 20px;
+}
+
+/* Button Styles */
+.aicrmform-button-outline .aicrmform-button {
+	background: transparent;
+	border: 2px solid #0073aa;
+	color: #0073aa;
+}
+
+.aicrmform-button-outline .aicrmform-button:hover {
+	background: #0073aa;
+	color: #fff;
+}
+
+.aicrmform-button-rounded .aicrmform-button {
+	border-radius: 50px;
+	padding: 14px 40px;
+}
+
+.aicrmform-button-full .aicrmform-button {
+	width: 100%;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+	.aicrmform-wrapper {
+		color: #e0e0e0;
+	}
+
+	.aicrmform-form {
+		background: #1e1e1e;
+		border-color: #333;
+	}
+
+	.aicrmform-title {
+		color: #fff;
+	}
+
+	.aicrmform-description {
+		color: #aaa;
+	}
+
+	.aicrmform-field label {
+		color: #e0e0e0;
+	}
+
+	.aicrmform-field input,
+	.aicrmform-field select,
+	.aicrmform-field textarea {
+		background: #2a2a2a;
+		border-color: #444;
+		color: #e0e0e0;
+	}
+
+	.aicrmform-field input:focus,
+	.aicrmform-field select:focus,
+	.aicrmform-field textarea:focus {
+		border-color: #0096dd;
+		box-shadow: 0 0 0 3px rgba(0, 150, 221, 0.2);
+	}
+}
+

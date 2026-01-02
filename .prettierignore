@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+vendor/
+
+# Build output
+dist/
+build/
+
+# WordPress
+wp-admin/
+wp-includes/
+
+# Other
+*.min.js
+*.min.css
+*.map
+

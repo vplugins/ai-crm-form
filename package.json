@@ -1,0 +1,42 @@
+{
+  "name": "ai-crm-form",
+  "version": "1.0.0",
+  "description": "AI-powered CRM form builder for WordPress",
+  "author": "Rajan Vijayan",
+  "license": "GPL-2.0-or-later",
+  "keywords": [
+    "wordpress",
+    "plugin",
+    "forms",
+    "crm",
+    "ai"
+  ],
+  "homepage": "https://github.com/rajanvijayan/ai-crm-form",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rajanvijayan/ai-crm-form.git"
+  },
+  "bugs": {
+    "url": "https://github.com/rajanvijayan/ai-crm-form/issues"
+  },
+  "scripts": {
+    "format": "prettier --write \"assets/**/*.{js,css}\"",
+    "format:check": "prettier --check \"assets/**/*.{js,css}\"",
+    "lint:js": "eslint assets/js/*.js",
+    "lint:css": "stylelint \"assets/css/*.css\"",
+    "lint": "npm run lint:js && npm run lint:css",
+    "build": "echo 'No build step required'",
+    "version": "echo $npm_package_version"
+  },
+  "devDependencies": {
+    "eslint": "^8.56.0",
+    "eslint-config-wordpress": "^2.0.0",
+    "prettier": "^3.2.0",
+    "stylelint": "^16.1.0",
+    "stylelint-config-standard": "^36.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
+

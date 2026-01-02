@@ -1,0 +1,86 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    name: Build Release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          tools: composer
+
+      - name: Get version from tag
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Install Composer dependencies (production)
+        run: composer install --prefer-dist --no-dev --no-progress --optimize-autoloader
+
+      - name: Create release archive
+        run: |
+          mkdir -p release/ai-crm-form
+          
+          # Copy files
+          cp -r assets release/ai-crm-form/
+          cp -r includes release/ai-crm-form/
+          cp -r templates release/ai-crm-form/
+          cp -r vendor release/ai-crm-form/
+          cp ai-crm-form.php release/ai-crm-form/
+          cp readme.txt release/ai-crm-form/
+          cp README.md release/ai-crm-form/
+          cp CHANGELOG.md release/ai-crm-form/
+          cp LICENSE release/ai-crm-form/ 2>/dev/null || echo "No LICENSE file"
+          
+          # Create zip
+          cd release
+          zip -r ../ai-crm-form-${{ steps.get_version.outputs.VERSION }}.zip ai-crm-form
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ai-crm-form-${{ steps.get_version.outputs.VERSION }}.zip
+          generate_release_notes: true
+          draft: false
+          prerelease: ${{ contains(github.ref, 'beta') || contains(github.ref, 'alpha') || contains(github.ref, 'rc') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  deploy-wp:
+    name: Deploy to WordPress.org
+    runs-on: ubuntu-latest
+    needs: build
+    if: "!contains(github.ref, 'beta') && !contains(github.ref, 'alpha') && !contains(github.ref, 'rc')"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          tools: composer
+
+      - name: Install Composer dependencies (production)
+        run: composer install --prefer-dist --no-dev --no-progress --optimize-autoloader
+
+      - name: WordPress Plugin Deploy
+        uses: 10up/action-wordpress-plugin-deploy@stable
+        env:
+          SVN_USERNAME: ${{ secrets.WP_SVN_USERNAME }}
+          SVN_PASSWORD: ${{ secrets.WP_SVN_PASSWORD }}
+          SLUG: ai-crm-form
+          BUILD_DIR: .
+          ASSETS_DIR: .wordpress-org
+

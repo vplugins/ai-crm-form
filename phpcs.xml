@@ -1,0 +1,87 @@
+<?xml version="1.0"?>
+<ruleset name="AI CRM Form Coding Standards">
+    <description>WordPress Coding Standards for AI CRM Form plugin</description>
+
+    <!-- What to scan -->
+    <file>.</file>
+
+    <!-- Exclude directories -->
+    <exclude-pattern>/vendor/*</exclude-pattern>
+    <exclude-pattern>/node_modules/*</exclude-pattern>
+    <exclude-pattern>/tests/*</exclude-pattern>
+    <exclude-pattern>/.github/*</exclude-pattern>
+
+    <!-- How to scan -->
+    <arg value="sp"/> <!-- Show sniff and progress -->
+    <arg name="basepath" value="."/>
+    <arg name="colors"/>
+    <arg name="extensions" value="php"/>
+    <arg name="parallel" value="8"/>
+
+    <!-- Rules: Check PHP version compatibility -->
+    <config name="testVersion" value="7.4-"/>
+    <rule ref="PHPCompatibilityWP"/>
+
+    <!-- Rules: WordPress Coding Standards -->
+    <config name="minimum_supported_wp_version" value="5.8"/>
+    <rule ref="WordPress">
+        <!-- Allow short array syntax -->
+        <exclude name="Generic.Arrays.DisallowShortArraySyntax"/>
+        <!-- Allow arrow functions -->
+        <exclude name="Generic.WhiteSpace.ArbitraryParenthesesSpacing.SpaceAfterOpen"/>
+        <exclude name="Generic.WhiteSpace.ArbitraryParenthesesSpacing.SpaceBeforeClose"/>
+    </rule>
+
+    <!-- Allow short array syntax -->
+    <rule ref="Generic.Arrays.DisallowLongArraySyntax"/>
+
+    <!-- Verify that the text_domain is set to the desired text-domain -->
+    <rule ref="WordPress.WP.I18n">
+        <properties>
+            <property name="text_domain" type="array">
+                <element value="ai-crm-form"/>
+            </property>
+        </properties>
+    </rule>
+
+    <!-- Allow for plugin-specific naming conventions -->
+    <rule ref="WordPress.NamingConventions.PrefixAllGlobals">
+        <properties>
+            <property name="prefixes" type="array">
+                <element value="aicrmform"/>
+                <element value="AICRMFORM"/>
+                <element value="ai_crm_form"/>
+                <element value="AI_CRM_Form"/>
+            </property>
+        </properties>
+    </rule>
+
+    <!-- Allow for theme-specific exceptions -->
+    <rule ref="WordPress.Files.FileName">
+        <properties>
+            <property name="strict_class_file_names" value="false"/>
+        </properties>
+        <exclude name="WordPress.Files.FileName.NotHyphenatedLowercase"/>
+    </rule>
+
+    <!-- Exclude the main plugin file from class naming rules -->
+    <rule ref="WordPress.Files.FileName.InvalidClassFileName">
+        <exclude-pattern>ai-crm-form.php</exclude-pattern>
+    </rule>
+
+    <!-- Allow inline control structures for simple conditionals -->
+    <rule ref="Generic.ControlStructures.InlineControlStructure">
+        <properties>
+            <property name="error" value="false"/>
+        </properties>
+    </rule>
+
+    <!-- Set the appropriate line length -->
+    <rule ref="Generic.Files.LineLength">
+        <properties>
+            <property name="lineLimit" value="200"/>
+            <property name="absoluteLineLimit" value="0"/>
+        </properties>
+    </rule>
+</ruleset>
+
