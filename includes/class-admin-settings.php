@@ -120,13 +120,13 @@ class AICRMFORM_Admin_Settings {
 						</div>
 
 						<!-- Form Styling -->
-						<div class="aicrmform-card">
-							<div class="aicrmform-card-header">
-								<div class="aicrmform-card-header-icon aicrmform-card-header-icon-purple">
+						<div class="aicrmform-card" style="border: 2px solid #8b5cf6;">
+							<div class="aicrmform-card-header" style="background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);">
+								<div class="aicrmform-card-header-icon" style="background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);">
 									<span class="dashicons dashicons-art"></span>
 								</div>
 								<div>
-									<h2><?php esc_html_e( 'Form Styling', 'ai-crm-form' ); ?></h2>
+									<h2><?php esc_html_e( 'Form Styling', 'ai-crm-form' ); ?> <span style="color: #8b5cf6;">✨</span></h2>
 									<p><?php esc_html_e( 'Default styling options for forms', 'ai-crm-form' ); ?></p>
 								</div>
 							</div>
