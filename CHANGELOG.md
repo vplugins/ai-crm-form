@@ -78,6 +78,6 @@ We use [Semantic Versioning](https://semver.org/):
 - **Development versions** are available on GitHub
 - **Security patches** are released as needed
 
-[Unreleased]: https://github.com/your-username/ai-crm-form/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/your-username/ai-crm-form/releases/tag/v1.0.0
+[Unreleased]: https://github.com/vplugins/ai-crm-form/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/vplugins/ai-crm-form/releases/tag/v1.0.0
 

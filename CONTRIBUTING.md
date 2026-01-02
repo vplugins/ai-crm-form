@@ -310,9 +310,9 @@ Any other context, mockups, or examples.
 
 If you have questions, please:
 
-1. Check the [documentation](https://github.com/your-username/ai-crm-form/wiki)
-2. Search [existing issues](https://github.com/your-username/ai-crm-form/issues)
-3. Open a [discussion](https://github.com/your-username/ai-crm-form/discussions)
+1. Check the [documentation](https://github.com/vplugins/ai-crm-form/wiki)
+2. Search [existing issues](https://github.com/vplugins/ai-crm-form/issues)
+3. Open a [discussion](https://github.com/vplugins/ai-crm-form/discussions)
 
 Thank you for contributing! 🎉
 
