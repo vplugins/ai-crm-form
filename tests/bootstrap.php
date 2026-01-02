@@ -5,6 +5,12 @@
  * @package AI_CRM_Form
  */
 
+// Composer autoloader for PHPUnit polyfills.
+$_composer_autoload = dirname( __DIR__ ) . '/vendor/autoload.php';
+if ( file_exists( $_composer_autoload ) ) {
+	require_once $_composer_autoload;
+}
+
 $_tests_dir = getenv( 'WP_TESTS_DIR' );
 
 if ( ! $_tests_dir ) {
@@ -15,6 +21,8 @@ if ( ! $_tests_dir ) {
 $_phpunit_polyfills_path = getenv( 'WP_TESTS_PHPUNIT_POLYFILLS_PATH' );
 if ( false !== $_phpunit_polyfills_path ) {
 	define( 'WP_TESTS_PHPUNIT_POLYFILLS_PATH', $_phpunit_polyfills_path );
+} elseif ( file_exists( dirname( __DIR__ ) . '/vendor/yoast/phpunit-polyfills/phpunitpolyfills-autoload.php' ) ) {
+	define( 'WP_TESTS_PHPUNIT_POLYFILLS_PATH', dirname( __DIR__ ) . '/vendor/yoast/phpunit-polyfills' );
 }
 
 if ( ! file_exists( "{$_tests_dir}/includes/functions.php" ) ) {
@@ -36,4 +44,3 @@ tests_add_filter( 'muplugins_loaded', '_manually_load_plugin' );
 
 // Start up the WP testing environment.
 require "{$_tests_dir}/includes/bootstrap.php";
-

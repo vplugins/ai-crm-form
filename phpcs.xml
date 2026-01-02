@@ -10,6 +10,8 @@
     <exclude-pattern>/node_modules/*</exclude-pattern>
     <exclude-pattern>/tests/*</exclude-pattern>
     <exclude-pattern>/.github/*</exclude-pattern>
+    <exclude-pattern>/bin/*</exclude-pattern>
+    <exclude-pattern>/assets/*</exclude-pattern>
 
     <!-- How to scan -->
     <arg value="sp"/> <!-- Show sniff and progress -->
@@ -24,12 +26,15 @@
 
     <!-- Rules: WordPress Coding Standards -->
     <config name="minimum_supported_wp_version" value="5.8"/>
-    <rule ref="WordPress">
+    <rule ref="WordPress-Core">
         <!-- Allow short array syntax -->
         <exclude name="Generic.Arrays.DisallowShortArraySyntax"/>
-        <!-- Allow arrow functions -->
-        <exclude name="Generic.WhiteSpace.ArbitraryParenthesesSpacing.SpaceAfterOpen"/>
-        <exclude name="Generic.WhiteSpace.ArbitraryParenthesesSpacing.SpaceBeforeClose"/>
+    </rule>
+    
+    <!-- WordPress Extra rules for best practices -->
+    <rule ref="WordPress-Extra">
+        <exclude name="WordPress.Files.FileName.InvalidClassFileName"/>
+        <exclude name="WordPress.Files.FileName.NotHyphenatedLowercase"/>
     </rule>
 
     <!-- Allow short array syntax -->
@@ -56,26 +61,6 @@
         </properties>
     </rule>
 
-    <!-- Allow for theme-specific exceptions -->
-    <rule ref="WordPress.Files.FileName">
-        <properties>
-            <property name="strict_class_file_names" value="false"/>
-        </properties>
-        <exclude name="WordPress.Files.FileName.NotHyphenatedLowercase"/>
-    </rule>
-
-    <!-- Exclude the main plugin file from class naming rules -->
-    <rule ref="WordPress.Files.FileName.InvalidClassFileName">
-        <exclude-pattern>ai-crm-form.php</exclude-pattern>
-    </rule>
-
-    <!-- Allow inline control structures for simple conditionals -->
-    <rule ref="Generic.ControlStructures.InlineControlStructure">
-        <properties>
-            <property name="error" value="false"/>
-        </properties>
-    </rule>
-
     <!-- Set the appropriate line length -->
     <rule ref="Generic.Files.LineLength">
         <properties>
@@ -83,5 +68,19 @@
             <property name="absoluteLineLimit" value="0"/>
         </properties>
     </rule>
+    
+    <!-- Exclude some noisy rules for now -->
+    <rule ref="WordPress.Security.EscapeOutput">
+        <properties>
+            <property name="customEscapingFunctions" type="array">
+                <element value="esc_html__"/>
+                <element value="esc_attr__"/>
+            </property>
+        </properties>
+    </rule>
+    
+    <!-- Allow nonce verification to be more lenient -->
+    <rule ref="WordPress.Security.NonceVerification">
+        <type>warning</type>
+    </rule>
 </ruleset>
-

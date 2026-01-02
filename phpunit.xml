@@ -1,15 +1,17 @@
 <?xml version="1.0"?>
 <phpunit
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="https://schema.phpunit.de/9.6/phpunit.xsd"
     bootstrap="tests/bootstrap.php"
     backupGlobals="false"
     colors="true"
-    convertErrorsToExceptions="true"
-    convertNoticesToExceptions="true"
-    convertWarningsToExceptions="true"
+    beStrictAboutTestsThatDoNotTestAnything="true"
+    beStrictAboutOutputDuringTests="true"
     >
     <testsuites>
         <testsuite name="AI CRM Form Test Suite">
             <directory suffix=".php">./tests/</directory>
+            <exclude>./tests/bootstrap.php</exclude>
         </testsuite>
     </testsuites>
     
@@ -22,10 +24,6 @@
             <directory>./vendor/</directory>
             <directory>./tests/</directory>
         </exclude>
-        <report>
-            <html outputDirectory="./tests/coverage/html"/>
-            <clover outputFile="./tests/coverage/clover.xml"/>
-        </report>
     </coverage>
     
     <php>
@@ -35,4 +33,3 @@
         <const name="WP_PHP_BINARY" value="php"/>
     </php>
 </phpunit>
-
