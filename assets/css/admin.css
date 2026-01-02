@@ -1783,6 +1783,20 @@
 	color: #fff;
 }
 
+.aicrmform-step-check {
+	display: none;
+}
+
+.aicrmform-steps li.completed {
+	color: var(--aicrmform-gray-500);
+	text-decoration: line-through;
+}
+
+.aicrmform-steps li.current {
+	color: var(--aicrmform-gray-800);
+	font-weight: 500;
+}
+
 @media (max-width: 1024px) {
 	.aicrmform-settings-layout {
 		grid-template-columns: 1fr;
