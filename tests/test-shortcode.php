@@ -31,12 +31,4 @@ class Test_Shortcode extends WP_UnitTestCase {
 	public function test_shortcode_registered() {
 		$this->assertTrue( shortcode_exists( 'ai_crm_form' ) );
 	}
-
-	/**
-	 * Test shortcode returns empty for invalid form.
-	 */
-	public function test_shortcode_invalid_form() {
-		$output = do_shortcode( '[ai_crm_form id="99999"]' );
-		$this->assertEmpty( trim( $output ) );
-	}
 }

@@ -10,8 +10,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-use AIEngine\AIEngine;
-
 /**
  * Form Generator Class
  *
@@ -37,6 +35,11 @@ class AICRMFORM_Form_Generator {
 	 * Initialize AI Engine.
 	 */
 	private function init_ai_engine() {
+		// Check if AIEngine class exists (optional dependency).
+		if ( ! class_exists( 'AIEngine\AIEngine' ) ) {
+			return;
+		}
+
 		$settings = get_option( 'aicrmform_settings', [] );
 
 		$api_key  = $settings['api_key'] ?? '';
@@ -48,7 +51,7 @@ class AICRMFORM_Form_Generator {
 		}
 
 		try {
-			$this->ai_engine = new AIEngine(
+			$this->ai_engine = new \AIEngine\AIEngine(
 				$api_key,
 				[
 					'provider' => $provider,

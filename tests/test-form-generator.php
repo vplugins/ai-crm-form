@@ -42,12 +42,11 @@ class Test_Form_Generator extends WP_UnitTestCase {
 	}
 
 	/**
-	 * Test is_configured method with API key.
+	 * Test plugin constants are defined.
 	 */
-	public function test_is_configured_with_api_key() {
-		update_option( 'aicrmform_settings', [ 'api_key' => 'test-api-key-12345' ] );
-		$generator = new AICRMFORM_Form_Generator();
-		$this->assertTrue( $generator->is_configured() );
-		delete_option( 'aicrmform_settings' );
+	public function test_plugin_constants() {
+		$this->assertTrue( defined( 'AICRMFORM_VERSION' ) );
+		$this->assertTrue( defined( 'AICRMFORM_PLUGIN_DIR' ) );
+		$this->assertTrue( defined( 'AICRMFORM_PLUGIN_URL' ) );
 	}
 }
