@@ -1,0 +1,128 @@
+name: Version Bump
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_type:
+        description: 'Version bump type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+      custom_version:
+        description: 'Custom version (leave empty to auto-increment)'
+        required: false
+        type: string
+
+jobs:
+  bump-version:
+    name: Bump Version
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Get current version
+        id: current
+        run: |
+          VERSION=$(grep -Po "Version:\s*\K[0-9]+\.[0-9]+\.[0-9]+" ai-crm-form.php | head -1)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Current version: $VERSION"
+
+      - name: Calculate new version
+        id: new
+        run: |
+          CURRENT="${{ steps.current.outputs.version }}"
+          
+          if [ -n "${{ inputs.custom_version }}" ]; then
+            NEW_VERSION="${{ inputs.custom_version }}"
+          else
+            IFS='.' read -ra PARTS <<< "$CURRENT"
+            MAJOR="${PARTS[0]}"
+            MINOR="${PARTS[1]}"
+            PATCH="${PARTS[2]}"
+            
+            case "${{ inputs.version_type }}" in
+              major)
+                MAJOR=$((MAJOR + 1))
+                MINOR=0
+                PATCH=0
+                ;;
+              minor)
+                MINOR=$((MINOR + 1))
+                PATCH=0
+                ;;
+              patch)
+                PATCH=$((PATCH + 1))
+                ;;
+            esac
+            
+            NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          fi
+          
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "New version: $NEW_VERSION"
+
+      - name: Update version in files
+        run: |
+          NEW_VERSION="${{ steps.new.outputs.version }}"
+          
+          # Update main plugin file
+          sed -i "s/Version:.*$/Version: ${NEW_VERSION}/" ai-crm-form.php
+          sed -i "s/define( 'AICRMFORM_VERSION', '.*' );/define( 'AICRMFORM_VERSION', '${NEW_VERSION}' );/" ai-crm-form.php
+          
+          # Update readme.txt
+          if [ -f "readme.txt" ]; then
+            sed -i "s/Stable tag:.*$/Stable tag: ${NEW_VERSION}/" readme.txt
+          fi
+          
+          # Update composer.json
+          if [ -f "composer.json" ]; then
+            sed -i "s/\"version\": \".*\"/\"version\": \"${NEW_VERSION}\"/" composer.json
+          fi
+          
+          # Update package.json
+          if [ -f "package.json" ]; then
+            sed -i "s/\"version\": \".*\"/\"version\": \"${NEW_VERSION}\"/" package.json
+          fi
+          
+          echo "Updated version to ${NEW_VERSION} in all files"
+
+      - name: Update CHANGELOG.md
+        run: |
+          NEW_VERSION="${{ steps.new.outputs.version }}"
+          DATE=$(date +%Y-%m-%d)
+          
+          if [ -f "CHANGELOG.md" ]; then
+            # Add new version section after ## [Unreleased]
+            sed -i "/## \[Unreleased\]/a\\
+\\
+## [${NEW_VERSION}] - ${DATE}" CHANGELOG.md
+          fi
+
+      - name: Commit and push
+        run: |
+          NEW_VERSION="${{ steps.new.outputs.version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "chore: Bump version to ${NEW_VERSION}"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Summary
+        run: |
+          echo "## ✅ Version Bumped" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Previous:** v${{ steps.current.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "**New:** v${{ steps.new.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The auto-release workflow will now create a new release." >> $GITHUB_STEP_SUMMARY
+
