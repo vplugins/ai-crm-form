@@ -31,16 +31,22 @@ jobs:
         run: |
           mkdir -p release/ai-crm-form
           
-          # Copy files
-          cp -r assets release/ai-crm-form/
-          cp -r includes release/ai-crm-form/
-          cp -r templates release/ai-crm-form/
-          cp -r vendor release/ai-crm-form/
+          # Copy plugin files
+          cp -r assets release/ai-crm-form/ 2>/dev/null || true
+          cp -r includes release/ai-crm-form/ 2>/dev/null || true
+          cp -r languages release/ai-crm-form/ 2>/dev/null || true
+          
+          # Copy vendor if exists
+          if [ -d "vendor" ]; then
+            cp -r vendor release/ai-crm-form/
+          fi
+          
+          # Copy root files
           cp ai-crm-form.php release/ai-crm-form/
-          cp readme.txt release/ai-crm-form/
-          cp README.md release/ai-crm-form/
-          cp CHANGELOG.md release/ai-crm-form/
-          cp LICENSE release/ai-crm-form/ 2>/dev/null || echo "No LICENSE file"
+          cp readme.txt release/ai-crm-form/ 2>/dev/null || true
+          cp README.md release/ai-crm-form/ 2>/dev/null || true
+          cp CHANGELOG.md release/ai-crm-form/ 2>/dev/null || true
+          cp LICENSE release/ai-crm-form/ 2>/dev/null || true
           
           # Create zip
           cd release

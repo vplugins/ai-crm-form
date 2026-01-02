@@ -1,0 +1,143 @@
+name: Auto Release
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'ai-crm-form.php'
+
+jobs:
+  check-version:
+    name: Check Version Change
+    runs-on: ubuntu-latest
+    outputs:
+      version_changed: ${{ steps.check.outputs.changed }}
+      new_version: ${{ steps.check.outputs.version }}
+      
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Check if version changed
+        id: check
+        run: |
+          # Get current version from plugin file
+          CURRENT_VERSION=$(grep -Po "Version:\s*\K[0-9]+\.[0-9]+\.[0-9]+" ai-crm-form.php | head -1)
+          
+          # Get previous version
+          git show HEAD~1:ai-crm-form.php > /tmp/previous.php 2>/dev/null || echo ""
+          PREVIOUS_VERSION=$(grep -Po "Version:\s*\K[0-9]+\.[0-9]+\.[0-9]+" /tmp/previous.php 2>/dev/null || echo "0.0.0")
+          
+          echo "Current version: $CURRENT_VERSION"
+          echo "Previous version: $PREVIOUS_VERSION"
+          
+          if [ "$CURRENT_VERSION" != "$PREVIOUS_VERSION" ] && [ -n "$CURRENT_VERSION" ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+            echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+            echo "version=$CURRENT_VERSION" >> $GITHUB_OUTPUT
+          fi
+
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: check-version
+    if: needs.check-version.outputs.version_changed == 'true'
+    
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          tools: composer
+
+      - name: Install Composer dependencies (production)
+        run: composer install --prefer-dist --no-dev --no-progress --optimize-autoloader --no-scripts
+        continue-on-error: true
+
+      - name: Create release archive
+        run: |
+          VERSION="${{ needs.check-version.outputs.new_version }}"
+          mkdir -p release/ai-crm-form
+          
+          # Copy plugin files
+          cp -r assets release/ai-crm-form/ 2>/dev/null || true
+          cp -r includes release/ai-crm-form/ 2>/dev/null || true
+          cp -r languages release/ai-crm-form/ 2>/dev/null || true
+          
+          # Copy vendor if exists
+          if [ -d "vendor" ]; then
+            cp -r vendor release/ai-crm-form/
+          fi
+          
+          # Copy root files
+          cp ai-crm-form.php release/ai-crm-form/
+          cp readme.txt release/ai-crm-form/ 2>/dev/null || true
+          cp README.md release/ai-crm-form/ 2>/dev/null || true
+          cp CHANGELOG.md release/ai-crm-form/ 2>/dev/null || true
+          cp LICENSE release/ai-crm-form/ 2>/dev/null || true
+          
+          # Create zip
+          cd release
+          zip -r ../ai-crm-form-${VERSION}.zip ai-crm-form
+          
+          echo "Created: ai-crm-form-${VERSION}.zip"
+
+      - name: Generate Release Notes
+        id: release_notes
+        run: |
+          VERSION="${{ needs.check-version.outputs.new_version }}"
+          
+          # Extract changelog for this version
+          if [ -f "CHANGELOG.md" ]; then
+            # Try to extract section for this version
+            NOTES=$(awk "/## \[${VERSION}\]/{flag=1; next} /## \[/{flag=0} flag" CHANGELOG.md)
+            
+            if [ -z "$NOTES" ]; then
+              # If no specific version notes, get recent commits
+              NOTES=$(git log --oneline -10 --pretty=format:"- %s")
+            fi
+          else
+            NOTES=$(git log --oneline -10 --pretty=format:"- %s")
+          fi
+          
+          # Write to file for multiline support
+          echo "$NOTES" > release_notes.txt
+          
+      - name: Create Git Tag
+        run: |
+          VERSION="${{ needs.check-version.outputs.new_version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "v${VERSION}" -m "Release v${VERSION}"
+          git push origin "v${VERSION}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ needs.check-version.outputs.new_version }}
+          name: v${{ needs.check-version.outputs.new_version }}
+          body_path: release_notes.txt
+          files: ai-crm-form-${{ needs.check-version.outputs.new_version }}.zip
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Summary
+        run: |
+          echo "## 🚀 Release Created" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** v${{ needs.check-version.outputs.new_version }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Artifact:** ai-crm-form-${{ needs.check-version.outputs.new_version }}.zip" >> $GITHUB_STEP_SUMMARY
+
