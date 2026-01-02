@@ -3,7 +3,7 @@
  * Plugin Name: AI CRM Form
  * Plugin URI: https://github.com/rajanvijayan/ai-crm-form
  * Description: AI-powered form generator that submits to CRM API. Generate dynamic forms using AI and capture leads seamlessly.
- * Version: 1.1.0
+ * Version: 1.1.1
  * Author: Rajan Vijayan
  * Author URI: https://rajanvijayan.com
  * License: GPL v2 or later
@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define plugin constants.
-define( 'AICRMFORM_VERSION', '1.1.0' );
+define( 'AICRMFORM_VERSION', '1.1.1' );
 define( 'AICRMFORM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'AICRMFORM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'AICRMFORM_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
