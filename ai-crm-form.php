@@ -94,6 +94,9 @@ class AI_CRM_Form {
 
 		// Check and create tables if needed.
 		add_action( 'admin_init', [ $this, 'maybe_create_tables' ] );
+
+		// Cron for auto-deleting old submissions.
+		add_action( 'aicrmform_cleanup_submissions', [ $this, 'cleanup_old_submissions' ] );
 	}
 
 	/**
@@ -135,6 +138,11 @@ class AI_CRM_Form {
 
 		// Create forms table.
 		$this->create_tables();
+
+		// Schedule cron for cleaning up old submissions.
+		if ( ! wp_next_scheduled( 'aicrmform_cleanup_submissions' ) ) {
+			wp_schedule_event( time(), 'daily', 'aicrmform_cleanup_submissions' );
+		}
 
 		flush_rewrite_rules();
 	}
@@ -189,7 +197,37 @@ class AI_CRM_Form {
 	 * Plugin deactivation.
 	 */
 	public function deactivate() {
+		// Clear scheduled cron.
+		$timestamp = wp_next_scheduled( 'aicrmform_cleanup_submissions' );
+		if ( $timestamp ) {
+			wp_unschedule_event( $timestamp, 'aicrmform_cleanup_submissions' );
+		}
+
 		flush_rewrite_rules();
+	}
+
+	/**
+	 * Cleanup old submissions based on settings.
+	 */
+	public function cleanup_old_submissions() {
+		$settings = get_option( 'aicrmform_settings', [] );
+		$days     = absint( $settings['auto_delete_submissions'] ?? 0 );
+
+		if ( $days <= 0 ) {
+			return; // Auto-delete is disabled.
+		}
+
+		global $wpdb;
+		$table_name = $wpdb->prefix . 'aicrmform_submissions';
+		$cutoff     = gmdate( 'Y-m-d H:i:s', strtotime( "-{$days} days" ) );
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$wpdb->query(
+			$wpdb->prepare(
+				"DELETE FROM {$table_name} WHERE created_at < %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$cutoff
+			)
+		);
 	}
 
 	/**
@@ -336,6 +374,18 @@ class AI_CRM_Form {
 	 */
 	public function frontend_scripts() {
 		$settings = get_option( 'aicrmform_settings', [] );
+
+		// Load Google Font if configured.
+		$font_family = $settings['default_font_family'] ?? '';
+		if ( ! empty( $font_family ) ) {
+			$font_slug = str_replace( ' ', '+', $font_family );
+			wp_enqueue_style(
+				'aicrmform-google-fonts',
+				'https://fonts.googleapis.com/css2?family=' . esc_attr( $font_slug ) . ':wght@400;500;600;700&display=swap',
+				[],
+				AICRMFORM_VERSION
+			);
+		}
 
 		wp_enqueue_style(
 			'aicrmform-frontend',

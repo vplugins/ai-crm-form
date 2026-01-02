@@ -55,6 +55,31 @@
 		// Confirmation modal
 		$('#aicrmform-confirm-cancel').on('click', hideConfirmModal);
 		$('#aicrmform-confirm-ok').on('click', executeConfirm);
+		
+		// Color picker sync (for settings page)
+		initColorPickers();
+	}
+	
+	/**
+	 * Initialize color pickers with text input sync.
+	 */
+	function initColorPickers() {
+		// Sync color input with text input
+		$('.aicrmform-color-input').on('input', function() {
+			const textInput = $(this).siblings('.aicrmform-color-text');
+			textInput.val($(this).val().toUpperCase());
+		});
+		
+		// Sync text input with color input
+		$('.aicrmform-color-text').on('input', function() {
+			let val = $(this).val();
+			if (!val.startsWith('#')) {
+				val = '#' + val;
+			}
+			if (/^#[0-9A-Fa-f]{6}$/.test(val)) {
+				$(this).siblings('.aicrmform-color-input').val(val);
+			}
+		});
 	}
 
 	/**
@@ -660,6 +685,18 @@
 			return;
 		}
 		
+		// Check for fields without CRM mapping
+		const fieldsWithoutMapping = formFields.filter(f => !f.crm_mapping || f.crm_mapping.trim() === '');
+		if (fieldsWithoutMapping.length > 0) {
+			const fieldNames = fieldsWithoutMapping.map(f => f.label || f.name).join(', ');
+			showAlert(
+				'CRM Mapping Required',
+				'The following fields do not have a CRM mapping: ' + fieldNames + '. Please add CRM mappings to ensure data is properly synced to your CRM.',
+				'warning'
+			);
+			return;
+		}
+		
 		const $btn = $('#save-form');
 		$btn.prop('disabled', true).html('<span class="aicrmform-spinner-small"></span> Saving...');
 		
@@ -740,6 +777,44 @@
 	}
 
 	/**
+	 * Show alert modal (popup instead of JS alert).
+	 */
+	function showAlert(title, message, type = 'warning') {
+		const $modal = $('#aicrmform-alert-modal');
+		const $icon = $('#aicrmform-alert-icon');
+		
+		$('#aicrmform-alert-title').text(title);
+		$('#aicrmform-alert-message').text(message);
+		
+		// Set icon based on type
+		$icon.removeClass('warning error success info').addClass(type);
+		const icons = {
+			warning: 'dashicons-warning',
+			error: 'dashicons-dismiss',
+			success: 'dashicons-yes-alt',
+			info: 'dashicons-info'
+		};
+		$icon.find('.dashicons').attr('class', 'dashicons ' + (icons[type] || 'dashicons-warning'));
+		
+		$modal.addClass('active');
+	}
+
+	/**
+	 * Hide alert modal.
+	 */
+	function hideAlert() {
+		$('#aicrmform-alert-modal').removeClass('active');
+	}
+
+	// Alert modal close handler
+	$(document).on('click', '#aicrmform-alert-ok', hideAlert);
+	$(document).on('click', '#aicrmform-alert-modal', function(e) {
+		if ($(e.target).is('#aicrmform-alert-modal')) {
+			hideAlert();
+		}
+	});
+
+	/**
 	 * Copy to clipboard.
 	 */
 	function copyToClipboard() {
@@ -807,7 +882,7 @@
 
 	function deleteForm(e) {
 		e.preventDefault();
-		const $card = $(this).closest('.aicrmform-form-card');
+		const $card = $(this).closest('[data-form-id]');
 		const formId = $card.data('form-id');
 		const formName = $card.find('h3').text();
 

@@ -119,6 +119,59 @@ class AICRMFORM_Admin_Settings {
 							</div>
 						</div>
 
+						<!-- Form Styling -->
+						<div class="aicrmform-card">
+							<div class="aicrmform-card-header">
+								<div class="aicrmform-card-header-icon aicrmform-card-header-icon-purple">
+									<span class="dashicons dashicons-art"></span>
+								</div>
+								<div>
+									<h2><?php esc_html_e( 'Form Styling', 'ai-crm-form' ); ?></h2>
+									<p><?php esc_html_e( 'Default styling options for forms', 'ai-crm-form' ); ?></p>
+								</div>
+							</div>
+							<div class="aicrmform-card-body">
+								<div class="aicrmform-form-row">
+									<label for="default_font_family"><?php esc_html_e( 'Default Font Family', 'ai-crm-form' ); ?></label>
+									<select id="default_font_family" name="default_font_family" class="aicrmform-input">
+										<option value="" <?php selected( $settings['default_font_family'] ?? '', '' ); ?>><?php esc_html_e( 'System Default', 'ai-crm-form' ); ?></option>
+										<optgroup label="<?php esc_attr_e( 'Sans-serif', 'ai-crm-form' ); ?>">
+											<option value="Inter" <?php selected( $settings['default_font_family'] ?? '', 'Inter' ); ?>>Inter</option>
+											<option value="Roboto" <?php selected( $settings['default_font_family'] ?? '', 'Roboto' ); ?>>Roboto</option>
+											<option value="Open Sans" <?php selected( $settings['default_font_family'] ?? '', 'Open Sans' ); ?>>Open Sans</option>
+											<option value="Lato" <?php selected( $settings['default_font_family'] ?? '', 'Lato' ); ?>>Lato</option>
+											<option value="Poppins" <?php selected( $settings['default_font_family'] ?? '', 'Poppins' ); ?>>Poppins</option>
+											<option value="Montserrat" <?php selected( $settings['default_font_family'] ?? '', 'Montserrat' ); ?>>Montserrat</option>
+											<option value="Source Sans Pro" <?php selected( $settings['default_font_family'] ?? '', 'Source Sans Pro' ); ?>>Source Sans Pro</option>
+											<option value="Nunito" <?php selected( $settings['default_font_family'] ?? '', 'Nunito' ); ?>>Nunito</option>
+										</optgroup>
+										<optgroup label="<?php esc_attr_e( 'Serif', 'ai-crm-form' ); ?>">
+											<option value="Merriweather" <?php selected( $settings['default_font_family'] ?? '', 'Merriweather' ); ?>>Merriweather</option>
+											<option value="Playfair Display" <?php selected( $settings['default_font_family'] ?? '', 'Playfair Display' ); ?>>Playfair Display</option>
+											<option value="Lora" <?php selected( $settings['default_font_family'] ?? '', 'Lora' ); ?>>Lora</option>
+										</optgroup>
+									</select>
+									<p class="aicrmform-field-hint"><?php esc_html_e( 'Select a Google Font for your forms. This will load the font automatically.', 'ai-crm-form' ); ?></p>
+								</div>
+								<div class="aicrmform-form-row">
+									<label for="default_font_size"><?php esc_html_e( 'Default Font Size', 'ai-crm-form' ); ?></label>
+									<select id="default_font_size" name="default_font_size" class="aicrmform-input">
+										<option value="14px" <?php selected( $settings['default_font_size'] ?? '16px', '14px' ); ?>>14px - Small</option>
+										<option value="16px" <?php selected( $settings['default_font_size'] ?? '16px', '16px' ); ?>>16px - Default</option>
+										<option value="18px" <?php selected( $settings['default_font_size'] ?? '16px', '18px' ); ?>>18px - Large</option>
+									</select>
+								</div>
+								<div class="aicrmform-form-row">
+									<label for="default_background_color"><?php esc_html_e( 'Default Form Background Color', 'ai-crm-form' ); ?></label>
+									<div class="aicrmform-color-picker-wrapper">
+										<input type="color" id="default_background_color" name="default_background_color" value="<?php echo esc_attr( $settings['default_background_color'] ?? '#ffffff' ); ?>" class="aicrmform-color-input">
+										<input type="text" id="default_background_color_text" value="<?php echo esc_attr( $settings['default_background_color'] ?? '#ffffff' ); ?>" class="aicrmform-input aicrmform-color-text" maxlength="7" pattern="^#[0-9A-Fa-f]{6}$">
+									</div>
+									<p class="aicrmform-field-hint"><?php esc_html_e( 'Background color for the form container.', 'ai-crm-form' ); ?></p>
+								</div>
+							</div>
+						</div>
+
 						<!-- General Settings -->
 						<div class="aicrmform-card">
 							<div class="aicrmform-card-header">
@@ -140,6 +193,20 @@ class AICRMFORM_Admin_Settings {
 										<input type="checkbox" id="enabled" name="enabled" value="1" <?php checked( $settings['enabled'] ?? false ); ?>>
 										<span class="aicrmform-switch-slider"></span>
 									</label>
+								</div>
+								<div class="aicrmform-form-row" style="margin-top: 20px;">
+									<label for="auto_delete_submissions"><?php esc_html_e( 'Auto-delete Submissions After (Days)', 'ai-crm-form' ); ?></label>
+									<select id="auto_delete_submissions" name="auto_delete_submissions" class="aicrmform-input">
+										<option value="0" <?php selected( $settings['auto_delete_submissions'] ?? '0', '0' ); ?>><?php esc_html_e( 'Never (Keep Forever)', 'ai-crm-form' ); ?></option>
+										<option value="7" <?php selected( $settings['auto_delete_submissions'] ?? '0', '7' ); ?>>7 <?php esc_html_e( 'days', 'ai-crm-form' ); ?></option>
+										<option value="14" <?php selected( $settings['auto_delete_submissions'] ?? '0', '14' ); ?>>14 <?php esc_html_e( 'days', 'ai-crm-form' ); ?></option>
+										<option value="30" <?php selected( $settings['auto_delete_submissions'] ?? '0', '30' ); ?>>30 <?php esc_html_e( 'days', 'ai-crm-form' ); ?></option>
+										<option value="60" <?php selected( $settings['auto_delete_submissions'] ?? '0', '60' ); ?>>60 <?php esc_html_e( 'days', 'ai-crm-form' ); ?></option>
+										<option value="90" <?php selected( $settings['auto_delete_submissions'] ?? '0', '90' ); ?>>90 <?php esc_html_e( 'days', 'ai-crm-form' ); ?></option>
+										<option value="180" <?php selected( $settings['auto_delete_submissions'] ?? '0', '180' ); ?>>180 <?php esc_html_e( 'days', 'ai-crm-form' ); ?></option>
+										<option value="365" <?php selected( $settings['auto_delete_submissions'] ?? '0', '365' ); ?>>365 <?php esc_html_e( 'days', 'ai-crm-form' ); ?></option>
+									</select>
+									<p class="aicrmform-field-hint"><?php esc_html_e( 'Automatically delete form submissions after the specified number of days. Useful for GDPR compliance.', 'ai-crm-form' ); ?></p>
 								</div>
 							</div>
 						</div>
@@ -230,14 +297,18 @@ class AICRMFORM_Admin_Settings {
 		}
 
 		$settings = [
-			'api_key'                 => sanitize_text_field( wp_unslash( $_POST['api_key'] ?? '' ) ),
-			'ai_provider'             => sanitize_text_field( wp_unslash( $_POST['ai_provider'] ?? 'groq' ) ),
-			'ai_model'                => sanitize_text_field( wp_unslash( $_POST['ai_model'] ?? 'llama-3.3-70b-versatile' ) ),
-			'crm_api_url'             => 'https://forms-prod.apigateway.co/forms.v1.FormSubmissionService/CreateFormSubmission',
-			'form_id'                 => $form_id,
-			'default_success_message' => sanitize_textarea_field( wp_unslash( $_POST['default_success_message'] ?? '' ) ),
-			'default_error_message'   => sanitize_textarea_field( wp_unslash( $_POST['default_error_message'] ?? '' ) ),
-			'enabled'                 => ! empty( $_POST['enabled'] ),
+			'api_key'                   => sanitize_text_field( wp_unslash( $_POST['api_key'] ?? '' ) ),
+			'ai_provider'               => sanitize_text_field( wp_unslash( $_POST['ai_provider'] ?? 'groq' ) ),
+			'ai_model'                  => sanitize_text_field( wp_unslash( $_POST['ai_model'] ?? 'llama-3.3-70b-versatile' ) ),
+			'crm_api_url'               => 'https://forms-prod.apigateway.co/forms.v1.FormSubmissionService/CreateFormSubmission',
+			'form_id'                   => $form_id,
+			'default_success_message'   => sanitize_textarea_field( wp_unslash( $_POST['default_success_message'] ?? '' ) ),
+			'default_error_message'     => sanitize_textarea_field( wp_unslash( $_POST['default_error_message'] ?? '' ) ),
+			'enabled'                   => ! empty( $_POST['enabled'] ),
+			'auto_delete_submissions'   => absint( $_POST['auto_delete_submissions'] ?? 0 ),
+			'default_font_family'       => sanitize_text_field( wp_unslash( $_POST['default_font_family'] ?? '' ) ),
+			'default_font_size'         => sanitize_text_field( wp_unslash( $_POST['default_font_size'] ?? '16px' ) ),
+			'default_background_color'  => sanitize_hex_color( wp_unslash( $_POST['default_background_color'] ?? '#ffffff' ) ),
 		];
 
 		update_option( 'aicrmform_settings', $settings );
@@ -563,8 +634,7 @@ class AICRMFORM_Admin_Settings {
 							</div>
 							<div class="aicrmform-form-row">
 								<label for="custom-css"><?php esc_html_e( 'Custom CSS', 'ai-crm-form' ); ?></label>
-								<textarea id="custom-css" class="aicrmform-textarea aicrmform-code-editor" rows="4" placeholder="/* Your custom styles */">
-								</textarea>
+								<textarea id="custom-css" class="aicrmform-textarea aicrmform-code-editor" rows="4" placeholder="/* Your custom styles */"></textarea>
 							</div>
 						</div>
 					</div>
@@ -894,6 +964,20 @@ class AICRMFORM_Admin_Settings {
 				<div class="aicrmform-modal-footer">
 					<a href="<?php echo esc_url( admin_url( 'admin.php?page=ai-crm-form-forms' ) ); ?>" class="button button-primary"><?php esc_html_e( 'View All Forms', 'ai-crm-form' ); ?></a>
 					<button type="button" class="button" id="create-another-form"><?php esc_html_e( 'Create Another Form', 'ai-crm-form' ); ?></button>
+				</div>
+			</div>
+		</div>
+
+		<!-- Alert Modal (Popup - replaces JS alerts) -->
+		<div id="aicrmform-alert-modal" class="aicrmform-alert-modal">
+			<div class="aicrmform-alert-content">
+				<div id="aicrmform-alert-icon" class="aicrmform-alert-icon warning">
+					<span class="dashicons dashicons-warning"></span>
+				</div>
+				<h3 id="aicrmform-alert-title" class="aicrmform-alert-title"><?php esc_html_e( 'Warning', 'ai-crm-form' ); ?></h3>
+				<p id="aicrmform-alert-message" class="aicrmform-alert-message"></p>
+				<div class="aicrmform-alert-actions">
+					<button type="button" class="button button-primary" id="aicrmform-alert-ok"><?php esc_html_e( 'OK', 'ai-crm-form' ); ?></button>
 				</div>
 			</div>
 		</div>
