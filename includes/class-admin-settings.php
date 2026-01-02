@@ -977,6 +977,7 @@ class AICRMFORM_Admin_Settings {
 				<h3 id="aicrmform-alert-title" class="aicrmform-alert-title"><?php esc_html_e( 'Warning', 'ai-crm-form' ); ?></h3>
 				<p id="aicrmform-alert-message" class="aicrmform-alert-message"></p>
 				<div class="aicrmform-alert-actions">
+					<button type="button" class="button" id="aicrmform-alert-ignore" style="display: none;"><?php esc_html_e( 'Ignore & Save', 'ai-crm-form' ); ?></button>
 					<button type="button" class="button button-primary" id="aicrmform-alert-ok"><?php esc_html_e( 'OK', 'ai-crm-form' ); ?></button>
 				</div>
 			</div>

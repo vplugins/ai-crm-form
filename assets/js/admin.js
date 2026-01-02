@@ -687,15 +687,14 @@
 		
 		// Check for fields without CRM mapping
 		const fieldsWithoutMapping = formFields.filter(f => !f.crm_mapping || f.crm_mapping.trim() === '');
-		if (fieldsWithoutMapping.length > 0) {
+		if (fieldsWithoutMapping.length > 0 && !window.ignoreCrmMappingWarning) {
 			const fieldNames = fieldsWithoutMapping.map(f => f.label || f.name).join(', ');
-			showAlert(
-				'CRM Mapping Required',
-				'The following fields do not have a CRM mapping: ' + fieldNames + '. Please add CRM mappings to ensure data is properly synced to your CRM.',
-				'warning'
-			);
+			showCrmMappingWarning(fieldNames);
 			return;
 		}
+		
+		// Reset the ignore flag after use
+		window.ignoreCrmMappingWarning = false;
 		
 		const $btn = $('#save-form');
 		$btn.prop('disabled', true).html('<span class="aicrmform-spinner-small"></span> Saving...');
@@ -804,10 +803,41 @@
 	 */
 	function hideAlert() {
 		$('#aicrmform-alert-modal').removeClass('active');
+		// Reset to single button mode
+		$('#aicrmform-alert-ignore').hide();
+		$('#aicrmform-alert-ok').text('OK');
+	}
+
+	/**
+	 * Show CRM mapping warning with ignore option.
+	 */
+	function showCrmMappingWarning(fieldNames) {
+		const $modal = $('#aicrmform-alert-modal');
+		const $icon = $('#aicrmform-alert-icon');
+		
+		$('#aicrmform-alert-title').text('CRM Mapping Missing');
+		$('#aicrmform-alert-message').html(
+			'The following fields do not have a CRM mapping: <strong>' + fieldNames + '</strong><br><br>' +
+			'Data from these fields will not be synced to your CRM. You can still save the form, but consider adding mappings for full CRM integration.'
+		);
+		
+		$icon.removeClass('warning error success info').addClass('warning');
+		$icon.find('.dashicons').attr('class', 'dashicons dashicons-warning');
+		
+		// Show ignore button and change OK text
+		$('#aicrmform-alert-ok').text('Go Back');
+		$('#aicrmform-alert-ignore').show();
+		
+		$modal.addClass('active');
 	}
 
 	// Alert modal close handler
 	$(document).on('click', '#aicrmform-alert-ok', hideAlert);
+	$(document).on('click', '#aicrmform-alert-ignore', function() {
+		hideAlert();
+		window.ignoreCrmMappingWarning = true;
+		$('#save-form').click(); // Retry save
+	});
 	$(document).on('click', '#aicrmform-alert-modal', function(e) {
 		if ($(e.target).is('#aicrmform-alert-modal')) {
 			hideAlert();
