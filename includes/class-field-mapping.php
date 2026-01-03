@@ -343,4 +343,3 @@ class AICRMFORM_Field_Mapping {
 		return $mapping;
 	}
 }
-

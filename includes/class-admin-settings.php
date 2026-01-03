@@ -76,10 +76,10 @@ class AICRMFORM_Admin_Settings {
 							<div class="aicrmform-card-body">
 								<div class="aicrmform-form-row">
 									<label for="ai_provider"><?php esc_html_e( 'AI Provider', 'ai-crm-form' ); ?></label>
-									<select id="ai_provider" name="ai_provider" class="aicrmform-input">
+									<select id="ai_provider" name="ai_provider" class="aicrmform-input" onchange="updateAIModelOptions()">
 										<option value="groq" <?php selected( $settings['ai_provider'] ?? 'groq', 'groq' ); ?>>Groq (Recommended)</option>
 										<option value="gemini" <?php selected( $settings['ai_provider'] ?? '', 'gemini' ); ?>>Google Gemini</option>
-										<option value="meta" <?php selected( $settings['ai_provider'] ?? '', 'meta' ); ?>>Meta Llama</option>
+										<option value="openai" <?php selected( $settings['ai_provider'] ?? '', 'openai' ); ?>>OpenAI</option>
 									</select>
 									<p class="aicrmform-field-hint"><?php esc_html_e( 'Select your preferred AI provider for form generation.', 'ai-crm-form' ); ?></p>
 								</div>
@@ -91,12 +91,38 @@ class AICRMFORM_Admin_Settings {
 											<span class="dashicons dashicons-visibility"></span>
 										</button>
 									</div>
-									<p class="aicrmform-field-hint"><?php esc_html_e( 'Your API key from the selected provider. Keep this secret.', 'ai-crm-form' ); ?></p>
+									<p class="aicrmform-field-hint" id="api_key_hint">
+										<?php esc_html_e( 'Get your API key from:', 'ai-crm-form' ); ?>
+										<a href="https://console.groq.com/keys" target="_blank" rel="noopener" id="api_key_link_groq" class="api-key-link">Groq Console →</a>
+										<a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener" id="api_key_link_gemini" class="api-key-link" style="display:none;">Google AI Studio →</a>
+										<a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener" id="api_key_link_openai" class="api-key-link" style="display:none;">OpenAI Platform →</a>
+									</p>
 								</div>
 								<div class="aicrmform-form-row">
 									<label for="ai_model"><?php esc_html_e( 'AI Model', 'ai-crm-form' ); ?></label>
-									<input type="text" id="ai_model" name="ai_model" value="<?php echo esc_attr( $settings['ai_model'] ?? 'llama-3.3-70b-versatile' ); ?>" class="aicrmform-input">
-									<p class="aicrmform-field-hint"><?php esc_html_e( 'The AI model to use. Default: llama-3.3-70b-versatile', 'ai-crm-form' ); ?></p>
+									<select id="ai_model" name="ai_model" class="aicrmform-input">
+										<?php $current_model = $settings['ai_model'] ?? 'llama-3.3-70b-versatile'; ?>
+										<!-- Groq Models -->
+										<optgroup label="Groq Models" id="model_group_groq">
+											<option value="llama-3.3-70b-versatile" <?php selected( $current_model, 'llama-3.3-70b-versatile' ); ?>>Llama 3.3 70B (Recommended)</option>
+											<option value="llama-3.1-8b-instant" <?php selected( $current_model, 'llama-3.1-8b-instant' ); ?>>Llama 3.1 8B (Fast)</option>
+											<option value="mixtral-8x7b-32768" <?php selected( $current_model, 'mixtral-8x7b-32768' ); ?>>Mixtral 8x7B</option>
+											<option value="gemma2-9b-it" <?php selected( $current_model, 'gemma2-9b-it' ); ?>>Gemma 2 9B</option>
+										</optgroup>
+										<!-- Gemini Models -->
+										<optgroup label="Gemini Models" id="model_group_gemini" style="display:none;">
+											<option value="gemini-1.5-pro" <?php selected( $current_model, 'gemini-1.5-pro' ); ?>>Gemini 1.5 Pro</option>
+											<option value="gemini-1.5-flash" <?php selected( $current_model, 'gemini-1.5-flash' ); ?>>Gemini 1.5 Flash (Fast)</option>
+											<option value="gemini-2.0-flash-exp" <?php selected( $current_model, 'gemini-2.0-flash-exp' ); ?>>Gemini 2.0 Flash (Experimental)</option>
+										</optgroup>
+										<!-- OpenAI Models -->
+										<optgroup label="OpenAI Models" id="model_group_openai" style="display:none;">
+											<option value="gpt-4o" <?php selected( $current_model, 'gpt-4o' ); ?>>GPT-4o (Recommended)</option>
+											<option value="gpt-4o-mini" <?php selected( $current_model, 'gpt-4o-mini' ); ?>>GPT-4o Mini (Fast)</option>
+											<option value="gpt-4-turbo" <?php selected( $current_model, 'gpt-4-turbo' ); ?>>GPT-4 Turbo</option>
+										</optgroup>
+									</select>
+									<p class="aicrmform-field-hint"><?php esc_html_e( 'Select the AI model for generating forms.', 'ai-crm-form' ); ?></p>
 								</div>
 							</div>
 						</div>
@@ -130,13 +156,13 @@ class AICRMFORM_Admin_Settings {
 						</div>
 
 						<!-- Form Styling -->
-						<div class="aicrmform-card" style="border: 2px solid #8b5cf6;">
-							<div class="aicrmform-card-header" style="background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);">
-								<div class="aicrmform-card-header-icon" style="background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);">
+						<div class="aicrmform-card">
+							<div class="aicrmform-card-header">
+								<div class="aicrmform-card-header-icon aicrmform-card-header-icon-purple">
 									<span class="dashicons dashicons-art"></span>
 								</div>
 								<div>
-									<h2><?php esc_html_e( 'Form Styling', 'ai-crm-form' ); ?> <span style="color: #8b5cf6;">✨</span></h2>
+									<h2><?php esc_html_e( 'Form Styling', 'ai-crm-form' ); ?></h2>
 									<p><?php esc_html_e( 'Default styling options for forms', 'ai-crm-form' ); ?></p>
 								</div>
 							</div>
@@ -306,6 +332,40 @@ class AICRMFORM_Admin_Settings {
 				icon.classList.add('dashicons-visibility');
 			}
 		}
+
+		function updateAIModelOptions() {
+			const provider = document.getElementById('ai_provider').value;
+			const modelSelect = document.getElementById('ai_model');
+			const providers = ['groq', 'gemini', 'openai'];
+
+			// Hide all API key links and model groups
+			providers.forEach(function(p) {
+				const link = document.getElementById('api_key_link_' + p);
+				const group = document.getElementById('model_group_' + p);
+				if (link) link.style.display = 'none';
+				if (group) group.style.display = 'none';
+			});
+
+			// Show selected provider's link and models
+			const activeLink = document.getElementById('api_key_link_' + provider);
+			const activeGroup = document.getElementById('model_group_' + provider);
+			if (activeLink) activeLink.style.display = 'inline';
+			if (activeGroup) activeGroup.style.display = 'block';
+
+			// Select first option from the active group if current selection is hidden
+			const currentOption = modelSelect.options[modelSelect.selectedIndex];
+			if (currentOption && currentOption.parentElement.style.display === 'none') {
+				const firstVisibleOption = activeGroup ? activeGroup.querySelector('option') : null;
+				if (firstVisibleOption) {
+					modelSelect.value = firstVisibleOption.value;
+				}
+			}
+		}
+
+		// Initialize on page load
+		document.addEventListener('DOMContentLoaded', function() {
+			updateAIModelOptions();
+		});
 		</script>
 		<?php
 	}
@@ -422,7 +482,7 @@ class AICRMFORM_Admin_Settings {
 							<span class="dashicons dashicons-format-aside"></span>
 						</div>
 						<div class="aicrmform-stat-content">
-							<span class="aicrmform-stat-value"><?php echo esc_html( count( $forms ) ); ?></span>
+							<span class="aicrmform-stat-value" id="forms-total-count"><?php echo esc_html( count( $forms ) ); ?></span>
 							<span class="aicrmform-stat-label"><?php esc_html_e( 'Total Forms', 'ai-crm-form' ); ?></span>
 						</div>
 					</div>
@@ -431,7 +491,7 @@ class AICRMFORM_Admin_Settings {
 							<span class="dashicons dashicons-yes-alt"></span>
 						</div>
 						<div class="aicrmform-stat-content">
-							<span class="aicrmform-stat-value"><?php echo esc_html( count( array_filter( $forms, fn( $f ) => 'active' === $f->status ) ) ); ?></span>
+							<span class="aicrmform-stat-value" id="forms-active-count"><?php echo esc_html( count( array_filter( $forms, fn( $f ) => 'active' === $f->status ) ) ); ?></span>
 							<span class="aicrmform-stat-label"><?php esc_html_e( 'Active', 'ai-crm-form' ); ?></span>
 						</div>
 					</div>
@@ -439,9 +499,10 @@ class AICRMFORM_Admin_Settings {
 
 				<!-- Forms Grid -->
 				<div class="aicrmform-forms-grid-pro">
-					<?php foreach ( $forms as $form ) : 
+					<?php
+					foreach ( $forms as $form ) :
 						$field_count = count( $form->form_config['fields'] ?? [] );
-					?>
+						?>
 						<div class="aicrmform-form-card-pro" data-form-id="<?php echo esc_attr( $form->id ); ?>">
 							<div class="aicrmform-form-card-top">
 								<div class="aicrmform-form-card-icon">
@@ -460,7 +521,12 @@ class AICRMFORM_Admin_Settings {
 								<div class="aicrmform-form-stats">
 									<div class="aicrmform-form-stat">
 										<span class="dashicons dashicons-list-view"></span>
-										<span><?php printf( esc_html( _n( '%d field', '%d fields', $field_count, 'ai-crm-form' ) ), $field_count ); ?></span>
+										<span>
+										<?php
+										/* translators: %d: number of fields in the form */
+										printf( esc_html( _n( '%d field', '%d fields', $field_count, 'ai-crm-form' ) ), (int) $field_count );
+										?>
+										</span>
 									</div>
 									<div class="aicrmform-form-stat">
 										<span class="dashicons dashicons-calendar"></span>
@@ -524,6 +590,10 @@ class AICRMFORM_Admin_Settings {
 			<div class="aicrmform-builder-header">
 				<h1><?php esc_html_e( 'Form Builder', 'ai-crm-form' ); ?></h1>
 				<div class="aicrmform-builder-header-actions">
+					<button type="button" id="open-import-modal" class="button button-secondary">
+						<span class="dashicons dashicons-download"></span>
+						<?php esc_html_e( 'Import Form', 'ai-crm-form' ); ?>
+					</button>
 					<?php if ( $configured ) : ?>
 					<button type="button" id="open-ai-generator" class="button button-secondary">
 						<span class="dashicons dashicons-superhero"></span>
@@ -780,10 +850,10 @@ class AICRMFORM_Admin_Settings {
 					<div id="field-picker-view">
 						<p class="aicrmform-picker-help"><?php esc_html_e( 'Select a field type to add to your form:', 'ai-crm-form' ); ?></p>
 						
-						<!-- CRM Fields (Primary) -->
+						<!-- Contact Fields -->
 						<div class="aicrmform-field-picker-section">
-							<h4><span class="dashicons dashicons-cloud"></span> <?php esc_html_e( 'CRM Fields', 'ai-crm-form' ); ?></h4>
-							<p class="aicrmform-picker-section-desc"><?php esc_html_e( 'Pre-configured fields that map directly to your CRM.', 'ai-crm-form' ); ?></p>
+							<h4><span class="dashicons dashicons-admin-users"></span> <?php esc_html_e( 'Contact Fields', 'ai-crm-form' ); ?></h4>
+							<p class="aicrmform-picker-section-desc"><?php esc_html_e( 'Primary contact information fields.', 'ai-crm-form' ); ?></p>
 							<div class="aicrmform-field-picker-grid">
 								<button type="button" class="aicrmform-picker-field" data-preset="first_name">
 									<span class="dashicons dashicons-admin-users"></span>
@@ -795,7 +865,7 @@ class AICRMFORM_Admin_Settings {
 								</button>
 								<button type="button" class="aicrmform-picker-field" data-preset="email">
 									<span class="dashicons dashicons-email"></span>
-									<span class="aicrmform-picker-field-name"><?php esc_html_e( 'Email Address', 'ai-crm-form' ); ?></span>
+									<span class="aicrmform-picker-field-name"><?php esc_html_e( 'Email', 'ai-crm-form' ); ?></span>
 								</button>
 								<button type="button" class="aicrmform-picker-field" data-preset="phone_number">
 									<span class="dashicons dashicons-phone"></span>
@@ -805,45 +875,185 @@ class AICRMFORM_Admin_Settings {
 									<span class="dashicons dashicons-smartphone"></span>
 									<span class="aicrmform-picker-field-name"><?php esc_html_e( 'Mobile Phone', 'ai-crm-form' ); ?></span>
 								</button>
+								<button type="button" class="aicrmform-picker-field" data-preset="additional_emails">
+									<span class="dashicons dashicons-email-alt"></span>
+									<span class="aicrmform-picker-field-name"><?php esc_html_e( 'Additional Emails', 'ai-crm-form' ); ?></span>
+								</button>
+								<button type="button" class="aicrmform-picker-field" data-preset="tags">
+									<span class="dashicons dashicons-tag"></span>
+									<span class="aicrmform-picker-field-name"><?php esc_html_e( 'Tags', 'ai-crm-form' ); ?></span>
+								</button>
+								<button type="button" class="aicrmform-picker-field" data-preset="message">
+									<span class="dashicons dashicons-testimonial"></span>
+									<span class="aicrmform-picker-field-name"><?php esc_html_e( 'Message', 'ai-crm-form' ); ?></span>
+								</button>
+							</div>
+						</div>
+
+						<!-- Address Fields -->
+						<div class="aicrmform-field-picker-section">
+							<h4><span class="dashicons dashicons-location"></span> <?php esc_html_e( 'Address Fields', 'ai-crm-form' ); ?></h4>
+							<p class="aicrmform-picker-section-desc"><?php esc_html_e( 'Contact address information.', 'ai-crm-form' ); ?></p>
+							<div class="aicrmform-field-picker-grid">
+								<button type="button" class="aicrmform-picker-field" data-preset="primary_address_line1">
+									<span class="dashicons dashicons-location"></span>
+									<span class="aicrmform-picker-field-name"><?php esc_html_e( 'Address Line 1', 'ai-crm-form' ); ?></span>
+								</button>
+								<button type="button" class="aicrmform-picker-field" data-preset="primary_address_line2">
+									<span class="dashicons dashicons-location-alt"></span>
+									<span class="aicrmform-picker-field-name"><?php esc_html_e( 'Address Line 2', 'ai-crm-form' ); ?></span>
+								</button>
+								<button type="button" class="aicrmform-picker-field" data-preset="primary_address_city">
+									<span class="dashicons dashicons-building"></span>
+									<span class="aicrmform-picker-field-name"><?php esc_html_e( 'City', 'ai-crm-form' ); ?></span>
+								</button>
+								<button type="button" class="aicrmform-picker-field" data-preset="primary_address_state">
+									<span class="dashicons dashicons-flag"></span>
+									<span class="aicrmform-picker-field-name"><?php esc_html_e( 'State', 'ai-crm-form' ); ?></span>
+								</button>
+								<button type="button" class="aicrmform-picker-field" data-preset="primary_address_postal">
+									<span class="dashicons dashicons-location"></span>
+									<span class="aicrmform-picker-field-name"><?php esc_html_e( 'Postal Code', 'ai-crm-form' ); ?></span>
+								</button>
+								<button type="button" class="aicrmform-picker-field" data-preset="primary_address_country">
+									<span class="dashicons dashicons-admin-site"></span>
+									<span class="aicrmform-picker-field-name"><?php esc_html_e( 'Country', 'ai-crm-form' ); ?></span>
+								</button>
+							</div>
+						</div>
+
+						<!-- Company Fields -->
+						<div class="aicrmform-field-picker-section">
+							<h4><span class="dashicons dashicons-building"></span> <?php esc_html_e( 'Company Fields', 'ai-crm-form' ); ?></h4>
+							<p class="aicrmform-picker-section-desc"><?php esc_html_e( 'Company and organization information.', 'ai-crm-form' ); ?></p>
+							<div class="aicrmform-field-picker-grid">
 								<button type="button" class="aicrmform-picker-field" data-preset="company_name">
 									<span class="dashicons dashicons-building"></span>
 									<span class="aicrmform-picker-field-name"><?php esc_html_e( 'Company Name', 'ai-crm-form' ); ?></span>
 								</button>
 								<button type="button" class="aicrmform-picker-field" data-preset="company_website">
 									<span class="dashicons dashicons-admin-site-alt3"></span>
-									<span class="aicrmform-picker-field-name"><?php esc_html_e( 'Website', 'ai-crm-form' ); ?></span>
+									<span class="aicrmform-picker-field-name"><?php esc_html_e( 'Company Website', 'ai-crm-form' ); ?></span>
 								</button>
-								<button type="button" class="aicrmform-picker-field" data-preset="message">
-									<span class="dashicons dashicons-testimonial"></span>
-									<span class="aicrmform-picker-field-name"><?php esc_html_e( 'Message', 'ai-crm-form' ); ?></span>
+								<button type="button" class="aicrmform-picker-field" data-preset="company_phone">
+									<span class="dashicons dashicons-phone"></span>
+									<span class="aicrmform-picker-field-name"><?php esc_html_e( 'Company Phone', 'ai-crm-form' ); ?></span>
 								</button>
-								<button type="button" class="aicrmform-picker-field" data-preset="address_line1">
+								<button type="button" class="aicrmform-picker-field" data-preset="company_address_line1">
 									<span class="dashicons dashicons-location"></span>
-									<span class="aicrmform-picker-field-name"><?php esc_html_e( 'Address Line 1', 'ai-crm-form' ); ?></span>
+									<span class="aicrmform-picker-field-name"><?php esc_html_e( 'Company Address', 'ai-crm-form' ); ?></span>
 								</button>
-								<button type="button" class="aicrmform-picker-field" data-preset="address_line2">
-									<span class="dashicons dashicons-location-alt"></span>
-									<span class="aicrmform-picker-field-name"><?php esc_html_e( 'Address Line 2', 'ai-crm-form' ); ?></span>
-								</button>
-								<button type="button" class="aicrmform-picker-field" data-preset="city">
+								<button type="button" class="aicrmform-picker-field" data-preset="company_address_city">
 									<span class="dashicons dashicons-building"></span>
-									<span class="aicrmform-picker-field-name"><?php esc_html_e( 'City', 'ai-crm-form' ); ?></span>
+									<span class="aicrmform-picker-field-name"><?php esc_html_e( 'Company City', 'ai-crm-form' ); ?></span>
 								</button>
-								<button type="button" class="aicrmform-picker-field" data-preset="state">
+								<button type="button" class="aicrmform-picker-field" data-preset="company_address_state">
 									<span class="dashicons dashicons-flag"></span>
-									<span class="aicrmform-picker-field-name"><?php esc_html_e( 'State', 'ai-crm-form' ); ?></span>
+									<span class="aicrmform-picker-field-name"><?php esc_html_e( 'Company State', 'ai-crm-form' ); ?></span>
 								</button>
-								<button type="button" class="aicrmform-picker-field" data-preset="postal_code">
+								<button type="button" class="aicrmform-picker-field" data-preset="company_address_postal">
 									<span class="dashicons dashicons-location"></span>
-									<span class="aicrmform-picker-field-name"><?php esc_html_e( 'Postal Code', 'ai-crm-form' ); ?></span>
+									<span class="aicrmform-picker-field-name"><?php esc_html_e( 'Company Postal', 'ai-crm-form' ); ?></span>
 								</button>
-								<button type="button" class="aicrmform-picker-field" data-preset="country">
+								<button type="button" class="aicrmform-picker-field" data-preset="company_address_country">
 									<span class="dashicons dashicons-admin-site"></span>
-									<span class="aicrmform-picker-field-name"><?php esc_html_e( 'Country', 'ai-crm-form' ); ?></span>
+									<span class="aicrmform-picker-field-name"><?php esc_html_e( 'Company Country', 'ai-crm-form' ); ?></span>
 								</button>
+								<button type="button" class="aicrmform-picker-field" data-preset="company_linkedin_url">
+									<span class="dashicons dashicons-linkedin"></span>
+									<span class="aicrmform-picker-field-name"><?php esc_html_e( 'LinkedIn URL', 'ai-crm-form' ); ?></span>
+								</button>
+								<button type="button" class="aicrmform-picker-field" data-preset="company_facebook_url">
+									<span class="dashicons dashicons-facebook"></span>
+									<span class="aicrmform-picker-field-name"><?php esc_html_e( 'Facebook URL', 'ai-crm-form' ); ?></span>
+								</button>
+								<button type="button" class="aicrmform-picker-field" data-preset="company_instagram_url">
+									<span class="dashicons dashicons-instagram"></span>
+									<span class="aicrmform-picker-field-name"><?php esc_html_e( 'Instagram URL', 'ai-crm-form' ); ?></span>
+								</button>
+								<button type="button" class="aicrmform-picker-field" data-preset="company_twitter_url">
+									<span class="dashicons dashicons-twitter"></span>
+									<span class="aicrmform-picker-field-name"><?php esc_html_e( 'Twitter URL', 'ai-crm-form' ); ?></span>
+								</button>
+							</div>
+						</div>
+
+						<!-- Lead & Source Fields -->
+						<div class="aicrmform-field-picker-section">
+							<h4><span class="dashicons dashicons-megaphone"></span> <?php esc_html_e( 'Lead & Source Fields', 'ai-crm-form' ); ?></h4>
+							<p class="aicrmform-picker-section-desc"><?php esc_html_e( 'Lead scoring and source tracking fields.', 'ai-crm-form' ); ?></p>
+							<div class="aicrmform-field-picker-grid">
 								<button type="button" class="aicrmform-picker-field" data-preset="source_name">
 									<span class="dashicons dashicons-megaphone"></span>
-									<span class="aicrmform-picker-field-name"><?php esc_html_e( 'Lead Source', 'ai-crm-form' ); ?></span>
+									<span class="aicrmform-picker-field-name"><?php esc_html_e( 'Source Name', 'ai-crm-form' ); ?></span>
+								</button>
+								<button type="button" class="aicrmform-picker-field" data-preset="original_source">
+									<span class="dashicons dashicons-admin-links"></span>
+									<span class="aicrmform-picker-field-name"><?php esc_html_e( 'Original Source', 'ai-crm-form' ); ?></span>
+								</button>
+								<button type="button" class="aicrmform-picker-field" data-preset="lead_score">
+									<span class="dashicons dashicons-star-filled"></span>
+									<span class="aicrmform-picker-field-name"><?php esc_html_e( 'Lead Score', 'ai-crm-form' ); ?></span>
+								</button>
+								<button type="button" class="aicrmform-picker-field" data-preset="lead_quality">
+									<span class="dashicons dashicons-star-half"></span>
+									<span class="aicrmform-picker-field-name"><?php esc_html_e( 'Lead Quality', 'ai-crm-form' ); ?></span>
+								</button>
+							</div>
+						</div>
+
+						<!-- UTM Fields -->
+						<div class="aicrmform-field-picker-section">
+							<h4><span class="dashicons dashicons-chart-bar"></span> <?php esc_html_e( 'UTM Tracking Fields', 'ai-crm-form' ); ?></h4>
+							<p class="aicrmform-picker-section-desc"><?php esc_html_e( 'Campaign and tracking parameters.', 'ai-crm-form' ); ?></p>
+							<div class="aicrmform-field-picker-grid">
+								<button type="button" class="aicrmform-picker-field" data-preset="utm_source">
+									<span class="dashicons dashicons-admin-links"></span>
+									<span class="aicrmform-picker-field-name"><?php esc_html_e( 'UTM Source', 'ai-crm-form' ); ?></span>
+								</button>
+								<button type="button" class="aicrmform-picker-field" data-preset="utm_medium">
+									<span class="dashicons dashicons-admin-links"></span>
+									<span class="aicrmform-picker-field-name"><?php esc_html_e( 'UTM Medium', 'ai-crm-form' ); ?></span>
+								</button>
+								<button type="button" class="aicrmform-picker-field" data-preset="utm_campaign">
+									<span class="dashicons dashicons-megaphone"></span>
+									<span class="aicrmform-picker-field-name"><?php esc_html_e( 'UTM Campaign', 'ai-crm-form' ); ?></span>
+								</button>
+								<button type="button" class="aicrmform-picker-field" data-preset="utm_term">
+									<span class="dashicons dashicons-search"></span>
+									<span class="aicrmform-picker-field-name"><?php esc_html_e( 'UTM Term', 'ai-crm-form' ); ?></span>
+								</button>
+								<button type="button" class="aicrmform-picker-field" data-preset="utm_content">
+									<span class="dashicons dashicons-text-page"></span>
+									<span class="aicrmform-picker-field-name"><?php esc_html_e( 'UTM Content', 'ai-crm-form' ); ?></span>
+								</button>
+								<button type="button" class="aicrmform-picker-field" data-preset="gclid">
+									<span class="dashicons dashicons-google"></span>
+									<span class="aicrmform-picker-field-name"><?php esc_html_e( 'Google Click ID', 'ai-crm-form' ); ?></span>
+								</button>
+								<button type="button" class="aicrmform-picker-field" data-preset="fbclid">
+									<span class="dashicons dashicons-facebook"></span>
+									<span class="aicrmform-picker-field-name"><?php esc_html_e( 'Facebook Click ID', 'ai-crm-form' ); ?></span>
+								</button>
+								<button type="button" class="aicrmform-picker-field" data-preset="msclkid">
+									<span class="dashicons dashicons-admin-site"></span>
+									<span class="aicrmform-picker-field-name"><?php esc_html_e( 'Microsoft Click ID', 'ai-crm-form' ); ?></span>
+								</button>
+							</div>
+						</div>
+
+						<!-- Consent Fields -->
+						<div class="aicrmform-field-picker-section">
+							<h4><span class="dashicons dashicons-privacy"></span> <?php esc_html_e( 'Consent Fields', 'ai-crm-form' ); ?></h4>
+							<p class="aicrmform-picker-section-desc"><?php esc_html_e( 'Marketing consent and compliance fields.', 'ai-crm-form' ); ?></p>
+							<div class="aicrmform-field-picker-grid">
+								<button type="button" class="aicrmform-picker-field" data-preset="marketing_email_consent_status">
+									<span class="dashicons dashicons-email"></span>
+									<span class="aicrmform-picker-field-name"><?php esc_html_e( 'Email Consent', 'ai-crm-form' ); ?></span>
+								</button>
+								<button type="button" class="aicrmform-picker-field" data-preset="sms_consent_status">
+									<span class="dashicons dashicons-smartphone"></span>
+									<span class="aicrmform-picker-field-name"><?php esc_html_e( 'SMS Consent', 'ai-crm-form' ); ?></span>
 								</button>
 							</div>
 						</div>
@@ -1027,6 +1237,30 @@ class AICRMFORM_Admin_Settings {
 			</div>
 		</div>
 
+		<!-- Import Form Modal -->
+		<div id="import-form-modal" class="aicrmform-modal-overlay" style="display: none;">
+			<div class="aicrmform-modal aicrmform-modal-md">
+				<div class="aicrmform-modal-header">
+					<h3><?php esc_html_e( 'Import Form', 'ai-crm-form' ); ?></h3>
+					<button type="button" class="aicrmform-modal-close">&times;</button>
+				</div>
+				<div class="aicrmform-modal-body">
+					<div id="import-loading" style="text-align: center; padding: 40px;">
+						<span class="spinner is-active" style="float: none;"></span>
+						<p><?php esc_html_e( 'Loading available forms...', 'ai-crm-form' ); ?></p>
+					</div>
+					<div id="import-content" style="display: none;">
+						<div id="import-no-plugins" class="aicrmform-empty-state" style="display: none;">
+							<span class="dashicons dashicons-warning" style="font-size: 48px; color: #f59e0b;"></span>
+							<h3><?php esc_html_e( 'No Form Plugins Found', 'ai-crm-form' ); ?></h3>
+							<p><?php esc_html_e( 'Install and activate Contact Form 7 or another supported plugin to import forms.', 'ai-crm-form' ); ?></p>
+						</div>
+						<div id="import-sources-list"></div>
+					</div>
+				</div>
+			</div>
+		</div>
+
 		<!-- Alert Modal (Popup - replaces JS alerts) -->
 		<div id="aicrmform-alert-modal" class="aicrmform-alert-modal">
 			<div class="aicrmform-alert-content">
@@ -1139,9 +1373,10 @@ class AICRMFORM_Admin_Settings {
 								</tr>
 							</thead>
 							<tbody>
-								<?php foreach ( $submissions as $submission ) : 
+								<?php
+								foreach ( $submissions as $submission ) :
 									$status_class = 'success' === $submission->status || 'sent' === $submission->status ? 'success' : ( 'pending' === $submission->status ? 'warning' : 'default' );
-								?>
+									?>
 									<tr>
 										<td class="aicrmform-td-id">
 											<span class="aicrmform-submission-id">#<?php echo esc_html( $submission->id ); ?></span>

@@ -5,7 +5,7 @@ Tags: forms, crm, lead generation, ai, contact form
 Requires at least: 5.8
 Tested up to: 6.4
 Requires PHP: 8.0
-Stable tag: 1.1.1
+Stable tag: 1.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -84,6 +84,28 @@ Submissions are stored in your WordPress database and can be viewed in AI CRM Fo
 
 == Changelog ==
 
+= 1.2.0 =
+* NEW: Form Import module for Contact Form 7
+* NEW: Import forms from CF7 with one click
+* NEW: "Use same shortcode" option - no page updates needed
+* NEW: Font Family setting with Google Fonts integration
+* NEW: Font Size setting for forms
+* NEW: Form Background Color setting
+* NEW: Auto-remove submissions after X days (configurable)
+* NEW: Styling options in Edit Form modal
+* FIX: Form deletion not updating UI immediately
+* FIX: Stats not updating after form deletion
+* FIX: CF7 forms breaking when not yet imported
+* FIX: Stale shortcode mappings causing errors
+
+= 1.1.1 =
+* Minor bug fixes and improvements
+
+= 1.1.0 =
+* NEW: Font styling options
+* NEW: Background color configuration
+* Improved styling section in Form Builder
+
 = 1.0.0 =
 * Initial release
 * AI-powered form generation
@@ -95,6 +117,9 @@ Submissions are stored in your WordPress database and can be viewed in AI CRM Fo
 * Responsive design
 
 == Upgrade Notice ==
+
+= 1.2.0 =
+Major update with Contact Form 7 import, Google Fonts, and enhanced styling options.
 
 = 1.0.0 =
 Initial release of AI CRM Form.

@@ -19,8 +19,8 @@
 	--aicrmform-gray-700: #374151;
 	--aicrmform-gray-800: #1f2937;
 	--aicrmform-radius: 8px;
-	--aicrmform-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
-	--aicrmform-shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.05);
+	--aicrmform-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+	--aicrmform-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
 }
 
 /* ============================
@@ -186,7 +186,9 @@
 	border: 1px solid var(--aicrmform-gray-300);
 	border-radius: 6px;
 	font-size: 14px;
-	transition: border-color 0.15s, box-shadow 0.15s;
+	transition:
+		border-color 0.15s,
+		box-shadow 0.15s;
 	background: #fff;
 }
 
@@ -233,6 +235,17 @@
 	color: var(--aicrmform-gray-500);
 }
 
+.aicrmform-field-hint .api-key-link {
+	color: var(--aicrmform-primary);
+	font-weight: 500;
+	text-decoration: none;
+	margin-left: 4px;
+}
+
+.aicrmform-field-hint .api-key-link:hover {
+	text-decoration: underline;
+}
+
 .aicrmform-field-error {
 	margin-top: 4px;
 	font-size: 12px;
@@ -240,7 +253,7 @@
 }
 
 .aicrmform-code-editor {
-	font-family: 'SF Mono', Monaco, Consolas, monospace;
+	font-family: "SF Mono", Monaco, Consolas, monospace;
 	font-size: 12px;
 	line-height: 1.5;
 	background: var(--aicrmform-gray-800);
@@ -358,7 +371,9 @@
 	border-radius: 6px;
 	margin-bottom: 8px;
 	cursor: move;
-	transition: box-shadow 0.15s, border-color 0.15s;
+	transition:
+		box-shadow 0.15s,
+		border-color 0.15s;
 }
 
 .aicrmform-field-item:last-child {
@@ -367,7 +382,7 @@
 
 .aicrmform-field-item:hover {
 	border-color: var(--aicrmform-gray-300);
-	box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .aicrmform-field-item.dragging {
@@ -888,7 +903,7 @@
 
 .aicrmform-shortcode-box code {
 	flex: 1;
-	font-family: 'SF Mono', Monaco, Consolas, monospace;
+	font-family: "SF Mono", Monaco, Consolas, monospace;
 	font-size: 14px;
 	color: #a5d6ff;
 }
@@ -900,7 +915,7 @@
 	width: 36px;
 	height: 36px;
 	padding: 0;
-	background: rgba(255,255,255,0.1);
+	background: rgba(255, 255, 255, 0.1);
 	border: none;
 	border-radius: 4px;
 	color: #fff;
@@ -909,7 +924,7 @@
 }
 
 .aicrmform-copy-btn:hover {
-	background: rgba(255,255,255,0.2);
+	background: rgba(255, 255, 255, 0.2);
 }
 
 /* ============================
@@ -927,7 +942,9 @@
 }
 
 @keyframes aicrmform-spin {
-	to { transform: rotate(360deg); }
+	to {
+		transform: rotate(360deg);
+	}
 }
 
 /* ============================
@@ -1112,7 +1129,7 @@
 
 .aicrmform-form-card-pro:hover {
 	border-color: var(--aicrmform-gray-300);
-	box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
 	transform: translateY(-2px);
 }
 
@@ -1214,7 +1231,7 @@
 
 .aicrmform-form-card-shortcode code {
 	flex: 1;
-	font-family: 'SF Mono', Monaco, Consolas, monospace;
+	font-family: "SF Mono", Monaco, Consolas, monospace;
 	font-size: 12px;
 	color: #a5d6ff;
 	background: none;
@@ -1228,7 +1245,7 @@
 	width: 28px;
 	height: 28px;
 	padding: 0;
-	background: rgba(255,255,255,0.1);
+	background: rgba(255, 255, 255, 0.1);
 	border: none;
 	border-radius: 4px;
 	color: #fff;
@@ -1237,7 +1254,7 @@
 }
 
 .aicrmform-copy-btn-sm:hover {
-	background: rgba(255,255,255,0.2);
+	background: rgba(255, 255, 255, 0.2);
 }
 
 .aicrmform-copy-btn-sm .dashicons {
@@ -1315,20 +1332,20 @@
 		align-items: flex-start;
 		gap: 16px;
 	}
-	
+
 	.aicrmform-stats-bar {
 		flex-direction: column;
 	}
-	
+
 	.aicrmform-stat-item {
 		min-width: auto;
 	}
-	
+
 	.aicrmform-empty-state-features {
 		flex-direction: column;
 		gap: 16px;
 	}
-	
+
 	.aicrmform-forms-grid-pro {
 		grid-template-columns: 1fr;
 	}
@@ -1436,7 +1453,7 @@
 }
 
 .aicrmform-ip {
-	font-family: 'SF Mono', Monaco, monospace;
+	font-family: "SF Mono", Monaco, monospace;
 	font-size: 12px;
 	color: var(--aicrmform-gray-500);
 }
@@ -1657,7 +1674,7 @@
 	background-color: white;
 	transition: 0.3s;
 	border-radius: 50%;
-	box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
 .aicrmform-switch input:checked + .aicrmform-switch-slider {
@@ -1801,12 +1818,12 @@
 	.aicrmform-settings-layout {
 		grid-template-columns: 1fr;
 	}
-	
+
 	.aicrmform-settings-sidebar {
 		order: -1;
 		flex-direction: row;
 	}
-	
+
 	.aicrmform-settings-sidebar > * {
 		flex: 1;
 	}
@@ -1891,7 +1908,7 @@
 }
 
 .aicrmform-field-name {
-	font-family: 'SF Mono', Monaco, monospace;
+	font-family: "SF Mono", Monaco, monospace;
 	font-size: 11px;
 	color: var(--aicrmform-primary);
 }
@@ -1910,13 +1927,13 @@
 		align-items: flex-start;
 		gap: 16px;
 	}
-	
+
 	.aicrmform-settings-grid,
 	.aicrmform-form-row-grid,
 	.aicrmform-style-grid {
 		grid-template-columns: 1fr;
 	}
-	
+
 	.aicrmform-modal {
 		width: 95% !important;
 		margin: 20px;
@@ -2171,7 +2188,9 @@
 	z-index: 100001;
 	opacity: 0;
 	visibility: hidden;
-	transition: opacity 0.2s, visibility 0.2s;
+	transition:
+		opacity 0.2s,
+		visibility 0.2s;
 }
 
 .aicrmform-alert-modal.active {
@@ -2185,7 +2204,9 @@
 	padding: 24px;
 	max-width: 400px;
 	width: 90%;
-	box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+	box-shadow:
+		0 20px 25px -5px rgba(0, 0, 0, 0.1),
+		0 10px 10px -5px rgba(0, 0, 0, 0.04);
 	text-align: center;
 }
 
@@ -2247,4 +2268,170 @@
 
 .aicrmform-alert-actions .button {
 	min-width: 100px;
+}
+
+/* ============================
+   FORM IMPORT MODAL
+   ============================ */
+
+.aicrmform-import-source {
+	margin-bottom: 24px;
+	padding-bottom: 24px;
+	border-bottom: 1px solid var(--aicrmform-gray-200);
+}
+
+.aicrmform-import-source:last-child {
+	margin-bottom: 0;
+	padding-bottom: 0;
+	border-bottom: none;
+}
+
+.aicrmform-import-source h4 {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 0 0 16px;
+	font-size: 15px;
+	font-weight: 600;
+	color: var(--aicrmform-gray-800);
+}
+
+.aicrmform-import-source h4 .dashicons {
+	color: var(--aicrmform-primary);
+}
+
+.aicrmform-import-forms-list {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.aicrmform-import-form-item {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	padding: 16px 20px;
+	background: var(--aicrmform-gray-50);
+	border: 1px solid var(--aicrmform-gray-200);
+	border-radius: 8px;
+	transition: all 0.2s ease;
+}
+
+.aicrmform-import-form-item:hover {
+	background: #fff;
+	border-color: var(--aicrmform-primary);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.aicrmform-import-form-info {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	flex: 1;
+	min-width: 0;
+}
+
+.aicrmform-import-form-info strong {
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--aicrmform-gray-900);
+}
+
+.aicrmform-import-form-fields {
+	font-size: 12px;
+	color: var(--aicrmform-gray-500);
+}
+
+.aicrmform-import-form-actions {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	flex-shrink: 0;
+}
+
+.aicrmform-import-same-shortcode {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 13px;
+	color: var(--aicrmform-gray-700);
+	cursor: pointer;
+	padding: 6px 12px;
+	background: #fff;
+	border: 1px solid var(--aicrmform-gray-200);
+	border-radius: 6px;
+	transition: all 0.2s ease;
+}
+
+.aicrmform-import-same-shortcode:hover {
+	border-color: var(--aicrmform-primary);
+	background: var(--aicrmform-gray-50);
+}
+
+.aicrmform-import-same-shortcode input {
+	margin: 0;
+	width: 16px;
+	height: 16px;
+	accent-color: var(--aicrmform-primary);
+}
+
+.aicrmform-import-same-shortcode span {
+	white-space: nowrap;
+}
+
+.aicrmform-import-form-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	padding: 8px 16px;
+	font-weight: 500;
+	line-height: 1;
+}
+
+.aicrmform-import-form-btn .dashicons {
+	font-size: 16px;
+	width: 16px;
+	height: 16px;
+	line-height: 1;
+	vertical-align: middle;
+	position: relative;
+	top: -1px;
+}
+
+.aicrmform-import-form-btn .spinner {
+	margin: 0 !important;
+}
+
+#import-no-plugins {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 48px 24px;
+	text-align: center;
+}
+
+#import-no-plugins .dashicons {
+	font-size: 48px;
+	width: 48px;
+	height: 48px;
+	color: #f59e0b;
+	margin-bottom: 16px;
+}
+
+#import-no-plugins h3 {
+	margin: 0 0 8px;
+	font-size: 18px;
+	font-weight: 600;
+	color: var(--aicrmform-gray-800);
+}
+
+#import-no-plugins p {
+	margin: 0;
+	font-size: 14px;
+	color: var(--aicrmform-gray-600);
+	max-width: 300px;
+	line-height: 1.5;
 }

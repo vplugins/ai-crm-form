@@ -366,4 +366,3 @@ class AICRMFORM_CRM_API {
 		);
 	}
 }
-

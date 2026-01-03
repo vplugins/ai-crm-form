@@ -35,11 +35,6 @@ class AICRMFORM_Form_Generator {
 	 * Initialize AI Engine.
 	 */
 	private function init_ai_engine() {
-		// Check if AIEngine class exists (optional dependency).
-		if ( ! class_exists( 'AIEngine\AIEngine' ) ) {
-			return;
-		}
-
 		$settings = get_option( 'aicrmform_settings', [] );
 
 		$api_key  = $settings['api_key'] ?? '';
@@ -51,14 +46,20 @@ class AICRMFORM_Form_Generator {
 		}
 
 		try {
-			$this->ai_engine = new \AIEngine\AIEngine(
-				$api_key,
-				[
-					'provider' => $provider,
-					'model'    => $model,
-					'timeout'  => 60,
-				]
-			);
+			// First try the external AIEngine package if available.
+			if ( class_exists( 'AIEngine\AIEngine' ) ) {
+				$this->ai_engine = new \AIEngine\AIEngine(
+					$api_key,
+					[
+						'provider' => $provider,
+						'model'    => $model,
+						'timeout'  => 60,
+					]
+				);
+			} else {
+				// Use built-in AI client as fallback.
+				$this->ai_engine = new AICRMFORM_AI_Client( $api_key, $provider, $model );
+			}
 
 			// Set system instruction for form generation.
 			$system_instruction = $this->get_system_instruction();
@@ -114,10 +115,19 @@ INSTRUCTION;
 	/**
 	 * Check if AI is configured.
 	 *
-	 * @return bool True if AI is configured.
+	 * @return bool True if AI is configured (API key is set).
 	 */
 	public function is_configured() {
-		return $this->ai_engine !== null && $this->ai_engine->isConfigured();
+		// First check if we have a working AI engine instance.
+		if ( null !== $this->ai_engine && $this->ai_engine->isConfigured() ) {
+			return true;
+		}
+
+		// Fallback: Check if API key is set in settings (even if AIEngine class is not available).
+		$settings = get_option( 'aicrmform_settings', [] );
+		$api_key  = $settings['api_key'] ?? '';
+
+		return ! empty( $api_key );
 	}
 
 	/**
@@ -131,6 +141,14 @@ INSTRUCTION;
 			return [
 				'success' => false,
 				'error'   => __( 'AI is not configured. Please add your API key in settings.', 'ai-crm-form' ),
+			];
+		}
+
+		// Check if AI engine is available.
+		if ( null === $this->ai_engine ) {
+			return [
+				'success' => false,
+				'error'   => __( 'Failed to initialize AI client. Please check your API key and try again.', 'ai-crm-form' ),
 			];
 		}
 
@@ -179,7 +197,7 @@ INSTRUCTION;
 		$json_start = strpos( $response, '{' );
 		$json_end   = strrpos( $response, '}' );
 
-		if ( $json_start === false || $json_end === false ) {
+		if ( false === $json_start || false === $json_end ) {
 			return null;
 		}
 
@@ -420,7 +438,7 @@ INSTRUCTION;
 			[ '%d' ]
 		);
 
-		return $result !== false;
+		return false !== $result;
 	}
 
 	/**
@@ -501,7 +519,7 @@ INSTRUCTION;
 			[ '%d' ]
 		);
 
-		return $result !== false;
+		return false !== $result;
 	}
 
 	/**
@@ -533,4 +551,3 @@ PROMPT;
 		return $this->generate_form( $prompt );
 	}
 }
-

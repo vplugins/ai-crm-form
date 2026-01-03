@@ -20,6 +20,266 @@ class AICRMFORM_Form_Shortcode {
 	 */
 	public function register() {
 		add_shortcode( 'ai_crm_form', [ $this, 'render_form' ] );
+
+		// Clean up any stale mappings first.
+		$this->cleanup_all_stale_mappings();
+
+		// Check if we have valid CF7 shortcode mappings.
+		$shortcode_map = get_option( 'aicrmform_shortcode_map', [] );
+		$has_cf7_maps  = false;
+		foreach ( array_keys( $shortcode_map ) as $key ) {
+			if ( strpos( $key, 'cf7_' ) === 0 ) {
+				$has_cf7_maps = true;
+				break;
+			}
+		}
+
+		if ( $has_cf7_maps ) {
+			// If CF7 is active, intercept its shortcode output.
+			if ( class_exists( 'WPCF7_ContactForm' ) ) {
+				add_filter( 'do_shortcode_tag', [ $this, 'intercept_cf7_shortcode' ], 10, 4 );
+			} else {
+				// If CF7 is NOT active, register the shortcode ourselves.
+				add_shortcode( 'contact-form-7', [ $this, 'render_cf7_replacement' ] );
+				add_shortcode( 'contact-form', [ $this, 'render_cf7_replacement' ] );
+			}
+		}
+	}
+
+	/**
+	 * Clean up all stale mappings where our forms no longer exist.
+	 */
+	private function cleanup_all_stale_mappings() {
+		$shortcode_map = get_option( 'aicrmform_shortcode_map', [] );
+
+		if ( empty( $shortcode_map ) ) {
+			return;
+		}
+
+		$generator = new AICRMFORM_Form_Generator();
+		$changed   = false;
+
+		foreach ( $shortcode_map as $key => $form_id ) {
+			// Check if our form still exists.
+			$form = $generator->get_form( (int) $form_id );
+			if ( ! $form ) {
+				unset( $shortcode_map[ $key ] );
+				$changed = true;
+			}
+		}
+
+		if ( $changed ) {
+			update_option( 'aicrmform_shortcode_map', $shortcode_map );
+		}
+	}
+
+	/**
+	 * Render replacement for CF7 shortcode when CF7 is deactivated.
+	 *
+	 * @param array  $atts    Shortcode attributes.
+	 * @param string $content Shortcode content.
+	 * @param string $tag     Shortcode tag.
+	 * @return string The form HTML or empty string.
+	 */
+	public function render_cf7_replacement( $atts, $content = '', $tag = '' ) {
+		$atts = shortcode_atts(
+			[
+				'id'    => '',
+				'title' => '',
+			],
+			$atts,
+			$tag
+		);
+
+		// Get the CF7 form ID from the shortcode.
+		$cf7_id = $atts['id'];
+
+		if ( empty( $cf7_id ) ) {
+			return $this->get_cf7_not_found_message( $cf7_id );
+		}
+
+		// Find our mapped form.
+		$our_form_id = $this->get_mapped_form_id( $cf7_id );
+
+		if ( ! $our_form_id ) {
+			return $this->get_cf7_not_found_message( $cf7_id );
+		}
+
+		// Check if our form actually exists before rendering.
+		$generator = new AICRMFORM_Form_Generator();
+		$form      = $generator->get_form( $our_form_id );
+
+		if ( ! $form ) {
+			// Our form was deleted - clean up the stale mapping.
+			$this->cleanup_stale_mapping( $cf7_id );
+			return $this->get_cf7_not_found_message( $cf7_id );
+		}
+
+		return $this->render_form( [ 'id' => $our_form_id ] );
+	}
+
+	/**
+	 * Get message when CF7 form is not found (only when CF7 is deactivated).
+	 *
+	 * @param string $cf7_id The CF7 form ID.
+	 * @return string Message HTML (only for admins).
+	 */
+	private function get_cf7_not_found_message( $cf7_id ) {
+		// Only show message to admins.
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return '';
+		}
+
+		$shortcode_map = get_option( 'aicrmform_shortcode_map', [] );
+
+		// If no mappings exist at all, show a helpful message.
+		if ( empty( $shortcode_map ) ) {
+			return '<div class="aicrmform-admin-notice" style="background: #fef3cd; border: 1px solid #ffc107; padding: 15px; border-radius: 4px; margin: 10px 0;">'
+				. '<strong>AI CRM Form:</strong> Contact Form 7 is deactivated and this form has not been imported.<br>'
+				. '<small style="color: #666;">Activate Contact Form 7 or import this form using AI CRM Form\'s Import feature.</small>'
+				. '</div>';
+		}
+
+		$debug_info = 'Looking for: cf7_' . $cf7_id . ' or cf7_hash_' . $cf7_id;
+
+		return '<div class="aicrmform-admin-notice" style="background: #fef3cd; border: 1px solid #ffc107; padding: 15px; border-radius: 4px; margin: 10px 0;">'
+			. '<strong>AI CRM Form:</strong> No imported form found for Contact Form 7 ID "' . esc_html( $cf7_id ) . '".<br>'
+			. '<small style="color: #666;">Re-import the form with "Use same shortcode" checked. ' . esc_html( $debug_info ) . '</small>'
+			. '</div>';
+	}
+
+	/**
+	 * Get our form ID from CF7 shortcode ID attribute.
+	 *
+	 * @param string $cf7_id The ID from the shortcode (can be post ID or hash).
+	 * @return int|false Our form ID or false.
+	 */
+	private function get_mapped_form_id( $cf7_id ) {
+		$shortcode_map = get_option( 'aicrmform_shortcode_map', [] );
+
+		// 1. Check direct mapping: cf7_{id}
+		$map_key = 'cf7_' . $cf7_id;
+		if ( ! empty( $shortcode_map[ $map_key ] ) ) {
+			return (int) $shortcode_map[ $map_key ];
+		}
+
+		// 2. Check hash mapping: cf7_hash_{id}
+		$hash_key = 'cf7_hash_' . $cf7_id;
+		if ( ! empty( $shortcode_map[ $hash_key ] ) ) {
+			return (int) $shortcode_map[ $hash_key ];
+		}
+
+		// 3. Check if shortcode ID is a PREFIX of a stored hash.
+		// CF7 shortcodes use short hash (7 chars) but we store full hash.
+		foreach ( $shortcode_map as $key => $form_id ) {
+			if ( strpos( $key, 'cf7_hash_' ) === 0 ) {
+				$stored_hash = substr( $key, 9 ); // Remove 'cf7_hash_' prefix.
+				if ( strpos( $stored_hash, $cf7_id ) === 0 ) {
+					return (int) $form_id;
+				}
+			}
+		}
+
+		// 4. If it's a hash (not numeric), try to find the post ID from database.
+		if ( ! is_numeric( $cf7_id ) ) {
+			global $wpdb;
+
+			// CF7 stores a hash in _hash meta key - check for prefix match.
+			$post_id = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_hash' AND meta_value LIKE %s LIMIT 1",
+					$cf7_id . '%'
+				)
+			);
+
+			if ( $post_id ) {
+				$map_key = 'cf7_' . $post_id;
+				if ( ! empty( $shortcode_map[ $map_key ] ) ) {
+					return (int) $shortcode_map[ $map_key ];
+				}
+			}
+		}
+
+		// No mapping found - return false so CF7 can handle it.
+		return false;
+	}
+
+	/**
+	 * Intercept Contact Form 7 shortcode and render our form if imported.
+	 *
+	 * @param string $output Shortcode output.
+	 * @param string $tag    Shortcode name.
+	 * @param array  $attr   Shortcode attributes.
+	 * @param array  $m      Regular expression match array.
+	 * @return string Modified output.
+	 */
+	public function intercept_cf7_shortcode( $output, $tag, $attr, $m ) {
+		// Only intercept contact-form-7 shortcode.
+		if ( 'contact-form-7' !== $tag && 'contact-form' !== $tag ) {
+			return $output;
+		}
+
+		if ( empty( $attr['id'] ) ) {
+			return $output;
+		}
+
+		// Find our mapped form.
+		$our_form_id = $this->get_mapped_form_id( $attr['id'] );
+
+		if ( ! $our_form_id ) {
+			return $output;
+		}
+
+		// Check if our form actually exists before replacing.
+		$generator = new AICRMFORM_Form_Generator();
+		$form      = $generator->get_form( $our_form_id );
+
+		if ( ! $form ) {
+			// Our form was deleted - clean up the stale mapping and let CF7 handle it.
+			$this->cleanup_stale_mapping( $attr['id'] );
+			return $output;
+		}
+
+		// Render our form instead.
+		return $this->render_form( [ 'id' => $our_form_id ] );
+	}
+
+	/**
+	 * Clean up stale CF7 mappings when our form no longer exists.
+	 *
+	 * @param string $cf7_id The CF7 form ID.
+	 */
+	private function cleanup_stale_mapping( $cf7_id ) {
+		$shortcode_map = get_option( 'aicrmform_shortcode_map', [] );
+		$changed       = false;
+
+		// Remove any mappings for this CF7 form.
+		$keys_to_remove = [
+			'cf7_' . $cf7_id,
+			'cf7_hash_' . $cf7_id,
+		];
+
+		foreach ( $keys_to_remove as $key ) {
+			if ( isset( $shortcode_map[ $key ] ) ) {
+				unset( $shortcode_map[ $key ] );
+				$changed = true;
+			}
+		}
+
+		// Also check for hash prefix matches.
+		foreach ( array_keys( $shortcode_map ) as $key ) {
+			if ( strpos( $key, 'cf7_hash_' ) === 0 ) {
+				$stored_hash = substr( $key, 9 );
+				if ( strpos( $stored_hash, $cf7_id ) === 0 ) {
+					unset( $shortcode_map[ $key ] );
+					$changed = true;
+				}
+			}
+		}
+
+		if ( $changed ) {
+			update_option( 'aicrmform_shortcode_map', $shortcode_map );
+		}
 	}
 
 	/**
@@ -363,4 +623,3 @@ class AICRMFORM_Form_Shortcode {
 		return $html;
 	}
 }
-

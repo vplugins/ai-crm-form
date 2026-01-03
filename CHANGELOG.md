@@ -16,6 +16,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Nothing yet
 
+## [1.2.0] - 2025-01-03
+
+### Added
+- Form Import module for Contact Form 7
+  - Import forms from CF7 with one click
+  - Use same shortcode option (no page updates needed)
+  - Automatic plugin deactivation prompt after import
+  - Hash ID prefix matching for CF7 shortcodes
+- Font Family setting with Google Fonts integration
+- Font Size setting for forms
+- Form Background Color setting
+- Auto-remove submissions after X days (configurable in Settings)
+- Styling options in Edit Form modal
+
+### Changed
+- Settings submenu moved to bottom of AI CRM Forms menu
+- Improved Quick Start widget with dynamic progress
+- Better CRM mapping warning with "Ignore & Save" option
+
+### Fixed
+- Form deletion not removing card from UI immediately
+- Total Forms and Active Forms stats not updating after deletion
+- CF7 forms breaking when not yet imported
+- Stale shortcode mappings causing "Form not found" error
+- Import button icon alignment
+- Empty state alignment in import modal
+- Custom CSS spacing issues
+
+### Security
+- Added cleanup for stale shortcode mappings
+- Proper nonce verification for import endpoints
+
+## [1.1.1] - 2025-01-03
+
+### Fixed
+- Minor bug fixes and improvements
+
+## [1.1.0] - 2025-01-03
+
+### Added
+- Font styling options
+- Background color configuration
+- Improved styling section in Form Builder
+
 ## [1.0.0] - 2025-01-03
 
 ### Added
@@ -78,6 +122,9 @@ We use [Semantic Versioning](https://semver.org/):
 - **Development versions** are available on GitHub
 - **Security patches** are released as needed
 
-[Unreleased]: https://github.com/vplugins/ai-crm-form/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/vplugins/ai-crm-form/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/vplugins/ai-crm-form/compare/v1.1.1...v1.2.0
+[1.1.1]: https://github.com/vplugins/ai-crm-form/compare/v1.1.0...v1.1.1
+[1.1.0]: https://github.com/vplugins/ai-crm-form/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/vplugins/ai-crm-form/releases/tag/v1.0.0
 

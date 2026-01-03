@@ -157,6 +157,39 @@ class AICRMFORM_REST_API {
 				'permission_callback' => [ $this, 'admin_permission_check' ],
 			]
 		);
+
+		// Get available import sources.
+		register_rest_route(
+			$this->namespace,
+			'/import/sources',
+			[
+				'methods'             => 'GET',
+				'callback'            => [ $this, 'get_import_sources' ],
+				'permission_callback' => [ $this, 'admin_permission_check' ],
+			]
+		);
+
+		// Import a form.
+		register_rest_route(
+			$this->namespace,
+			'/import',
+			[
+				'methods'             => 'POST',
+				'callback'            => [ $this, 'import_form' ],
+				'permission_callback' => [ $this, 'admin_permission_check' ],
+			]
+		);
+
+		// Deactivate a plugin.
+		register_rest_route(
+			$this->namespace,
+			'/deactivate-plugin',
+			[
+				'methods'             => 'POST',
+				'callback'            => [ $this, 'deactivate_plugin' ],
+				'permission_callback' => [ $this, 'admin_permission_check' ],
+			]
+		);
 	}
 
 	/**
@@ -580,5 +613,112 @@ class AICRMFORM_REST_API {
 			200
 		);
 	}
-}
 
+	/**
+	 * Get available import sources.
+	 *
+	 * @param WP_REST_Request $request The request object.
+	 * @return WP_REST_Response The response.
+	 */
+	public function get_import_sources( $request ) {
+		$importer = new AICRMFORM_Form_Importer();
+		$sources  = $importer->get_available_plugins();
+
+		return new WP_REST_Response(
+			[
+				'success' => true,
+				'sources' => $sources,
+			],
+			200
+		);
+	}
+
+	/**
+	 * Import a form from another plugin.
+	 *
+	 * @param WP_REST_Request $request The request object.
+	 * @return WP_REST_Response The response.
+	 */
+	public function import_form( $request ) {
+		$plugin_key = sanitize_text_field( $request->get_param( 'plugin' ) );
+		$form_id    = (int) $request->get_param( 'form_id' );
+		$use_same_shortcode = (bool) $request->get_param( 'use_same_shortcode' );
+
+		if ( empty( $plugin_key ) || empty( $form_id ) ) {
+			return new WP_REST_Response(
+				[
+					'success' => false,
+					'error'   => __( 'Plugin and form ID are required.', 'ai-crm-form' ),
+				],
+				400
+			);
+		}
+
+		$importer = new AICRMFORM_Form_Importer();
+		$result   = $importer->import_form( $plugin_key, $form_id, $use_same_shortcode );
+
+		$status_code = $result['success'] ? 200 : 400;
+
+		return new WP_REST_Response( $result, $status_code );
+	}
+
+	/**
+	 * Deactivate a plugin.
+	 *
+	 * @param WP_REST_Request $request The request object.
+	 * @return WP_REST_Response The response.
+	 */
+	public function deactivate_plugin( $request ) {
+		$plugin_key = sanitize_text_field( $request->get_param( 'plugin' ) );
+
+		$plugin_files = [
+			'cf7' => 'contact-form-7/wp-contact-form-7.php',
+			// Add more plugins here as needed.
+		];
+
+		if ( empty( $plugin_key ) || ! isset( $plugin_files[ $plugin_key ] ) ) {
+			return new WP_REST_Response(
+				[
+					'success' => false,
+					'error'   => __( 'Invalid plugin specified.', 'ai-crm-form' ),
+				],
+				400
+			);
+		}
+
+		$plugin_file = $plugin_files[ $plugin_key ];
+
+		// Check if plugin is active.
+		if ( ! is_plugin_active( $plugin_file ) ) {
+			return new WP_REST_Response(
+				[
+					'success' => true,
+					'message' => __( 'Plugin is already deactivated.', 'ai-crm-form' ),
+				],
+				200
+			);
+		}
+
+		// Deactivate the plugin.
+		deactivate_plugins( $plugin_file );
+
+		// Check if it worked.
+		if ( is_plugin_active( $plugin_file ) ) {
+			return new WP_REST_Response(
+				[
+					'success' => false,
+					'error'   => __( 'Failed to deactivate plugin.', 'ai-crm-form' ),
+				],
+				500
+			);
+		}
+
+		return new WP_REST_Response(
+			[
+				'success' => true,
+				'message' => __( 'Plugin deactivated successfully.', 'ai-crm-form' ),
+			],
+			200
+		);
+	}
+}

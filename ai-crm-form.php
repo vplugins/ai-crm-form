@@ -3,7 +3,7 @@
  * Plugin Name: AI CRM Form
  * Plugin URI: https://github.com/rajanvijayan/ai-crm-form
  * Description: AI-powered form generator that submits to CRM API. Generate dynamic forms using AI and capture leads seamlessly.
- * Version: 1.1.1
+ * Version: 1.2.0
  * Author: Rajan Vijayan
  * Author URI: https://rajanvijayan.com
  * License: GPL v2 or later
@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define plugin constants.
-define( 'AICRMFORM_VERSION', '1.1.1' );
+define( 'AICRMFORM_VERSION', '1.2.0' );
 define( 'AICRMFORM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'AICRMFORM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'AICRMFORM_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
@@ -71,7 +71,9 @@ class AI_CRM_Form {
 		// Load plugin classes.
 		require_once AICRMFORM_PLUGIN_DIR . 'includes/class-field-mapping.php';
 		require_once AICRMFORM_PLUGIN_DIR . 'includes/class-crm-api.php';
+		require_once AICRMFORM_PLUGIN_DIR . 'includes/class-ai-client.php';
 		require_once AICRMFORM_PLUGIN_DIR . 'includes/class-form-generator.php';
+		require_once AICRMFORM_PLUGIN_DIR . 'includes/class-form-importer.php';
 		require_once AICRMFORM_PLUGIN_DIR . 'includes/class-admin-settings.php';
 		require_once AICRMFORM_PLUGIN_DIR . 'includes/class-rest-api.php';
 		require_once AICRMFORM_PLUGIN_DIR . 'includes/class-form-shortcode.php';
@@ -246,27 +248,20 @@ class AI_CRM_Form {
 	 * Add admin menu.
 	 */
 	public function add_admin_menu() {
+		// Main menu - points to Forms page.
 		add_menu_page(
 			__( 'AI CRM Forms', 'ai-crm-form' ),
 			__( 'AI CRM Forms', 'ai-crm-form' ),
 			'manage_options',
-			'ai-crm-form-settings',
-			[ $this, 'render_admin_page' ],
+			'ai-crm-form-forms',
+			[ $this, 'render_forms_page' ],
 			'dashicons-feedback',
 			30
 		);
 
+		// Submenu: Forms (first item, same slug as parent to rename it).
 		add_submenu_page(
-			'ai-crm-form-settings',
-			__( 'Settings', 'ai-crm-form' ),
-			__( 'Settings', 'ai-crm-form' ),
-			'manage_options',
-			'ai-crm-form-settings',
-			[ $this, 'render_admin_page' ]
-		);
-
-		add_submenu_page(
-			'ai-crm-form-settings',
+			'ai-crm-form-forms',
 			__( 'Forms', 'ai-crm-form' ),
 			__( 'Forms', 'ai-crm-form' ),
 			'manage_options',
@@ -274,8 +269,9 @@ class AI_CRM_Form {
 			[ $this, 'render_forms_page' ]
 		);
 
+		// Submenu: Form Builder.
 		add_submenu_page(
-			'ai-crm-form-settings',
+			'ai-crm-form-forms',
 			__( 'Form Builder', 'ai-crm-form' ),
 			__( 'Form Builder', 'ai-crm-form' ),
 			'manage_options',
@@ -283,13 +279,24 @@ class AI_CRM_Form {
 			[ $this, 'render_generator_page' ]
 		);
 
+		// Submenu: Submissions.
 		add_submenu_page(
-			'ai-crm-form-settings',
+			'ai-crm-form-forms',
 			__( 'Submissions', 'ai-crm-form' ),
 			__( 'Submissions', 'ai-crm-form' ),
 			'manage_options',
 			'ai-crm-form-submissions',
 			[ $this, 'render_submissions_page' ]
+		);
+
+		// Submenu: Settings (at the bottom).
+		add_submenu_page(
+			'ai-crm-form-forms',
+			__( 'Settings', 'ai-crm-form' ),
+			__( 'Settings', 'ai-crm-form' ),
+			'manage_options',
+			'ai-crm-form-settings',
+			[ $this, 'render_admin_page' ]
 		);
 	}
 
@@ -362,9 +369,10 @@ class AI_CRM_Form {
 			'aicrmform-admin',
 			'aicrmformAdmin',
 			[
-				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-				'restUrl' => rest_url( 'ai-crm-form/v1/' ),
-				'nonce'   => wp_create_nonce( 'wp_rest' ),
+				'ajaxUrl'  => admin_url( 'admin-ajax.php' ),
+				'restUrl'  => rest_url( 'ai-crm-form/v1/' ),
+				'adminUrl' => admin_url( 'admin.php' ),
+				'nonce'    => wp_create_nonce( 'wp_rest' ),
 			]
 		);
 	}
@@ -453,4 +461,3 @@ add_filter(
 		return $links;
 	}
 );
-
