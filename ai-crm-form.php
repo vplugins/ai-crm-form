@@ -247,27 +247,20 @@ class AI_CRM_Form {
 	 * Add admin menu.
 	 */
 	public function add_admin_menu() {
+		// Main menu - points to Forms page.
 		add_menu_page(
 			__( 'AI CRM Forms', 'ai-crm-form' ),
 			__( 'AI CRM Forms', 'ai-crm-form' ),
 			'manage_options',
-			'ai-crm-form-settings',
-			[ $this, 'render_admin_page' ],
+			'ai-crm-form-forms',
+			[ $this, 'render_forms_page' ],
 			'dashicons-feedback',
-			3
+			30
 		);
 
+		// Submenu: Forms (first item, same slug as parent to rename it).
 		add_submenu_page(
-			'ai-crm-form-settings',
-			__( 'Settings', 'ai-crm-form' ),
-			__( 'Settings', 'ai-crm-form' ),
-			'manage_options',
-			'ai-crm-form-settings',
-			[ $this, 'render_admin_page' ]
-		);
-
-		add_submenu_page(
-			'ai-crm-form-settings',
+			'ai-crm-form-forms',
 			__( 'Forms', 'ai-crm-form' ),
 			__( 'Forms', 'ai-crm-form' ),
 			'manage_options',
@@ -275,8 +268,9 @@ class AI_CRM_Form {
 			[ $this, 'render_forms_page' ]
 		);
 
+		// Submenu: Form Builder.
 		add_submenu_page(
-			'ai-crm-form-settings',
+			'ai-crm-form-forms',
 			__( 'Form Builder', 'ai-crm-form' ),
 			__( 'Form Builder', 'ai-crm-form' ),
 			'manage_options',
@@ -284,13 +278,24 @@ class AI_CRM_Form {
 			[ $this, 'render_generator_page' ]
 		);
 
+		// Submenu: Submissions.
 		add_submenu_page(
-			'ai-crm-form-settings',
+			'ai-crm-form-forms',
 			__( 'Submissions', 'ai-crm-form' ),
 			__( 'Submissions', 'ai-crm-form' ),
 			'manage_options',
 			'ai-crm-form-submissions',
 			[ $this, 'render_submissions_page' ]
+		);
+
+		// Submenu: Settings (at the bottom).
+		add_submenu_page(
+			'ai-crm-form-forms',
+			__( 'Settings', 'ai-crm-form' ),
+			__( 'Settings', 'ai-crm-form' ),
+			'manage_options',
+			'ai-crm-form-settings',
+			[ $this, 'render_admin_page' ]
 		);
 	}
 
