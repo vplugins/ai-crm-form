@@ -2378,21 +2378,33 @@
 }
 
 #import-no-plugins {
-	padding: 40px 20px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 48px 24px;
 	text-align: center;
 }
 
 #import-no-plugins .dashicons {
-	display: block;
-	margin: 0 auto 16px;
+	font-size: 48px;
+	width: 48px;
+	height: 48px;
+	color: #f59e0b;
+	margin-bottom: 16px;
 }
 
 #import-no-plugins h3 {
 	margin: 0 0 8px;
+	font-size: 18px;
+	font-weight: 600;
 	color: var(--aicrmform-gray-800);
 }
 
 #import-no-plugins p {
 	margin: 0;
+	font-size: 14px;
 	color: var(--aicrmform-gray-600);
+	max-width: 300px;
+	line-height: 1.5;
 }
