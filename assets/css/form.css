@@ -6,7 +6,9 @@
 .aicrmform-wrapper {
 	max-width: 600px;
 	margin: 0 auto;
-	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+	font-family:
+		-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell,
+		"Helvetica Neue", sans-serif;
 }
 
 .aicrmform-title {
@@ -65,7 +67,9 @@
 	border-radius: 6px;
 	font-size: 15px;
 	font-family: inherit;
-	transition: border-color 0.2s, box-shadow 0.2s;
+	transition:
+		border-color 0.2s,
+		box-shadow 0.2s;
 	box-sizing: border-box;
 }
 
@@ -138,7 +142,9 @@
 	font-size: 16px;
 	font-weight: 600;
 	cursor: pointer;
-	transition: transform 0.2s, box-shadow 0.2s;
+	transition:
+		transform 0.2s,
+		box-shadow 0.2s;
 }
 
 .aicrmform-button:hover {
@@ -168,8 +174,12 @@
 }
 
 @keyframes aicrmform-spin {
-	0% { transform: rotate(0deg); }
-	100% { transform: rotate(360deg); }
+	0% {
+		transform: rotate(0deg);
+	}
+	100% {
+		transform: rotate(360deg);
+	}
 }
 
 /* Success Message */
@@ -390,4 +400,3 @@
 		box-shadow: 0 0 0 3px rgba(0, 150, 221, 0.2);
 	}
 }
-

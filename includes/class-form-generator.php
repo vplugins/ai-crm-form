@@ -117,7 +117,7 @@ INSTRUCTION;
 	 * @return bool True if AI is configured.
 	 */
 	public function is_configured() {
-		return $this->ai_engine !== null && $this->ai_engine->isConfigured();
+		return null !== $this->ai_engine && $this->ai_engine->isConfigured();
 	}
 
 	/**
@@ -179,7 +179,7 @@ INSTRUCTION;
 		$json_start = strpos( $response, '{' );
 		$json_end   = strrpos( $response, '}' );
 
-		if ( $json_start === false || $json_end === false ) {
+		if ( false === $json_start || false === $json_end ) {
 			return null;
 		}
 
@@ -420,7 +420,7 @@ INSTRUCTION;
 			[ '%d' ]
 		);
 
-		return $result !== false;
+		return false !== $result;
 	}
 
 	/**
@@ -501,7 +501,7 @@ INSTRUCTION;
 			[ '%d' ]
 		);
 
-		return $result !== false;
+		return false !== $result;
 	}
 
 	/**
@@ -533,4 +533,3 @@ PROMPT;
 		return $this->generate_form( $prompt );
 	}
 }
-

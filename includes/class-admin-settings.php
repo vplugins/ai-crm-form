@@ -439,9 +439,10 @@ class AICRMFORM_Admin_Settings {
 
 				<!-- Forms Grid -->
 				<div class="aicrmform-forms-grid-pro">
-					<?php foreach ( $forms as $form ) : 
+					<?php
+					foreach ( $forms as $form ) :
 						$field_count = count( $form->form_config['fields'] ?? [] );
-					?>
+						?>
 						<div class="aicrmform-form-card-pro" data-form-id="<?php echo esc_attr( $form->id ); ?>">
 							<div class="aicrmform-form-card-top">
 								<div class="aicrmform-form-card-icon">
@@ -460,7 +461,12 @@ class AICRMFORM_Admin_Settings {
 								<div class="aicrmform-form-stats">
 									<div class="aicrmform-form-stat">
 										<span class="dashicons dashicons-list-view"></span>
-										<span><?php printf( esc_html( _n( '%d field', '%d fields', $field_count, 'ai-crm-form' ) ), $field_count ); ?></span>
+										<span>
+										<?php
+										/* translators: %d: number of fields in the form */
+										printf( esc_html( _n( '%d field', '%d fields', $field_count, 'ai-crm-form' ) ), (int) $field_count );
+										?>
+										</span>
 									</div>
 									<div class="aicrmform-form-stat">
 										<span class="dashicons dashicons-calendar"></span>
@@ -1167,9 +1173,10 @@ class AICRMFORM_Admin_Settings {
 								</tr>
 							</thead>
 							<tbody>
-								<?php foreach ( $submissions as $submission ) : 
+								<?php
+								foreach ( $submissions as $submission ) :
 									$status_class = 'success' === $submission->status || 'sent' === $submission->status ? 'success' : ( 'pending' === $submission->status ? 'warning' : 'default' );
-								?>
+									?>
 									<tr>
 										<td class="aicrmform-td-id">
 											<span class="aicrmform-submission-id">#<?php echo esc_html( $submission->id ); ?></span>

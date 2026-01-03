@@ -722,4 +722,3 @@ class AICRMFORM_REST_API {
 		);
 	}
 }
-

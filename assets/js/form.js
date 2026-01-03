@@ -2,7 +2,7 @@
  * AI CRM Form - Frontend JavaScript
  */
 
-(function() {
+(function () {
 	'use strict';
 
 	/**
@@ -10,7 +10,7 @@
 	 */
 	function init() {
 		const forms = document.querySelectorAll('.aicrmform-form');
-		forms.forEach(function(form) {
+		forms.forEach(function (form) {
 			initForm(form);
 		});
 	}
@@ -19,19 +19,19 @@
 	 * Initialize a single form.
 	 */
 	function initForm(form) {
-		form.addEventListener('submit', function(e) {
+		form.addEventListener('submit', function (e) {
 			e.preventDefault();
 			submitForm(form);
 		});
 
 		// Add real-time validation.
 		const inputs = form.querySelectorAll('input, select, textarea');
-		inputs.forEach(function(input) {
-			input.addEventListener('blur', function() {
+		inputs.forEach(function (input) {
+			input.addEventListener('blur', function () {
 				validateField(input);
 			});
 
-			input.addEventListener('input', function() {
+			input.addEventListener('input', function () {
 				clearFieldError(input);
 			});
 		});
@@ -66,42 +66,45 @@
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
-				'X-WP-Nonce': aicrmformConfig.nonce
+				'X-WP-Nonce': aicrmformConfig.nonce,
 			},
-			body: JSON.stringify({ data: formData })
+			body: JSON.stringify({ data: formData }),
 		})
-		.then(function(response) {
-			return response.json().then(function(data) {
-				return { status: response.status, data: data };
-			});
-		})
-		.then(function(result) {
-			if (result.status >= 200 && result.status < 300 && result.data.success) {
-				// Success.
-				form.style.display = 'none';
-				if (successEl) {
-					successEl.style.display = 'block';
-					if (result.data.message) {
-						successEl.querySelector('p').textContent = result.data.message;
+			.then(function (response) {
+				return response.json().then(function (data) {
+					return { status: response.status, data: data };
+				});
+			})
+			.then(function (result) {
+				if (result.status >= 200 && result.status < 300 && result.data.success) {
+					// Success.
+					form.style.display = 'none';
+					if (successEl) {
+						successEl.style.display = 'block';
+						if (result.data.message) {
+							successEl.querySelector('p').textContent = result.data.message;
+						}
 					}
+				} else {
+					// Error - use custom message from data attribute if available.
+					const defaultError = errorEl
+						? errorEl.getAttribute('data-default-message')
+						: null;
+					const errorMessage =
+						result.data.error || defaultError || 'An error occurred. Please try again.';
+					showError(errorEl, errorMessage);
+					submitButton.disabled = false;
 				}
-			} else {
-				// Error - use custom message from data attribute if available.
+			})
+			.catch(function (error) {
+				console.error('Form submission error:', error);
 				const defaultError = errorEl ? errorEl.getAttribute('data-default-message') : null;
-				const errorMessage = result.data.error || defaultError || 'An error occurred. Please try again.';
-				showError(errorEl, errorMessage);
+				showError(errorEl, defaultError || 'An error occurred. Please try again.');
 				submitButton.disabled = false;
-			}
-		})
-		.catch(function(error) {
-			console.error('Form submission error:', error);
-			const defaultError = errorEl ? errorEl.getAttribute('data-default-message') : null;
-			showError(errorEl, defaultError || 'An error occurred. Please try again.');
-			submitButton.disabled = false;
-		})
-		.finally(function() {
-			if (spinner) spinner.style.display = 'none';
-		});
+			})
+			.finally(function () {
+				if (spinner) spinner.style.display = 'none';
+			});
 	}
 
 	/**
@@ -111,7 +114,7 @@
 		const data = {};
 		const inputs = form.querySelectorAll('input, select, textarea');
 
-		inputs.forEach(function(input) {
+		inputs.forEach(function (input) {
 			const name = input.getAttribute('name');
 			if (!name || input.type === 'hidden') return;
 
@@ -143,7 +146,7 @@
 		let isValid = true;
 		const inputs = form.querySelectorAll('input, select, textarea');
 
-		inputs.forEach(function(input) {
+		inputs.forEach(function (input) {
 			if (!validateField(input)) {
 				isValid = false;
 			}
@@ -151,7 +154,9 @@
 
 		// Focus first error.
 		if (!isValid) {
-			const firstError = form.querySelector('.aicrmform-field.error input, .aicrmform-field.error select, .aicrmform-field.error textarea');
+			const firstError = form.querySelector(
+				'.aicrmform-field.error input, .aicrmform-field.error select, .aicrmform-field.error textarea'
+			);
 			if (firstError) {
 				firstError.focus();
 			}
@@ -273,6 +278,4 @@
 	} else {
 		init();
 	}
-
 })();
-

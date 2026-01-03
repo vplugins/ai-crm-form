@@ -29,16 +29,21 @@
     <rule ref="WordPress-Core">
         <!-- Allow short array syntax -->
         <exclude name="Generic.Arrays.DisallowShortArraySyntax"/>
+        <exclude name="Universal.Arrays.DisallowShortArraySyntax"/>
+        <!-- Allow short ternary -->
+        <exclude name="Universal.Operators.DisallowShortTernary"/>
+        <!-- Disable conflicting alignment rules -->
+        <exclude name="WordPress.Arrays.MultipleStatementAlignment"/>
+        <exclude name="Generic.Formatting.MultipleStatementAlignment"/>
     </rule>
     
     <!-- WordPress Extra rules for best practices -->
     <rule ref="WordPress-Extra">
         <exclude name="WordPress.Files.FileName.InvalidClassFileName"/>
         <exclude name="WordPress.Files.FileName.NotHyphenatedLowercase"/>
+        <exclude name="Universal.Arrays.DisallowShortArraySyntax"/>
+        <exclude name="Universal.Operators.DisallowShortTernary"/>
     </rule>
-
-    <!-- Allow short array syntax -->
-    <rule ref="Generic.Arrays.DisallowLongArraySyntax"/>
 
     <!-- Verify that the text_domain is set to the desired text-domain -->
     <rule ref="WordPress.WP.I18n">

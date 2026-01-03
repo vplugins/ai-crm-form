@@ -623,4 +623,3 @@ class AICRMFORM_Form_Shortcode {
 		return $html;
 	}
 }
-

@@ -19,8 +19,8 @@
 	--aicrmform-gray-700: #374151;
 	--aicrmform-gray-800: #1f2937;
 	--aicrmform-radius: 8px;
-	--aicrmform-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
-	--aicrmform-shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.05);
+	--aicrmform-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+	--aicrmform-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
 }
 
 /* ============================
@@ -186,7 +186,9 @@
 	border: 1px solid var(--aicrmform-gray-300);
 	border-radius: 6px;
 	font-size: 14px;
-	transition: border-color 0.15s, box-shadow 0.15s;
+	transition:
+		border-color 0.15s,
+		box-shadow 0.15s;
 	background: #fff;
 }
 
@@ -240,7 +242,7 @@
 }
 
 .aicrmform-code-editor {
-	font-family: 'SF Mono', Monaco, Consolas, monospace;
+	font-family: "SF Mono", Monaco, Consolas, monospace;
 	font-size: 12px;
 	line-height: 1.5;
 	background: var(--aicrmform-gray-800);
@@ -358,7 +360,9 @@
 	border-radius: 6px;
 	margin-bottom: 8px;
 	cursor: move;
-	transition: box-shadow 0.15s, border-color 0.15s;
+	transition:
+		box-shadow 0.15s,
+		border-color 0.15s;
 }
 
 .aicrmform-field-item:last-child {
@@ -367,7 +371,7 @@
 
 .aicrmform-field-item:hover {
 	border-color: var(--aicrmform-gray-300);
-	box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .aicrmform-field-item.dragging {
@@ -888,7 +892,7 @@
 
 .aicrmform-shortcode-box code {
 	flex: 1;
-	font-family: 'SF Mono', Monaco, Consolas, monospace;
+	font-family: "SF Mono", Monaco, Consolas, monospace;
 	font-size: 14px;
 	color: #a5d6ff;
 }
@@ -900,7 +904,7 @@
 	width: 36px;
 	height: 36px;
 	padding: 0;
-	background: rgba(255,255,255,0.1);
+	background: rgba(255, 255, 255, 0.1);
 	border: none;
 	border-radius: 4px;
 	color: #fff;
@@ -909,7 +913,7 @@
 }
 
 .aicrmform-copy-btn:hover {
-	background: rgba(255,255,255,0.2);
+	background: rgba(255, 255, 255, 0.2);
 }
 
 /* ============================
@@ -927,7 +931,9 @@
 }
 
 @keyframes aicrmform-spin {
-	to { transform: rotate(360deg); }
+	to {
+		transform: rotate(360deg);
+	}
 }
 
 /* ============================
@@ -1112,7 +1118,7 @@
 
 .aicrmform-form-card-pro:hover {
 	border-color: var(--aicrmform-gray-300);
-	box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
 	transform: translateY(-2px);
 }
 
@@ -1214,7 +1220,7 @@
 
 .aicrmform-form-card-shortcode code {
 	flex: 1;
-	font-family: 'SF Mono', Monaco, Consolas, monospace;
+	font-family: "SF Mono", Monaco, Consolas, monospace;
 	font-size: 12px;
 	color: #a5d6ff;
 	background: none;
@@ -1228,7 +1234,7 @@
 	width: 28px;
 	height: 28px;
 	padding: 0;
-	background: rgba(255,255,255,0.1);
+	background: rgba(255, 255, 255, 0.1);
 	border: none;
 	border-radius: 4px;
 	color: #fff;
@@ -1237,7 +1243,7 @@
 }
 
 .aicrmform-copy-btn-sm:hover {
-	background: rgba(255,255,255,0.2);
+	background: rgba(255, 255, 255, 0.2);
 }
 
 .aicrmform-copy-btn-sm .dashicons {
@@ -1315,20 +1321,20 @@
 		align-items: flex-start;
 		gap: 16px;
 	}
-	
+
 	.aicrmform-stats-bar {
 		flex-direction: column;
 	}
-	
+
 	.aicrmform-stat-item {
 		min-width: auto;
 	}
-	
+
 	.aicrmform-empty-state-features {
 		flex-direction: column;
 		gap: 16px;
 	}
-	
+
 	.aicrmform-forms-grid-pro {
 		grid-template-columns: 1fr;
 	}
@@ -1436,7 +1442,7 @@
 }
 
 .aicrmform-ip {
-	font-family: 'SF Mono', Monaco, monospace;
+	font-family: "SF Mono", Monaco, monospace;
 	font-size: 12px;
 	color: var(--aicrmform-gray-500);
 }
@@ -1657,7 +1663,7 @@
 	background-color: white;
 	transition: 0.3s;
 	border-radius: 50%;
-	box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
 .aicrmform-switch input:checked + .aicrmform-switch-slider {
@@ -1801,12 +1807,12 @@
 	.aicrmform-settings-layout {
 		grid-template-columns: 1fr;
 	}
-	
+
 	.aicrmform-settings-sidebar {
 		order: -1;
 		flex-direction: row;
 	}
-	
+
 	.aicrmform-settings-sidebar > * {
 		flex: 1;
 	}
@@ -1891,7 +1897,7 @@
 }
 
 .aicrmform-field-name {
-	font-family: 'SF Mono', Monaco, monospace;
+	font-family: "SF Mono", Monaco, monospace;
 	font-size: 11px;
 	color: var(--aicrmform-primary);
 }
@@ -1910,13 +1916,13 @@
 		align-items: flex-start;
 		gap: 16px;
 	}
-	
+
 	.aicrmform-settings-grid,
 	.aicrmform-form-row-grid,
 	.aicrmform-style-grid {
 		grid-template-columns: 1fr;
 	}
-	
+
 	.aicrmform-modal {
 		width: 95% !important;
 		margin: 20px;
@@ -2171,7 +2177,9 @@
 	z-index: 100001;
 	opacity: 0;
 	visibility: hidden;
-	transition: opacity 0.2s, visibility 0.2s;
+	transition:
+		opacity 0.2s,
+		visibility 0.2s;
 }
 
 .aicrmform-alert-modal.active {
@@ -2185,7 +2193,9 @@
 	padding: 24px;
 	max-width: 400px;
 	width: 90%;
-	box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+	box-shadow:
+		0 20px 25px -5px rgba(0, 0, 0, 0.1),
+		0 10px 10px -5px rgba(0, 0, 0, 0.04);
 	text-align: center;
 }
 

@@ -386,4 +386,3 @@ class AICRMFORM_Form_Importer {
 		return $results;
 	}
 }
-
