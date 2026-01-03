@@ -21,8 +21,107 @@ class AICRMFORM_Form_Shortcode {
 	public function register() {
 		add_shortcode( 'ai_crm_form', [ $this, 'render_form' ] );
 
-		// Intercept Contact Form 7 shortcode if we have imported forms.
-		add_filter( 'do_shortcode_tag', [ $this, 'intercept_cf7_shortcode' ], 10, 4 );
+		// Check if we have CF7 shortcode mappings.
+		$shortcode_map = get_option( 'aicrmform_shortcode_map', [] );
+		$has_cf7_maps  = false;
+		foreach ( array_keys( $shortcode_map ) as $key ) {
+			if ( strpos( $key, 'cf7_' ) === 0 ) {
+				$has_cf7_maps = true;
+				break;
+			}
+		}
+
+		if ( $has_cf7_maps ) {
+			// If CF7 is active, intercept its shortcode output.
+			if ( class_exists( 'WPCF7_ContactForm' ) ) {
+				add_filter( 'do_shortcode_tag', [ $this, 'intercept_cf7_shortcode' ], 10, 4 );
+			} else {
+				// If CF7 is NOT active, register the shortcode ourselves.
+				add_shortcode( 'contact-form-7', [ $this, 'render_cf7_replacement' ] );
+				add_shortcode( 'contact-form', [ $this, 'render_cf7_replacement' ] );
+			}
+		}
+	}
+
+	/**
+	 * Render replacement for CF7 shortcode when CF7 is deactivated.
+	 *
+	 * @param array  $atts    Shortcode attributes.
+	 * @param string $content Shortcode content.
+	 * @param string $tag     Shortcode tag.
+	 * @return string The form HTML or empty string.
+	 */
+	public function render_cf7_replacement( $atts, $content = '', $tag = '' ) {
+		$atts = shortcode_atts(
+			[
+				'id'    => '',
+				'title' => '',
+			],
+			$atts,
+			$tag
+		);
+
+		// Get the CF7 form ID from the shortcode.
+		$cf7_id = $atts['id'];
+
+		if ( empty( $cf7_id ) ) {
+			return '';
+		}
+
+		// Find our mapped form.
+		$our_form_id = $this->get_mapped_form_id( $cf7_id );
+
+		if ( ! $our_form_id ) {
+			return '';
+		}
+
+		return $this->render_form( [ 'id' => $our_form_id ] );
+	}
+
+	/**
+	 * Get our form ID from CF7 shortcode ID attribute.
+	 *
+	 * @param string $cf7_id The ID from the shortcode (can be post ID or hash).
+	 * @return int|false Our form ID or false.
+	 */
+	private function get_mapped_form_id( $cf7_id ) {
+		$shortcode_map = get_option( 'aicrmform_shortcode_map', [] );
+
+		// If it's numeric, check by post ID.
+		if ( is_numeric( $cf7_id ) ) {
+			$map_key = 'cf7_' . $cf7_id;
+			if ( ! empty( $shortcode_map[ $map_key ] ) ) {
+				return (int) $shortcode_map[ $map_key ];
+			}
+		}
+
+		// Check by hash.
+		$hash_key = 'cf7_hash_' . $cf7_id;
+		if ( ! empty( $shortcode_map[ $hash_key ] ) ) {
+			return (int) $shortcode_map[ $hash_key ];
+		}
+
+		// Try to find the post ID from hash and then check mapping.
+		if ( ! is_numeric( $cf7_id ) ) {
+			global $wpdb;
+
+			// CF7 stores a hash in _hash meta key.
+			$post_id = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_hash' AND meta_value = %s LIMIT 1",
+					$cf7_id
+				)
+			);
+
+			if ( $post_id ) {
+				$map_key = 'cf7_' . $post_id;
+				if ( ! empty( $shortcode_map[ $map_key ] ) ) {
+					return (int) $shortcode_map[ $map_key ];
+				}
+			}
+		}
+
+		return false;
 	}
 
 	/**
@@ -40,36 +139,18 @@ class AICRMFORM_Form_Shortcode {
 			return $output;
 		}
 
-		// Get the CF7 form ID.
-		$cf7_form_id = 0;
-		if ( ! empty( $attr['id'] ) ) {
-			// ID can be numeric or a slug.
-			if ( is_numeric( $attr['id'] ) ) {
-				$cf7_form_id = (int) $attr['id'];
-			} else {
-				// Try to get post by slug.
-				$post = get_page_by_path( $attr['id'], OBJECT, 'wpcf7_contact_form' );
-				if ( $post ) {
-					$cf7_form_id = $post->ID;
-				}
-			}
-		}
-
-		if ( ! $cf7_form_id ) {
+		if ( empty( $attr['id'] ) ) {
 			return $output;
 		}
 
-		// Check if we have a mapped form.
-		$shortcode_map = get_option( 'aicrmform_shortcode_map', [] );
-		$map_key       = 'cf7_' . $cf7_form_id;
+		// Find our mapped form.
+		$our_form_id = $this->get_mapped_form_id( $attr['id'] );
 
-		if ( empty( $shortcode_map[ $map_key ] ) ) {
+		if ( ! $our_form_id ) {
 			return $output;
 		}
 
 		// Render our form instead.
-		$our_form_id = (int) $shortcode_map[ $map_key ];
-
 		return $this->render_form( [ 'id' => $our_form_id ] );
 	}
 

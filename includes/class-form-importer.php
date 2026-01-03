@@ -99,8 +99,12 @@ class AICRMFORM_Form_Importer {
 		$cf7_forms = WPCF7_ContactForm::find();
 
 		foreach ( $cf7_forms as $cf7_form ) {
+			// Get the hash if it exists.
+			$hash = get_post_meta( $cf7_form->id(), '_hash', true );
+
 			$forms[] = [
 				'id'     => $cf7_form->id(),
+				'hash'   => $hash ?: '',
 				'title'  => $cf7_form->title(),
 				'fields' => $this->parse_cf7_form( $cf7_form ),
 			];
@@ -349,7 +353,15 @@ class AICRMFORM_Form_Importer {
 		// If using same shortcode, store the mapping.
 		if ( $use_same_shortcode ) {
 			$shortcode_map = get_option( 'aicrmform_shortcode_map', [] );
+
+			// Store mapping by post ID.
 			$shortcode_map[ $plugin_key . '_' . $form_id ] = $result['form_id'];
+
+			// Also store mapping by hash if available.
+			if ( ! empty( $source_form['hash'] ) ) {
+				$shortcode_map[ $plugin_key . '_hash_' . $source_form['hash'] ] = $result['form_id'];
+			}
+
 			update_option( 'aicrmform_shortcode_map', $shortcode_map );
 			$response['shortcode_mapped'] = true;
 		}
