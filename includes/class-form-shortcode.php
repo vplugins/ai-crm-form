@@ -21,7 +21,10 @@ class AICRMFORM_Form_Shortcode {
 	public function register() {
 		add_shortcode( 'ai_crm_form', [ $this, 'render_form' ] );
 
-		// Check if we have CF7 shortcode mappings.
+		// Clean up any stale mappings first.
+		$this->cleanup_all_stale_mappings();
+
+		// Check if we have valid CF7 shortcode mappings.
 		$shortcode_map = get_option( 'aicrmform_shortcode_map', [] );
 		$has_cf7_maps  = false;
 		foreach ( array_keys( $shortcode_map ) as $key ) {
@@ -40,6 +43,33 @@ class AICRMFORM_Form_Shortcode {
 				add_shortcode( 'contact-form-7', [ $this, 'render_cf7_replacement' ] );
 				add_shortcode( 'contact-form', [ $this, 'render_cf7_replacement' ] );
 			}
+		}
+	}
+
+	/**
+	 * Clean up all stale mappings where our forms no longer exist.
+	 */
+	private function cleanup_all_stale_mappings() {
+		$shortcode_map = get_option( 'aicrmform_shortcode_map', [] );
+
+		if ( empty( $shortcode_map ) ) {
+			return;
+		}
+
+		$generator = new AICRMFORM_Form_Generator();
+		$changed   = false;
+
+		foreach ( $shortcode_map as $key => $form_id ) {
+			// Check if our form still exists.
+			$form = $generator->get_form( (int) $form_id );
+			if ( ! $form ) {
+				unset( $shortcode_map[ $key ] );
+				$changed = true;
+			}
+		}
+
+		if ( $changed ) {
+			update_option( 'aicrmform_shortcode_map', $shortcode_map );
 		}
 	}
 
@@ -72,6 +102,16 @@ class AICRMFORM_Form_Shortcode {
 		$our_form_id = $this->get_mapped_form_id( $cf7_id );
 
 		if ( ! $our_form_id ) {
+			return $this->get_cf7_not_found_message( $cf7_id );
+		}
+
+		// Check if our form actually exists before rendering.
+		$generator = new AICRMFORM_Form_Generator();
+		$form      = $generator->get_form( $our_form_id );
+
+		if ( ! $form ) {
+			// Our form was deleted - clean up the stale mapping.
+			$this->cleanup_stale_mapping( $cf7_id );
 			return $this->get_cf7_not_found_message( $cf7_id );
 		}
 
@@ -190,8 +230,56 @@ class AICRMFORM_Form_Shortcode {
 			return $output;
 		}
 
+		// Check if our form actually exists before replacing.
+		$generator = new AICRMFORM_Form_Generator();
+		$form      = $generator->get_form( $our_form_id );
+
+		if ( ! $form ) {
+			// Our form was deleted - clean up the stale mapping and let CF7 handle it.
+			$this->cleanup_stale_mapping( $attr['id'] );
+			return $output;
+		}
+
 		// Render our form instead.
 		return $this->render_form( [ 'id' => $our_form_id ] );
+	}
+
+	/**
+	 * Clean up stale CF7 mappings when our form no longer exists.
+	 *
+	 * @param string $cf7_id The CF7 form ID.
+	 */
+	private function cleanup_stale_mapping( $cf7_id ) {
+		$shortcode_map = get_option( 'aicrmform_shortcode_map', [] );
+		$changed       = false;
+
+		// Remove any mappings for this CF7 form.
+		$keys_to_remove = [
+			'cf7_' . $cf7_id,
+			'cf7_hash_' . $cf7_id,
+		];
+
+		foreach ( $keys_to_remove as $key ) {
+			if ( isset( $shortcode_map[ $key ] ) ) {
+				unset( $shortcode_map[ $key ] );
+				$changed = true;
+			}
+		}
+
+		// Also check for hash prefix matches.
+		foreach ( array_keys( $shortcode_map ) as $key ) {
+			if ( strpos( $key, 'cf7_hash_' ) === 0 ) {
+				$stored_hash = substr( $key, 9 );
+				if ( strpos( $stored_hash, $cf7_id ) === 0 ) {
+					unset( $shortcode_map[ $key ] );
+					$changed = true;
+				}
+			}
+		}
+
+		if ( $changed ) {
+			update_option( 'aicrmform_shortcode_map', $shortcode_map );
+		}
 	}
 
 	/**
