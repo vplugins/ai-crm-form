@@ -462,9 +462,10 @@
 	}
 
 	/**
-	 * Field presets configuration.
+	 * Field presets configuration - All CRM mapped fields.
 	 */
 	const fieldPresets = {
+		// Contact Fields
 		first_name: {
 			label: 'First Name',
 			name: 'first_name',
@@ -505,20 +506,20 @@
 			crm_mapping: 'mobile_phone',
 			required: false,
 		},
-		company_name: {
-			label: 'Company Name',
-			name: 'company_name',
-			type: 'text',
-			placeholder: 'Enter your company name',
-			crm_mapping: 'company_name',
+		additional_emails: {
+			label: 'Additional Emails',
+			name: 'additional_emails',
+			type: 'email',
+			placeholder: 'Enter additional email',
+			crm_mapping: 'additional_emails',
 			required: false,
 		},
-		company_website: {
-			label: 'Website',
-			name: 'company_website',
-			type: 'url',
-			placeholder: 'https://example.com',
-			crm_mapping: 'company_website',
+		tags: {
+			label: 'Tags',
+			name: 'tags',
+			type: 'text',
+			placeholder: 'Enter tags (comma separated)',
+			crm_mapping: 'tags',
 			required: false,
 		},
 		message: {
@@ -529,54 +530,156 @@
 			crm_mapping: 'message',
 			required: false,
 		},
-		address_line1: {
+
+		// Address Fields
+		primary_address_line1: {
 			label: 'Address Line 1',
-			name: 'address_line1',
+			name: 'primary_address_line1',
 			type: 'text',
 			placeholder: 'Street address',
 			crm_mapping: 'primary_address_line1',
 			required: false,
 		},
-		address_line2: {
+		primary_address_line2: {
 			label: 'Address Line 2',
-			name: 'address_line2',
+			name: 'primary_address_line2',
 			type: 'text',
 			placeholder: 'Apt, suite, etc.',
 			crm_mapping: 'primary_address_line2',
 			required: false,
 		},
-		city: {
+		primary_address_city: {
 			label: 'City',
-			name: 'city',
+			name: 'primary_address_city',
 			type: 'text',
 			placeholder: 'City',
 			crm_mapping: 'primary_address_city',
 			required: false,
 		},
-		state: {
+		primary_address_state: {
 			label: 'State',
-			name: 'state',
+			name: 'primary_address_state',
 			type: 'text',
 			placeholder: 'State',
 			crm_mapping: 'primary_address_state',
 			required: false,
 		},
-		postal_code: {
+		primary_address_postal: {
 			label: 'Postal Code',
-			name: 'postal_code',
+			name: 'primary_address_postal',
 			type: 'text',
 			placeholder: 'ZIP / Postal code',
 			crm_mapping: 'primary_address_postal',
 			required: false,
 		},
-		country: {
+		primary_address_country: {
 			label: 'Country',
-			name: 'country',
+			name: 'primary_address_country',
 			type: 'text',
 			placeholder: 'Country',
 			crm_mapping: 'primary_address_country',
 			required: false,
 		},
+
+		// Company Fields
+		company_name: {
+			label: 'Company Name',
+			name: 'company_name',
+			type: 'text',
+			placeholder: 'Enter your company name',
+			crm_mapping: 'company_name',
+			required: false,
+		},
+		company_website: {
+			label: 'Company Website',
+			name: 'company_website',
+			type: 'url',
+			placeholder: 'https://example.com',
+			crm_mapping: 'company_website',
+			required: false,
+		},
+		company_phone: {
+			label: 'Company Phone',
+			name: 'company_phone',
+			type: 'tel',
+			placeholder: 'Company phone number',
+			crm_mapping: 'company_phone',
+			required: false,
+		},
+		company_address_line1: {
+			label: 'Company Address',
+			name: 'company_address_line1',
+			type: 'text',
+			placeholder: 'Company street address',
+			crm_mapping: 'company_address_line1',
+			required: false,
+		},
+		company_address_city: {
+			label: 'Company City',
+			name: 'company_address_city',
+			type: 'text',
+			placeholder: 'Company city',
+			crm_mapping: 'company_address_city',
+			required: false,
+		},
+		company_address_state: {
+			label: 'Company State',
+			name: 'company_address_state',
+			type: 'text',
+			placeholder: 'Company state',
+			crm_mapping: 'company_address_state',
+			required: false,
+		},
+		company_address_postal: {
+			label: 'Company Postal Code',
+			name: 'company_address_postal',
+			type: 'text',
+			placeholder: 'Company postal code',
+			crm_mapping: 'company_address_postal',
+			required: false,
+		},
+		company_address_country: {
+			label: 'Company Country',
+			name: 'company_address_country',
+			type: 'text',
+			placeholder: 'Company country',
+			crm_mapping: 'company_address_country',
+			required: false,
+		},
+		company_linkedin_url: {
+			label: 'LinkedIn URL',
+			name: 'company_linkedin_url',
+			type: 'url',
+			placeholder: 'https://linkedin.com/company/...',
+			crm_mapping: 'company_linkedin_url',
+			required: false,
+		},
+		company_facebook_url: {
+			label: 'Facebook URL',
+			name: 'company_facebook_url',
+			type: 'url',
+			placeholder: 'https://facebook.com/...',
+			crm_mapping: 'company_facebook_url',
+			required: false,
+		},
+		company_instagram_url: {
+			label: 'Instagram URL',
+			name: 'company_instagram_url',
+			type: 'url',
+			placeholder: 'https://instagram.com/...',
+			crm_mapping: 'company_instagram_url',
+			required: false,
+		},
+		company_twitter_url: {
+			label: 'Twitter URL',
+			name: 'company_twitter_url',
+			type: 'url',
+			placeholder: 'https://twitter.com/...',
+			crm_mapping: 'company_twitter_url',
+			required: false,
+		},
+
+		// Lead & Source Fields
 		source_name: {
 			label: 'How did you hear about us?',
 			name: 'source_name',
@@ -584,7 +687,118 @@
 			placeholder: '',
 			crm_mapping: 'source_name',
 			required: false,
-			options: ['Google', 'Social Media', 'Friend/Referral', 'Other'],
+			options: ['Google', 'Social Media', 'Friend/Referral', 'Advertisement', 'Other'],
+		},
+		original_source: {
+			label: 'Original Source',
+			name: 'original_source',
+			type: 'text',
+			placeholder: 'Original source',
+			crm_mapping: 'original_source',
+			required: false,
+		},
+		lead_score: {
+			label: 'Lead Score',
+			name: 'lead_score',
+			type: 'number',
+			placeholder: 'Lead score',
+			crm_mapping: 'lead_score',
+			required: false,
+		},
+		lead_quality: {
+			label: 'Lead Quality',
+			name: 'lead_quality',
+			type: 'select',
+			placeholder: '',
+			crm_mapping: 'lead_quality',
+			required: false,
+			options: ['Hot', 'Warm', 'Cold'],
+		},
+
+		// UTM Fields
+		utm_source: {
+			label: 'UTM Source',
+			name: 'utm_source',
+			type: 'hidden',
+			placeholder: '',
+			crm_mapping: 'utm_source',
+			required: false,
+		},
+		utm_medium: {
+			label: 'UTM Medium',
+			name: 'utm_medium',
+			type: 'hidden',
+			placeholder: '',
+			crm_mapping: 'utm_medium',
+			required: false,
+		},
+		utm_campaign: {
+			label: 'UTM Campaign',
+			name: 'utm_campaign',
+			type: 'hidden',
+			placeholder: '',
+			crm_mapping: 'utm_campaign',
+			required: false,
+		},
+		utm_term: {
+			label: 'UTM Term',
+			name: 'utm_term',
+			type: 'hidden',
+			placeholder: '',
+			crm_mapping: 'utm_term',
+			required: false,
+		},
+		utm_content: {
+			label: 'UTM Content',
+			name: 'utm_content',
+			type: 'hidden',
+			placeholder: '',
+			crm_mapping: 'utm_content',
+			required: false,
+		},
+		gclid: {
+			label: 'Google Click ID',
+			name: 'gclid',
+			type: 'hidden',
+			placeholder: '',
+			crm_mapping: 'gclid',
+			required: false,
+		},
+		fbclid: {
+			label: 'Facebook Click ID',
+			name: 'fbclid',
+			type: 'hidden',
+			placeholder: '',
+			crm_mapping: 'fbclid',
+			required: false,
+		},
+		msclkid: {
+			label: 'Microsoft Click ID',
+			name: 'msclkid',
+			type: 'hidden',
+			placeholder: '',
+			crm_mapping: 'msclkid',
+			required: false,
+		},
+
+		// Consent Fields
+		marketing_email_consent_status: {
+			label: 'Email Marketing Consent',
+			name: 'marketing_email_consent_status',
+			type: 'checkbox',
+			placeholder: '',
+			crm_mapping: 'marketing_email_consent_status',
+			required: false,
+			options: ['I agree to receive marketing emails'],
+		},
+		sms_consent_status: {
+			label: 'SMS Consent',
+			name: 'sms_consent_status',
+			type: 'checkbox',
+			placeholder: '',
+			crm_mapping: 'sms_consent_status',
+			required: false,
+			options: ['I agree to receive SMS messages'],
 		},
 	};
 
