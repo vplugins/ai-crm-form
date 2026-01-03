@@ -65,17 +65,39 @@ class AICRMFORM_Form_Shortcode {
 		$cf7_id = $atts['id'];
 
 		if ( empty( $cf7_id ) ) {
-			return '';
+			return $this->get_cf7_not_found_message( $cf7_id );
 		}
 
 		// Find our mapped form.
 		$our_form_id = $this->get_mapped_form_id( $cf7_id );
 
 		if ( ! $our_form_id ) {
-			return '';
+			return $this->get_cf7_not_found_message( $cf7_id );
 		}
 
 		return $this->render_form( [ 'id' => $our_form_id ] );
+	}
+
+	/**
+	 * Get message when CF7 form is not found.
+	 *
+	 * @param string $cf7_id The CF7 form ID.
+	 * @return string Message HTML (only for admins).
+	 */
+	private function get_cf7_not_found_message( $cf7_id ) {
+		// Only show message to admins.
+		if ( ! current_user_can( 'manage_options' ) ) {
+			return '';
+		}
+
+		$shortcode_map = get_option( 'aicrmform_shortcode_map', [] );
+		$debug_info    = 'Looking for: cf7_' . $cf7_id . ' or cf7_hash_' . $cf7_id;
+		$debug_info   .= ' | Available mappings: ' . implode( ', ', array_keys( $shortcode_map ) );
+
+		return '<div class="aicrmform-admin-notice" style="background: #fef3cd; border: 1px solid #ffc107; padding: 15px; border-radius: 4px; margin: 10px 0;">'
+			. '<strong>AI CRM Form:</strong> No imported form found for Contact Form 7 ID "' . esc_html( $cf7_id ) . '".<br>'
+			. '<small style="color: #666;">Re-import the form with "Use same shortcode" checked. ' . esc_html( $debug_info ) . '</small>'
+			. '</div>';
 	}
 
 	/**
@@ -87,21 +109,19 @@ class AICRMFORM_Form_Shortcode {
 	private function get_mapped_form_id( $cf7_id ) {
 		$shortcode_map = get_option( 'aicrmform_shortcode_map', [] );
 
-		// If it's numeric, check by post ID.
-		if ( is_numeric( $cf7_id ) ) {
-			$map_key = 'cf7_' . $cf7_id;
-			if ( ! empty( $shortcode_map[ $map_key ] ) ) {
-				return (int) $shortcode_map[ $map_key ];
-			}
+		// 1. Check direct mapping: cf7_{id}
+		$map_key = 'cf7_' . $cf7_id;
+		if ( ! empty( $shortcode_map[ $map_key ] ) ) {
+			return (int) $shortcode_map[ $map_key ];
 		}
 
-		// Check by hash.
+		// 2. Check hash mapping: cf7_hash_{id}
 		$hash_key = 'cf7_hash_' . $cf7_id;
 		if ( ! empty( $shortcode_map[ $hash_key ] ) ) {
 			return (int) $shortcode_map[ $hash_key ];
 		}
 
-		// Try to find the post ID from hash and then check mapping.
+		// 3. If it's a hash (not numeric), try to find the post ID from database.
 		if ( ! is_numeric( $cf7_id ) ) {
 			global $wpdb;
 
@@ -117,6 +137,18 @@ class AICRMFORM_Form_Shortcode {
 				$map_key = 'cf7_' . $post_id;
 				if ( ! empty( $shortcode_map[ $map_key ] ) ) {
 					return (int) $shortcode_map[ $map_key ];
+				}
+			}
+		}
+
+		// 4. Last resort: Check if any mapping has this form (by iterating).
+		// This handles cases where the form was imported before hash support.
+		foreach ( $shortcode_map as $key => $form_id ) {
+			if ( strpos( $key, 'cf7_' ) === 0 ) {
+				// We found a CF7 mapping - return the first one as fallback.
+				// This is not ideal but helps with single-form imports.
+				if ( count( array_filter( array_keys( $shortcode_map ), fn( $k ) => strpos( $k, 'cf7_' ) === 0 ) ) === 1 ) {
+					return (int) $form_id;
 				}
 			}
 		}
