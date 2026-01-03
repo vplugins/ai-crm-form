@@ -76,10 +76,10 @@ class AICRMFORM_Admin_Settings {
 							<div class="aicrmform-card-body">
 								<div class="aicrmform-form-row">
 									<label for="ai_provider"><?php esc_html_e( 'AI Provider', 'ai-crm-form' ); ?></label>
-									<select id="ai_provider" name="ai_provider" class="aicrmform-input">
+									<select id="ai_provider" name="ai_provider" class="aicrmform-input" onchange="updateAIModelOptions()">
 										<option value="groq" <?php selected( $settings['ai_provider'] ?? 'groq', 'groq' ); ?>>Groq (Recommended)</option>
 										<option value="gemini" <?php selected( $settings['ai_provider'] ?? '', 'gemini' ); ?>>Google Gemini</option>
-										<option value="meta" <?php selected( $settings['ai_provider'] ?? '', 'meta' ); ?>>Meta Llama</option>
+										<option value="openai" <?php selected( $settings['ai_provider'] ?? '', 'openai' ); ?>>OpenAI</option>
 									</select>
 									<p class="aicrmform-field-hint"><?php esc_html_e( 'Select your preferred AI provider for form generation.', 'ai-crm-form' ); ?></p>
 								</div>
@@ -91,12 +91,38 @@ class AICRMFORM_Admin_Settings {
 											<span class="dashicons dashicons-visibility"></span>
 										</button>
 									</div>
-									<p class="aicrmform-field-hint"><?php esc_html_e( 'Your API key from the selected provider. Keep this secret.', 'ai-crm-form' ); ?></p>
+									<p class="aicrmform-field-hint" id="api_key_hint">
+										<?php esc_html_e( 'Get your API key from:', 'ai-crm-form' ); ?>
+										<a href="https://console.groq.com/keys" target="_blank" rel="noopener" id="api_key_link_groq" class="api-key-link">Groq Console →</a>
+										<a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener" id="api_key_link_gemini" class="api-key-link" style="display:none;">Google AI Studio →</a>
+										<a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener" id="api_key_link_openai" class="api-key-link" style="display:none;">OpenAI Platform →</a>
+									</p>
 								</div>
 								<div class="aicrmform-form-row">
 									<label for="ai_model"><?php esc_html_e( 'AI Model', 'ai-crm-form' ); ?></label>
-									<input type="text" id="ai_model" name="ai_model" value="<?php echo esc_attr( $settings['ai_model'] ?? 'llama-3.3-70b-versatile' ); ?>" class="aicrmform-input">
-									<p class="aicrmform-field-hint"><?php esc_html_e( 'The AI model to use. Default: llama-3.3-70b-versatile', 'ai-crm-form' ); ?></p>
+									<select id="ai_model" name="ai_model" class="aicrmform-input">
+										<?php $current_model = $settings['ai_model'] ?? 'llama-3.3-70b-versatile'; ?>
+										<!-- Groq Models -->
+										<optgroup label="Groq Models" id="model_group_groq">
+											<option value="llama-3.3-70b-versatile" <?php selected( $current_model, 'llama-3.3-70b-versatile' ); ?>>Llama 3.3 70B (Recommended)</option>
+											<option value="llama-3.1-8b-instant" <?php selected( $current_model, 'llama-3.1-8b-instant' ); ?>>Llama 3.1 8B (Fast)</option>
+											<option value="mixtral-8x7b-32768" <?php selected( $current_model, 'mixtral-8x7b-32768' ); ?>>Mixtral 8x7B</option>
+											<option value="gemma2-9b-it" <?php selected( $current_model, 'gemma2-9b-it' ); ?>>Gemma 2 9B</option>
+										</optgroup>
+										<!-- Gemini Models -->
+										<optgroup label="Gemini Models" id="model_group_gemini" style="display:none;">
+											<option value="gemini-1.5-pro" <?php selected( $current_model, 'gemini-1.5-pro' ); ?>>Gemini 1.5 Pro</option>
+											<option value="gemini-1.5-flash" <?php selected( $current_model, 'gemini-1.5-flash' ); ?>>Gemini 1.5 Flash (Fast)</option>
+											<option value="gemini-2.0-flash-exp" <?php selected( $current_model, 'gemini-2.0-flash-exp' ); ?>>Gemini 2.0 Flash (Experimental)</option>
+										</optgroup>
+										<!-- OpenAI Models -->
+										<optgroup label="OpenAI Models" id="model_group_openai" style="display:none;">
+											<option value="gpt-4o" <?php selected( $current_model, 'gpt-4o' ); ?>>GPT-4o (Recommended)</option>
+											<option value="gpt-4o-mini" <?php selected( $current_model, 'gpt-4o-mini' ); ?>>GPT-4o Mini (Fast)</option>
+											<option value="gpt-4-turbo" <?php selected( $current_model, 'gpt-4-turbo' ); ?>>GPT-4 Turbo</option>
+										</optgroup>
+									</select>
+									<p class="aicrmform-field-hint"><?php esc_html_e( 'Select the AI model for generating forms.', 'ai-crm-form' ); ?></p>
 								</div>
 							</div>
 						</div>
@@ -306,6 +332,40 @@ class AICRMFORM_Admin_Settings {
 				icon.classList.add('dashicons-visibility');
 			}
 		}
+
+		function updateAIModelOptions() {
+			const provider = document.getElementById('ai_provider').value;
+			const modelSelect = document.getElementById('ai_model');
+			const providers = ['groq', 'gemini', 'openai'];
+
+			// Hide all API key links and model groups
+			providers.forEach(function(p) {
+				const link = document.getElementById('api_key_link_' + p);
+				const group = document.getElementById('model_group_' + p);
+				if (link) link.style.display = 'none';
+				if (group) group.style.display = 'none';
+			});
+
+			// Show selected provider's link and models
+			const activeLink = document.getElementById('api_key_link_' + provider);
+			const activeGroup = document.getElementById('model_group_' + provider);
+			if (activeLink) activeLink.style.display = 'inline';
+			if (activeGroup) activeGroup.style.display = 'block';
+
+			// Select first option from the active group if current selection is hidden
+			const currentOption = modelSelect.options[modelSelect.selectedIndex];
+			if (currentOption && currentOption.parentElement.style.display === 'none') {
+				const firstVisibleOption = activeGroup ? activeGroup.querySelector('option') : null;
+				if (firstVisibleOption) {
+					modelSelect.value = firstVisibleOption.value;
+				}
+			}
+		}
+
+		// Initialize on page load
+		document.addEventListener('DOMContentLoaded', function() {
+			updateAIModelOptions();
+		});
 		</script>
 		<?php
 	}

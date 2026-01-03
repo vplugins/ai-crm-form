@@ -235,6 +235,17 @@
 	color: var(--aicrmform-gray-500);
 }
 
+.aicrmform-field-hint .api-key-link {
+	color: var(--aicrmform-primary);
+	font-weight: 500;
+	text-decoration: none;
+	margin-left: 4px;
+}
+
+.aicrmform-field-hint .api-key-link:hover {
+	text-decoration: underline;
+}
+
 .aicrmform-field-error {
 	margin-top: 4px;
 	font-size: 12px;
