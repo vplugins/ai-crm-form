@@ -2318,6 +2318,29 @@
 	color: var(--aicrmform-gray-500);
 }
 
+.aicrmform-import-form-actions {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.aicrmform-import-same-shortcode {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 12px;
+	color: var(--aicrmform-gray-600);
+	cursor: pointer;
+}
+
+.aicrmform-import-same-shortcode input {
+	margin: 0;
+}
+
+.aicrmform-import-same-shortcode span {
+	white-space: nowrap;
+}
+
 .aicrmform-import-form-btn {
 	display: flex;
 	align-items: center;

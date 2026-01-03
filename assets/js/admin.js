@@ -268,8 +268,9 @@
 			const plugin = $btn.data('plugin');
 			const formId = $btn.data('form-id');
 			const formTitle = $btn.data('form-title');
+			const useSameShortcode = $btn.closest('.aicrmform-import-form-item').find('.use-same-shortcode').is(':checked');
 			
-			importForm(plugin, formId, formTitle, $btn);
+			importForm(plugin, formId, formTitle, useSameShortcode, $btn);
 		});
 	}
 	
@@ -319,12 +320,18 @@
 					html += '<strong>' + escapeHtml(form.title) + '</strong>';
 					html += '<span class="aicrmform-import-form-fields">' + form.fields.length + ' fields</span>';
 					html += '</div>';
+					html += '<div class="aicrmform-import-form-actions">';
+					html += '<label class="aicrmform-import-same-shortcode">';
+					html += '<input type="checkbox" class="use-same-shortcode" data-form-id="' + form.id + '" checked>';
+					html += '<span>Use same shortcode</span>';
+					html += '</label>';
 					html += '<button type="button" class="button aicrmform-import-form-btn" ';
 					html += 'data-plugin="' + escapeHtml(key) + '" ';
 					html += 'data-form-id="' + form.id + '" ';
 					html += 'data-form-title="' + escapeHtml(form.title) + '">';
 					html += '<span class="dashicons dashicons-download"></span> Import';
 					html += '</button>';
+					html += '</div>';
 					html += '</div>';
 				});
 				
@@ -344,7 +351,7 @@
 	/**
 	 * Import a form.
 	 */
-	function importForm(plugin, formId, formTitle, $btn) {
+	function importForm(plugin, formId, formTitle, useSameShortcode, $btn) {
 		const originalText = $btn.html();
 		$btn.prop('disabled', true).html('<span class="spinner is-active" style="float: none; margin: 0;"></span>');
 		
@@ -356,20 +363,31 @@
 			data: JSON.stringify({
 				plugin: plugin,
 				form_id: formId,
-				use_same_shortcode: false
+				use_same_shortcode: useSameShortcode
 			})
 		}).done(function(response) {
 			if (response.success) {
 				$btn.html('<span class="dashicons dashicons-yes"></span> Imported!').addClass('button-primary');
-				showToast('Form "' + formTitle + '" imported successfully!', 'success');
+				
+				let successMsg = 'Form "' + formTitle + '" imported successfully!';
+				if (useSameShortcode) {
+					successMsg += ' Existing shortcodes will now use this form.';
+				}
+				showToast(successMsg, 'success');
 				
 				// Offer to disable the source plugin
 				setTimeout(function() {
+					let confirmMsg = 'Would you like to disable Contact Form 7?';
+					if (useSameShortcode) {
+						confirmMsg += ' Your existing shortcodes will continue to work with the imported form.';
+					} else {
+						confirmMsg += ' You may need to update your shortcodes to [ai_crm_form id="' + response.form_id + '"]';
+					}
+					
 					showConfirm(
 						'Disable Source Plugin?',
-						'Would you like to disable ' + plugin.toUpperCase().replace('CF7', 'Contact Form 7') + '? The imported form will work independently.',
+						confirmMsg,
 						function() {
-							// For now, just close the modal
 							$('#import-form-modal').hide();
 							window.location.href = aicrmformAdmin.adminUrl + '?page=ai-crm-form-forms';
 						},

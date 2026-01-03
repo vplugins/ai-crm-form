@@ -20,6 +20,57 @@ class AICRMFORM_Form_Shortcode {
 	 */
 	public function register() {
 		add_shortcode( 'ai_crm_form', [ $this, 'render_form' ] );
+
+		// Intercept Contact Form 7 shortcode if we have imported forms.
+		add_filter( 'do_shortcode_tag', [ $this, 'intercept_cf7_shortcode' ], 10, 4 );
+	}
+
+	/**
+	 * Intercept Contact Form 7 shortcode and render our form if imported.
+	 *
+	 * @param string $output Shortcode output.
+	 * @param string $tag    Shortcode name.
+	 * @param array  $attr   Shortcode attributes.
+	 * @param array  $m      Regular expression match array.
+	 * @return string Modified output.
+	 */
+	public function intercept_cf7_shortcode( $output, $tag, $attr, $m ) {
+		// Only intercept contact-form-7 shortcode.
+		if ( 'contact-form-7' !== $tag && 'contact-form' !== $tag ) {
+			return $output;
+		}
+
+		// Get the CF7 form ID.
+		$cf7_form_id = 0;
+		if ( ! empty( $attr['id'] ) ) {
+			// ID can be numeric or a slug.
+			if ( is_numeric( $attr['id'] ) ) {
+				$cf7_form_id = (int) $attr['id'];
+			} else {
+				// Try to get post by slug.
+				$post = get_page_by_path( $attr['id'], OBJECT, 'wpcf7_contact_form' );
+				if ( $post ) {
+					$cf7_form_id = $post->ID;
+				}
+			}
+		}
+
+		if ( ! $cf7_form_id ) {
+			return $output;
+		}
+
+		// Check if we have a mapped form.
+		$shortcode_map = get_option( 'aicrmform_shortcode_map', [] );
+		$map_key       = 'cf7_' . $cf7_form_id;
+
+		if ( empty( $shortcode_map[ $map_key ] ) ) {
+			return $output;
+		}
+
+		// Render our form instead.
+		$our_form_id = (int) $shortcode_map[ $map_key ];
+
+		return $this->render_form( [ 'id' => $our_form_id ] );
 	}
 
 	/**
