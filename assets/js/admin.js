@@ -385,11 +385,11 @@
 					}
 					
 					showConfirm(
-						'Disable Source Plugin?',
+						'Disable Contact Form 7?',
 						confirmMsg,
 						function() {
-							$('#import-form-modal').hide();
-							window.location.href = aicrmformAdmin.adminUrl + '?page=ai-crm-form-forms';
+							// Deactivate the plugin
+							deactivatePlugin(plugin);
 						},
 						function() {
 							$('#import-form-modal').hide();
@@ -404,6 +404,33 @@
 		}).fail(function() {
 			$btn.prop('disabled', false).html(originalText);
 			showToast('Failed to import form.', 'error');
+		});
+	}
+	
+	/**
+	 * Deactivate a plugin.
+	 */
+	function deactivatePlugin(pluginKey) {
+		showToast('Deactivating plugin...', 'info');
+		
+		$.ajax({
+			url: aicrmformAdmin.restUrl + 'deactivate-plugin',
+			method: 'POST',
+			headers: { 'X-WP-Nonce': aicrmformAdmin.nonce },
+			contentType: 'application/json',
+			data: JSON.stringify({ plugin: pluginKey })
+		}).done(function(response) {
+			if (response.success) {
+				showToast('Contact Form 7 has been deactivated!', 'success');
+			} else {
+				showToast(response.error || 'Could not deactivate plugin.', 'error');
+			}
+			$('#import-form-modal').hide();
+			window.location.href = aicrmformAdmin.adminUrl + '?page=ai-crm-form-forms';
+		}).fail(function() {
+			showToast('Failed to deactivate plugin.', 'error');
+			$('#import-form-modal').hide();
+			window.location.href = aicrmformAdmin.adminUrl + '?page=ai-crm-form-forms';
 		});
 	}
 	

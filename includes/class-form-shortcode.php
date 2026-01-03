@@ -121,15 +121,26 @@ class AICRMFORM_Form_Shortcode {
 			return (int) $shortcode_map[ $hash_key ];
 		}
 
-		// 3. If it's a hash (not numeric), try to find the post ID from database.
+		// 3. Check if shortcode ID is a PREFIX of a stored hash.
+		// CF7 shortcodes use short hash (7 chars) but we store full hash.
+		foreach ( $shortcode_map as $key => $form_id ) {
+			if ( strpos( $key, 'cf7_hash_' ) === 0 ) {
+				$stored_hash = substr( $key, 9 ); // Remove 'cf7_hash_' prefix.
+				if ( strpos( $stored_hash, $cf7_id ) === 0 ) {
+					return (int) $form_id;
+				}
+			}
+		}
+
+		// 4. If it's a hash (not numeric), try to find the post ID from database.
 		if ( ! is_numeric( $cf7_id ) ) {
 			global $wpdb;
 
-			// CF7 stores a hash in _hash meta key.
+			// CF7 stores a hash in _hash meta key - check for prefix match.
 			$post_id = $wpdb->get_var(
 				$wpdb->prepare(
-					"SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_hash' AND meta_value = %s LIMIT 1",
-					$cf7_id
+					"SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_hash' AND meta_value LIKE %s LIMIT 1",
+					$cf7_id . '%'
 				)
 			);
 
@@ -141,16 +152,15 @@ class AICRMFORM_Form_Shortcode {
 			}
 		}
 
-		// 4. Last resort: Check if any mapping has this form (by iterating).
-		// This handles cases where the form was imported before hash support.
-		foreach ( $shortcode_map as $key => $form_id ) {
-			if ( strpos( $key, 'cf7_' ) === 0 ) {
-				// We found a CF7 mapping - return the first one as fallback.
-				// This is not ideal but helps with single-form imports.
-				if ( count( array_filter( array_keys( $shortcode_map ), fn( $k ) => strpos( $k, 'cf7_' ) === 0 ) ) === 1 ) {
-					return (int) $form_id;
-				}
-			}
+		// 5. Last resort: If only one CF7 mapping exists, use it.
+		$cf7_mappings = array_filter(
+			$shortcode_map,
+			fn( $k ) => strpos( $k, 'cf7_' ) === 0,
+			ARRAY_FILTER_USE_KEY
+		);
+
+		if ( count( $cf7_mappings ) === 1 ) {
+			return (int) reset( $cf7_mappings );
 		}
 
 		return false;
