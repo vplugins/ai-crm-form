@@ -79,7 +79,7 @@ class AICRMFORM_Form_Shortcode {
 	}
 
 	/**
-	 * Get message when CF7 form is not found.
+	 * Get message when CF7 form is not found (only when CF7 is deactivated).
 	 *
 	 * @param string $cf7_id The CF7 form ID.
 	 * @return string Message HTML (only for admins).
@@ -91,8 +91,16 @@ class AICRMFORM_Form_Shortcode {
 		}
 
 		$shortcode_map = get_option( 'aicrmform_shortcode_map', [] );
-		$debug_info    = 'Looking for: cf7_' . $cf7_id . ' or cf7_hash_' . $cf7_id;
-		$debug_info   .= ' | Available mappings: ' . implode( ', ', array_keys( $shortcode_map ) );
+
+		// If no mappings exist at all, show a helpful message.
+		if ( empty( $shortcode_map ) ) {
+			return '<div class="aicrmform-admin-notice" style="background: #fef3cd; border: 1px solid #ffc107; padding: 15px; border-radius: 4px; margin: 10px 0;">'
+				. '<strong>AI CRM Form:</strong> Contact Form 7 is deactivated and this form has not been imported.<br>'
+				. '<small style="color: #666;">Activate Contact Form 7 or import this form using AI CRM Form\'s Import feature.</small>'
+				. '</div>';
+		}
+
+		$debug_info = 'Looking for: cf7_' . $cf7_id . ' or cf7_hash_' . $cf7_id;
 
 		return '<div class="aicrmform-admin-notice" style="background: #fef3cd; border: 1px solid #ffc107; padding: 15px; border-radius: 4px; margin: 10px 0;">'
 			. '<strong>AI CRM Form:</strong> No imported form found for Contact Form 7 ID "' . esc_html( $cf7_id ) . '".<br>'
@@ -152,17 +160,7 @@ class AICRMFORM_Form_Shortcode {
 			}
 		}
 
-		// 5. Last resort: If only one CF7 mapping exists, use it.
-		$cf7_mappings = array_filter(
-			$shortcode_map,
-			fn( $k ) => strpos( $k, 'cf7_' ) === 0,
-			ARRAY_FILTER_USE_KEY
-		);
-
-		if ( count( $cf7_mappings ) === 1 ) {
-			return (int) reset( $cf7_mappings );
-		}
-
+		// No mapping found - return false so CF7 can handle it.
 		return false;
 	}
 
