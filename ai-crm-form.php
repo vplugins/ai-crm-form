@@ -71,6 +71,7 @@ class AI_CRM_Form {
 		// Load plugin classes.
 		require_once AICRMFORM_PLUGIN_DIR . 'includes/class-field-mapping.php';
 		require_once AICRMFORM_PLUGIN_DIR . 'includes/class-crm-api.php';
+		require_once AICRMFORM_PLUGIN_DIR . 'includes/class-ai-client.php';
 		require_once AICRMFORM_PLUGIN_DIR . 'includes/class-form-generator.php';
 		require_once AICRMFORM_PLUGIN_DIR . 'includes/class-form-importer.php';
 		require_once AICRMFORM_PLUGIN_DIR . 'includes/class-admin-settings.php';
