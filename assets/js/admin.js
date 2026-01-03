@@ -1109,6 +1109,7 @@
 		const formId = $btn.data('form-id');
 		const $card = $btn.closest('.aicrmform-form-card-pro');
 		const formName = $card.find('h3').text();
+		const isActive = $card.find('.aicrmform-status-active').length > 0;
 
 		showConfirm('Delete Form', 'Are you sure you want to delete "' + formName + '"?', function() {
 			$.ajax({
@@ -1117,7 +1118,11 @@
 				headers: { 'X-WP-Nonce': aicrmformAdmin.nonce }
 			}).done(function(response) {
 				if (response.success) {
-					$card.fadeOut(300, function() { $(this).remove(); });
+					$card.fadeOut(300, function() { 
+						$(this).remove();
+						updateFormStats();
+						checkEmptyState();
+					});
 					showToast('Form deleted.', 'success');
 				} else {
 					showToast(response.error || 'Failed to delete.', 'error');
@@ -1126,6 +1131,36 @@
 				showToast('Failed to delete form.', 'error');
 			});
 		});
+	}
+	
+	/**
+	 * Update form stats after deletion.
+	 */
+	function updateFormStats() {
+		const totalCount = $('.aicrmform-form-card-pro').length;
+		const activeCount = $('.aicrmform-form-card-pro .aicrmform-status-active').length;
+		
+		$('#forms-total-count').text(totalCount);
+		$('#forms-active-count').text(activeCount);
+	}
+	
+	/**
+	 * Check if forms list is empty and show empty state.
+	 */
+	function checkEmptyState() {
+		const totalCount = $('.aicrmform-form-card-pro').length;
+		
+		if (totalCount === 0) {
+			// Show empty state if it exists, or reload page
+			if ($('.aicrmform-empty-state').length) {
+				$('.aicrmform-forms-grid').hide();
+				$('.aicrmform-stats-bar').hide();
+				$('.aicrmform-empty-state').show();
+			} else {
+				// Reload page to show empty state
+				window.location.reload();
+			}
+		}
 	}
 
 	function previewForm(e) {

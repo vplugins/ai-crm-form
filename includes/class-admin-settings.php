@@ -422,7 +422,7 @@ class AICRMFORM_Admin_Settings {
 							<span class="dashicons dashicons-format-aside"></span>
 						</div>
 						<div class="aicrmform-stat-content">
-							<span class="aicrmform-stat-value"><?php echo esc_html( count( $forms ) ); ?></span>
+							<span class="aicrmform-stat-value" id="forms-total-count"><?php echo esc_html( count( $forms ) ); ?></span>
 							<span class="aicrmform-stat-label"><?php esc_html_e( 'Total Forms', 'ai-crm-form' ); ?></span>
 						</div>
 					</div>
@@ -431,7 +431,7 @@ class AICRMFORM_Admin_Settings {
 							<span class="dashicons dashicons-yes-alt"></span>
 						</div>
 						<div class="aicrmform-stat-content">
-							<span class="aicrmform-stat-value"><?php echo esc_html( count( array_filter( $forms, fn( $f ) => 'active' === $f->status ) ) ); ?></span>
+							<span class="aicrmform-stat-value" id="forms-active-count"><?php echo esc_html( count( array_filter( $forms, fn( $f ) => 'active' === $f->status ) ) ); ?></span>
 							<span class="aicrmform-stat-label"><?php esc_html_e( 'Active', 'ai-crm-form' ); ?></span>
 						</div>
 					</div>

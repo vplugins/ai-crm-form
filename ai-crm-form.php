@@ -254,7 +254,7 @@ class AI_CRM_Form {
 			'ai-crm-form-settings',
 			[ $this, 'render_admin_page' ],
 			'dashicons-feedback',
-			25
+			3
 		);
 
 		add_submenu_page(
