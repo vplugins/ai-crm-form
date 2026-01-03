@@ -72,6 +72,7 @@ class AI_CRM_Form {
 		require_once AICRMFORM_PLUGIN_DIR . 'includes/class-field-mapping.php';
 		require_once AICRMFORM_PLUGIN_DIR . 'includes/class-crm-api.php';
 		require_once AICRMFORM_PLUGIN_DIR . 'includes/class-form-generator.php';
+		require_once AICRMFORM_PLUGIN_DIR . 'includes/class-form-importer.php';
 		require_once AICRMFORM_PLUGIN_DIR . 'includes/class-admin-settings.php';
 		require_once AICRMFORM_PLUGIN_DIR . 'includes/class-rest-api.php';
 		require_once AICRMFORM_PLUGIN_DIR . 'includes/class-form-shortcode.php';
@@ -253,7 +254,7 @@ class AI_CRM_Form {
 			'ai-crm-form-settings',
 			[ $this, 'render_admin_page' ],
 			'dashicons-feedback',
-			30
+			25
 		);
 
 		add_submenu_page(
@@ -362,9 +363,10 @@ class AI_CRM_Form {
 			'aicrmform-admin',
 			'aicrmformAdmin',
 			[
-				'ajaxUrl' => admin_url( 'admin-ajax.php' ),
-				'restUrl' => rest_url( 'ai-crm-form/v1/' ),
-				'nonce'   => wp_create_nonce( 'wp_rest' ),
+				'ajaxUrl'  => admin_url( 'admin-ajax.php' ),
+				'restUrl'  => rest_url( 'ai-crm-form/v1/' ),
+				'adminUrl' => admin_url( 'admin.php' ),
+				'nonce'    => wp_create_nonce( 'wp_rest' ),
 			]
 		);
 	}

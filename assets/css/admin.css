@@ -2248,3 +2248,108 @@
 .aicrmform-alert-actions .button {
 	min-width: 100px;
 }
+
+/* ============================
+   FORM IMPORT MODAL
+   ============================ */
+
+.aicrmform-import-source {
+	margin-bottom: 24px;
+	padding-bottom: 24px;
+	border-bottom: 1px solid var(--aicrmform-gray-200);
+}
+
+.aicrmform-import-source:last-child {
+	margin-bottom: 0;
+	padding-bottom: 0;
+	border-bottom: none;
+}
+
+.aicrmform-import-source h4 {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 0 0 16px;
+	font-size: 15px;
+	font-weight: 600;
+	color: var(--aicrmform-gray-800);
+}
+
+.aicrmform-import-source h4 .dashicons {
+	color: var(--aicrmform-primary);
+}
+
+.aicrmform-import-forms-list {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.aicrmform-import-form-item {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 16px;
+	background: var(--aicrmform-gray-50);
+	border: 1px solid var(--aicrmform-gray-200);
+	border-radius: 8px;
+	transition: all 0.2s ease;
+}
+
+.aicrmform-import-form-item:hover {
+	background: #fff;
+	border-color: var(--aicrmform-primary);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.aicrmform-import-form-info {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.aicrmform-import-form-info strong {
+	font-size: 14px;
+	color: var(--aicrmform-gray-900);
+}
+
+.aicrmform-import-form-fields {
+	font-size: 12px;
+	color: var(--aicrmform-gray-500);
+}
+
+.aicrmform-import-form-btn {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.aicrmform-import-form-btn .dashicons {
+	font-size: 16px;
+	width: 16px;
+	height: 16px;
+}
+
+.aicrmform-import-form-btn .spinner {
+	margin: 0 !important;
+}
+
+#import-no-plugins {
+	padding: 40px 20px;
+	text-align: center;
+}
+
+#import-no-plugins .dashicons {
+	display: block;
+	margin: 0 auto 16px;
+}
+
+#import-no-plugins h3 {
+	margin: 0 0 8px;
+	color: var(--aicrmform-gray-800);
+}
+
+#import-no-plugins p {
+	margin: 0;
+	color: var(--aicrmform-gray-600);
+}

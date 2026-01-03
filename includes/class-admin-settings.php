@@ -524,6 +524,10 @@ class AICRMFORM_Admin_Settings {
 			<div class="aicrmform-builder-header">
 				<h1><?php esc_html_e( 'Form Builder', 'ai-crm-form' ); ?></h1>
 				<div class="aicrmform-builder-header-actions">
+					<button type="button" id="open-import-modal" class="button button-secondary">
+						<span class="dashicons dashicons-download"></span>
+						<?php esc_html_e( 'Import Form', 'ai-crm-form' ); ?>
+					</button>
 					<?php if ( $configured ) : ?>
 					<button type="button" id="open-ai-generator" class="button button-secondary">
 						<span class="dashicons dashicons-superhero"></span>
@@ -1023,6 +1027,30 @@ class AICRMFORM_Admin_Settings {
 				<div class="aicrmform-modal-footer">
 					<a href="<?php echo esc_url( admin_url( 'admin.php?page=ai-crm-form-forms' ) ); ?>" class="button button-primary"><?php esc_html_e( 'View All Forms', 'ai-crm-form' ); ?></a>
 					<button type="button" class="button" id="create-another-form"><?php esc_html_e( 'Create Another Form', 'ai-crm-form' ); ?></button>
+				</div>
+			</div>
+		</div>
+
+		<!-- Import Form Modal -->
+		<div id="import-form-modal" class="aicrmform-modal-overlay" style="display: none;">
+			<div class="aicrmform-modal aicrmform-modal-md">
+				<div class="aicrmform-modal-header">
+					<h3><?php esc_html_e( 'Import Form', 'ai-crm-form' ); ?></h3>
+					<button type="button" class="aicrmform-modal-close">&times;</button>
+				</div>
+				<div class="aicrmform-modal-body">
+					<div id="import-loading" style="text-align: center; padding: 40px;">
+						<span class="spinner is-active" style="float: none;"></span>
+						<p><?php esc_html_e( 'Loading available forms...', 'ai-crm-form' ); ?></p>
+					</div>
+					<div id="import-content" style="display: none;">
+						<div id="import-no-plugins" class="aicrmform-empty-state" style="display: none;">
+							<span class="dashicons dashicons-warning" style="font-size: 48px; color: #f59e0b;"></span>
+							<h3><?php esc_html_e( 'No Form Plugins Found', 'ai-crm-form' ); ?></h3>
+							<p><?php esc_html_e( 'Install and activate Contact Form 7 or another supported plugin to import forms.', 'ai-crm-form' ); ?></p>
+						</div>
+						<div id="import-sources-list"></div>
+					</div>
 				</div>
 			</div>
 		</div>

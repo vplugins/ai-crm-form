@@ -24,6 +24,9 @@
 		// Field Editor Modal
 		initFieldEditor();
 		
+		// Form Import
+		initFormImport();
+		
 		// Collapsible Cards
 		initCollapsibleCards();
 		
@@ -241,6 +244,148 @@
 			} else {
 				$('#field-options-row').hide();
 			}
+		});
+	}
+	
+	/**
+	 * Initialize Form Import.
+	 */
+	function initFormImport() {
+		// Open import modal
+		$('#open-import-modal').on('click', function() {
+			$('#import-form-modal').show();
+			loadImportSources();
+		});
+		
+		// Close import modal
+		$('#import-form-modal .aicrmform-modal-close').on('click', function() {
+			$('#import-form-modal').hide();
+		});
+		
+		// Import form button click
+		$(document).on('click', '.aicrmform-import-form-btn', function() {
+			const $btn = $(this);
+			const plugin = $btn.data('plugin');
+			const formId = $btn.data('form-id');
+			const formTitle = $btn.data('form-title');
+			
+			importForm(plugin, formId, formTitle, $btn);
+		});
+	}
+	
+	/**
+	 * Load import sources from API.
+	 */
+	function loadImportSources() {
+		$('#import-loading').show();
+		$('#import-content').hide();
+		
+		$.ajax({
+			url: aicrmformAdmin.restUrl + 'import/sources',
+			method: 'GET',
+			headers: { 'X-WP-Nonce': aicrmformAdmin.nonce }
+		}).done(function(response) {
+			$('#import-loading').hide();
+			$('#import-content').show();
+			
+			if (response.success && response.sources) {
+				renderImportSources(response.sources);
+			}
+		}).fail(function() {
+			$('#import-loading').hide();
+			$('#import-content').show();
+			$('#import-no-plugins').show();
+			$('#import-sources-list').hide();
+		});
+	}
+	
+	/**
+	 * Render import sources.
+	 */
+	function renderImportSources(sources) {
+		let hasActiveSources = false;
+		let html = '';
+		
+		for (const [key, source] of Object.entries(sources)) {
+			if (source.active && source.forms && source.forms.length > 0) {
+				hasActiveSources = true;
+				html += '<div class="aicrmform-import-source">';
+				html += '<h4><span class="dashicons dashicons-admin-plugins"></span> ' + escapeHtml(source.name) + '</h4>';
+				html += '<div class="aicrmform-import-forms-list">';
+				
+				source.forms.forEach(function(form) {
+					html += '<div class="aicrmform-import-form-item">';
+					html += '<div class="aicrmform-import-form-info">';
+					html += '<strong>' + escapeHtml(form.title) + '</strong>';
+					html += '<span class="aicrmform-import-form-fields">' + form.fields.length + ' fields</span>';
+					html += '</div>';
+					html += '<button type="button" class="button aicrmform-import-form-btn" ';
+					html += 'data-plugin="' + escapeHtml(key) + '" ';
+					html += 'data-form-id="' + form.id + '" ';
+					html += 'data-form-title="' + escapeHtml(form.title) + '">';
+					html += '<span class="dashicons dashicons-download"></span> Import';
+					html += '</button>';
+					html += '</div>';
+				});
+				
+				html += '</div></div>';
+			}
+		}
+		
+		if (hasActiveSources) {
+			$('#import-no-plugins').hide();
+			$('#import-sources-list').html(html).show();
+		} else {
+			$('#import-no-plugins').show();
+			$('#import-sources-list').hide();
+		}
+	}
+	
+	/**
+	 * Import a form.
+	 */
+	function importForm(plugin, formId, formTitle, $btn) {
+		const originalText = $btn.html();
+		$btn.prop('disabled', true).html('<span class="spinner is-active" style="float: none; margin: 0;"></span>');
+		
+		$.ajax({
+			url: aicrmformAdmin.restUrl + 'import',
+			method: 'POST',
+			headers: { 'X-WP-Nonce': aicrmformAdmin.nonce },
+			contentType: 'application/json',
+			data: JSON.stringify({
+				plugin: plugin,
+				form_id: formId,
+				use_same_shortcode: false
+			})
+		}).done(function(response) {
+			if (response.success) {
+				$btn.html('<span class="dashicons dashicons-yes"></span> Imported!').addClass('button-primary');
+				showToast('Form "' + formTitle + '" imported successfully!', 'success');
+				
+				// Offer to disable the source plugin
+				setTimeout(function() {
+					showConfirm(
+						'Disable Source Plugin?',
+						'Would you like to disable ' + plugin.toUpperCase().replace('CF7', 'Contact Form 7') + '? The imported form will work independently.',
+						function() {
+							// For now, just close the modal
+							$('#import-form-modal').hide();
+							window.location.href = aicrmformAdmin.adminUrl + '?page=ai-crm-form-forms';
+						},
+						function() {
+							$('#import-form-modal').hide();
+							window.location.href = aicrmformAdmin.adminUrl + '?page=ai-crm-form-forms';
+						}
+					);
+				}, 1000);
+			} else {
+				$btn.prop('disabled', false).html(originalText);
+				showToast(response.error || 'Failed to import form.', 'error');
+			}
+		}).fail(function() {
+			$btn.prop('disabled', false).html(originalText);
+			showToast('Failed to import form.', 'error');
 		});
 	}
 	
@@ -915,8 +1060,9 @@
 
 	function deleteForm(e) {
 		e.preventDefault();
-		const $card = $(this).closest('[data-form-id]');
-		const formId = $card.data('form-id');
+		const $btn = $(this);
+		const formId = $btn.data('form-id');
+		const $card = $btn.closest('.aicrmform-form-card-pro');
 		const formName = $card.find('h3').text();
 
 		showConfirm('Delete Form', 'Are you sure you want to delete "' + formName + '"?', function() {
