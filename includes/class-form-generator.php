@@ -114,10 +114,19 @@ INSTRUCTION;
 	/**
 	 * Check if AI is configured.
 	 *
-	 * @return bool True if AI is configured.
+	 * @return bool True if AI is configured (API key is set).
 	 */
 	public function is_configured() {
-		return null !== $this->ai_engine && $this->ai_engine->isConfigured();
+		// First check if we have a working AI engine instance.
+		if ( null !== $this->ai_engine && $this->ai_engine->isConfigured() ) {
+			return true;
+		}
+
+		// Fallback: Check if API key is set in settings (even if AIEngine class is not available).
+		$settings = get_option( 'aicrmform_settings', [] );
+		$api_key  = $settings['api_key'] ?? '';
+
+		return ! empty( $api_key );
 	}
 
 	/**
