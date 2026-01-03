@@ -318,28 +318,29 @@ class AICRMFORM_Form_Importer {
 		}
 
 		// Get settings for CRM form ID.
-		$settings = get_option( 'aicrmform_settings', [] );
+		$settings    = get_option( 'aicrmform_settings', [] );
 		$crm_form_id = $settings['crm_form_id'] ?? '';
 
 		// Save the form.
+		// save_form( $form_config, $crm_form_id, $name = null, $description = null )
 		$result = $this->generator->save_form(
-			$source_form['title'] . ' (Imported)',
-			'Imported from ' . $this->supported_plugins[ $plugin_key ]['name'],
 			$form_config,
-			$field_mapping,
-			$crm_form_id
+			$crm_form_id,
+			$source_form['title'] . ' (Imported)',
+			'Imported from ' . $this->supported_plugins[ $plugin_key ]['name']
 		);
 
-		if ( is_wp_error( $result ) ) {
+		// Check if save was successful.
+		if ( ! $result['success'] ) {
 			return [
 				'success' => false,
-				'error'   => $result->get_error_message(),
+				'error'   => $result['error'] ?? __( 'Failed to import form.', 'ai-crm-form' ),
 			];
 		}
 
 		$response = [
 			'success'        => true,
-			'form_id'        => $result,
+			'form_id'        => $result['form_id'],
 			'message'        => __( 'Form imported successfully!', 'ai-crm-form' ),
 			'source_plugin'  => $plugin_key,
 			'source_form_id' => $form_id,
@@ -348,7 +349,7 @@ class AICRMFORM_Form_Importer {
 		// If using same shortcode, store the mapping.
 		if ( $use_same_shortcode ) {
 			$shortcode_map = get_option( 'aicrmform_shortcode_map', [] );
-			$shortcode_map[ $plugin_key . '_' . $form_id ] = $result;
+			$shortcode_map[ $plugin_key . '_' . $form_id ] = $result['form_id'];
 			update_option( 'aicrmform_shortcode_map', $shortcode_map );
 			$response['shortcode_mapped'] = true;
 		}
