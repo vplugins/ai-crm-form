@@ -33,7 +33,7 @@
         "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
         "phpcompatibility/phpcompatibility-wp": "^2.1",
         "squizlabs/php_codesniffer": "^3.8",
-        "yoast/phpunit-polyfills": "^2.0"
+        "yoast/phpunit-polyfills": "^4.0"
     },
     "suggest": {
         "rajanvijayan/ai-engine": "Required for AI form generation features"
