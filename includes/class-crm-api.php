@@ -169,21 +169,23 @@ class AICRMFORM_CRM_API {
 	 *
 	 * This handles:
 	 * - Splitting combined name fields into first_name + last_name
-	 * - Combining subject + message into message field
+	 * - Ensuring required fields exist with empty values if not provided
 	 *
 	 * @param array $mapped_data Data with CRM Field IDs as keys.
 	 * @return array Preprocessed data.
 	 */
 	private function preprocess_mapped_data( $mapped_data ) {
-		$first_name_id = AICRMFORM_Field_Mapping::get_field_id( 'first_name' );
-		$last_name_id  = AICRMFORM_Field_Mapping::get_field_id( 'last_name' );
+		$first_name_id   = AICRMFORM_Field_Mapping::get_field_id( 'first_name' );
+		$last_name_id    = AICRMFORM_Field_Mapping::get_field_id( 'last_name' );
+		$phone_number_id = AICRMFORM_Field_Mapping::get_field_id( 'phone_number' );
+		$email_id        = AICRMFORM_Field_Mapping::get_field_id( 'email' );
 
-		// If we have first_name but not last_name, and first_name contains a space,
-		// split it into first_name and last_name.
+		// If we have first_name but not last_name, handle the name.
 		if ( isset( $mapped_data[ $first_name_id ] ) && ! isset( $mapped_data[ $last_name_id ] ) ) {
 			$full_name = trim( $mapped_data[ $first_name_id ] );
 
 			if ( strpos( $full_name, ' ' ) !== false ) {
+				// Name has space - split into first_name and last_name.
 				$name_parts = explode( ' ', $full_name, 2 );
 				$mapped_data[ $first_name_id ] = trim( $name_parts[0] );
 				$mapped_data[ $last_name_id ]  = trim( $name_parts[1] ?? '' );
@@ -194,7 +196,21 @@ class AICRMFORM_CRM_API {
 					$mapped_data[ $first_name_id ],
 					$mapped_data[ $last_name_id ]
 				) );
+			} else {
+				// Single name - still need to provide last_name (empty string).
+				$mapped_data[ $last_name_id ] = '';
+
+				error_log( sprintf(
+					'AI CRM Form: Single name "%s" - added empty last_name',
+					$full_name
+				) );
 			}
+		}
+
+		// Ensure phone_number exists if we have other contact info (many CRM schemas require it).
+		if ( isset( $mapped_data[ $email_id ] ) && ! isset( $mapped_data[ $phone_number_id ] ) ) {
+			$mapped_data[ $phone_number_id ] = '';
+			error_log( 'AI CRM Form: Added empty phone_number field' );
 		}
 
 		return $mapped_data;
