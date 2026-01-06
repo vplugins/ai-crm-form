@@ -107,9 +107,28 @@ class AICRMFORM_CRM_API {
 			];
 		}
 
+		// Try to parse error message from response.
+		$error_data    = json_decode( $response_body, true );
+		$error_message = __( 'API request failed.', 'ai-crm-form' );
+
+		if ( ! empty( $error_data['message'] ) ) {
+			$error_message = $error_data['message'];
+		} elseif ( ! empty( $error_data['error'] ) ) {
+			$error_message = is_string( $error_data['error'] ) ? $error_data['error'] : wp_json_encode( $error_data['error'] );
+		}
+
+		// Log the error for debugging.
+		error_log( sprintf(
+			'AI CRM Form: CRM API Error - Code: %d, URL: %s, Form ID: %s, Response: %s',
+			$response_code,
+			$this->api_url,
+			$form_id,
+			$response_body
+		) );
+
 		return [
 			'success'       => false,
-			'error'         => __( 'API request failed.', 'ai-crm-form' ),
+			'error'         => sprintf( __( 'CRM API Error (%d): %s', 'ai-crm-form' ), $response_code, $error_message ),
 			'response_code' => $response_code,
 			'response_body' => $response_body,
 		];

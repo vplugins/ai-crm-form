@@ -245,27 +245,61 @@ class AICRMFORM_Form_Importer {
 	private function guess_crm_mapping( $field_name ) {
 		$name_lower = strtolower( $field_name );
 
+		// Remove common prefixes like "your-", "user-", "contact-", etc.
+		$clean_name = preg_replace( '/^(your|user|contact|my|the|form|field)[_-]?/i', '', $name_lower );
+
+		// Mappings with keywords - ordered by priority.
 		$mappings = [
-			'first_name'  => [ 'first', 'firstname', 'first_name', 'fname' ],
-			'last_name'   => [ 'last', 'lastname', 'last_name', 'lname', 'surname' ],
-			'email'       => [ 'email', 'mail', 'e-mail', 'email_address' ],
-			'phone'       => [ 'phone', 'tel', 'telephone', 'mobile', 'cell' ],
-			'company'     => [ 'company', 'organization', 'org', 'business' ],
-			'website'     => [ 'website', 'url', 'site', 'web' ],
-			'address'     => [ 'address', 'street', 'addr' ],
-			'city'        => [ 'city', 'town' ],
-			'state'       => [ 'state', 'province', 'region' ],
-			'zip'         => [ 'zip', 'zipcode', 'postal', 'postcode' ],
-			'country'     => [ 'country', 'nation' ],
-			'message'     => [ 'message', 'comment', 'comments', 'inquiry', 'question' ],
+			'first_name'            => [ 'firstname', 'first_name', 'first-name', 'fname', 'givenname', 'given_name' ],
+			'last_name'             => [ 'lastname', 'last_name', 'last-name', 'lname', 'surname', 'familyname', 'family_name' ],
+			'email'                 => [ 'email', 'mail', 'e-mail', 'email_address', 'emailaddress' ],
+			'phone_number'          => [ 'phone', 'tel', 'telephone', 'mobile', 'cell', 'phonenumber', 'phone_number' ],
+			'company_name'          => [ 'company', 'organization', 'org', 'business', 'companyname', 'company_name' ],
+			'company_website'       => [ 'website', 'url', 'site', 'web', 'homepage' ],
+			'primary_address_line1' => [ 'address', 'street', 'addr', 'address1', 'address_1', 'streetaddress' ],
+			'primary_address_city'  => [ 'city', 'town', 'locality' ],
+			'primary_address_state' => [ 'state', 'province', 'region', 'county' ],
+			'primary_address_postal' => [ 'zip', 'zipcode', 'postal', 'postcode', 'postalcode', 'postal_code' ],
+			'primary_address_country' => [ 'country', 'nation' ],
+			'message'               => [ 'message', 'comment', 'comments', 'inquiry', 'question', 'body', 'content', 'text', 'note', 'notes', 'description' ],
+			'source_name'           => [ 'source', 'referral', 'howdidyouhear', 'hearabout' ],
 		];
 
+		// First, try exact match with cleaned name.
+		foreach ( $mappings as $crm_field => $keywords ) {
+			foreach ( $keywords as $keyword ) {
+				if ( $clean_name === $keyword ) {
+					return $crm_field;
+				}
+			}
+		}
+
+		// Second, try substring match with cleaned name.
+		foreach ( $mappings as $crm_field => $keywords ) {
+			foreach ( $keywords as $keyword ) {
+				if ( strpos( $clean_name, $keyword ) !== false || strpos( $keyword, $clean_name ) !== false ) {
+					return $crm_field;
+				}
+			}
+		}
+
+		// Third, try substring match with original name.
 		foreach ( $mappings as $crm_field => $keywords ) {
 			foreach ( $keywords as $keyword ) {
 				if ( strpos( $name_lower, $keyword ) !== false ) {
 					return $crm_field;
 				}
 			}
+		}
+
+		// Special case: generic "name" field - map to first_name.
+		if ( $clean_name === 'name' || $name_lower === 'name' || $name_lower === 'your-name' || $name_lower === 'fullname' || $name_lower === 'full_name' ) {
+			return 'first_name';
+		}
+
+		// Special case: "subject" - map to message (as part of the inquiry).
+		if ( strpos( $name_lower, 'subject' ) !== false ) {
+			return 'message';
 		}
 
 		return '';

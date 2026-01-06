@@ -346,13 +346,34 @@ INSTRUCTION;
 			];
 		}
 
-		// Extract field mapping from config.
+		// Extract field mapping from config and resolve CRM Field IDs.
 		$field_mapping = [];
-		foreach ( $form_config['fields'] as $field ) {
-			if ( ! empty( $field['field_id'] ) && ! empty( $field['name'] ) ) {
-				$field_mapping[ $field['name'] ] = $field['field_id'];
+		foreach ( $form_config['fields'] as &$field ) {
+			if ( empty( $field['name'] ) ) {
+				continue;
+			}
+
+			// Get the CRM mapping - can be in field_id or crm_mapping.
+			$crm_mapping = $field['field_id'] ?? $field['crm_mapping'] ?? '';
+
+			if ( ! empty( $crm_mapping ) ) {
+				// Check if it's already a full FieldID or a short name.
+				if ( strpos( $crm_mapping, 'FieldID-' ) === 0 ) {
+					// Already a full FieldID.
+					$field_id = $crm_mapping;
+				} else {
+					// It's a short name - convert to full FieldID.
+					$field_id = AICRMFORM_Field_Mapping::get_field_id( $crm_mapping );
+				}
+
+				if ( $field_id ) {
+					$field_mapping[ $field['name'] ] = $field_id;
+					// Also update the field config to use the full FieldID.
+					$field['field_id'] = $field_id;
+				}
 			}
 		}
+		unset( $field ); // Unset reference.
 
 		$form_name        = $name ?? ( $form_config['form_name'] ?? __( 'Untitled Form', 'ai-crm-form' ) );
 		$form_description = $description ?? ( $form_config['form_description'] ?? '' );
@@ -406,14 +427,35 @@ INSTRUCTION;
 
 		$table_name = $wpdb->prefix . 'aicrmform_forms';
 
-		// Extract field mapping from config.
+		// Extract field mapping from config and resolve CRM Field IDs.
 		$field_mapping = [];
 		if ( isset( $form_config['fields'] ) && is_array( $form_config['fields'] ) ) {
-			foreach ( $form_config['fields'] as $field ) {
-				if ( ! empty( $field['field_id'] ) && ! empty( $field['name'] ) ) {
-					$field_mapping[ $field['name'] ] = $field['field_id'];
+			foreach ( $form_config['fields'] as &$field ) {
+				if ( empty( $field['name'] ) ) {
+					continue;
+				}
+
+				// Get the CRM mapping - can be in field_id or crm_mapping.
+				$crm_mapping = $field['field_id'] ?? $field['crm_mapping'] ?? '';
+
+				if ( ! empty( $crm_mapping ) ) {
+					// Check if it's already a full FieldID or a short name.
+					if ( strpos( $crm_mapping, 'FieldID-' ) === 0 ) {
+						// Already a full FieldID.
+						$field_id = $crm_mapping;
+					} else {
+						// It's a short name - convert to full FieldID.
+						$field_id = AICRMFORM_Field_Mapping::get_field_id( $crm_mapping );
+					}
+
+					if ( $field_id ) {
+						$field_mapping[ $field['name'] ] = $field_id;
+						// Also update the field config to use the full FieldID.
+						$field['field_id'] = $field_id;
+					}
 				}
 			}
+			unset( $field ); // Unset reference.
 		}
 
 		// Base data with form config and field mapping.

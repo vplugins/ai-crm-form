@@ -490,6 +490,26 @@ class AICRMFORM_REST_API {
 			);
 		}
 
+		// Check if CRM Form ID is configured.
+		if ( empty( $form->crm_form_id ) ) {
+			return new WP_REST_Response(
+				[
+					'success' => false,
+					'error'   => __( 'This form is not configured with a CRM Form ID. Please edit the form and add a valid CRM Form ID.', 'ai-crm-form' ),
+				],
+				400
+			);
+		}
+
+		// Log the submission attempt for debugging.
+		error_log( sprintf(
+			'AI CRM Form: Submitting form %d with CRM Form ID: %s, Field mapping: %s, Form data: %s',
+			$form_id,
+			$form->crm_form_id,
+			wp_json_encode( $form->field_mapping ),
+			wp_json_encode( $form_data )
+		) );
+
 		// Submit to CRM.
 		$crm_api = new AICRMFORM_CRM_API();
 		$result  = $crm_api->submit_with_mapping( $form_data, $form->field_mapping, $form->crm_form_id );
