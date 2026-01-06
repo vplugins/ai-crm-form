@@ -945,10 +945,19 @@ class AICRMFORM_REST_API {
 			);
 		}
 
+		// Include debug info for troubleshooting.
+		$debug_info = [
+			'field_mapping'   => $form->field_mapping,
+			'crm_form_id'     => $form->crm_form_id,
+			'response_code'   => $result['response_code'] ?? null,
+			'response_body'   => $result['response_body'] ?? null,
+		];
+
 		return new WP_REST_Response(
 			[
 				'success' => false,
 				'error'   => $result['error'] ?? __( 'Submission failed.', 'ai-crm-form' ),
+				'debug'   => $debug_info,
 			],
 			400
 		);

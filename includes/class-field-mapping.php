@@ -307,6 +307,10 @@ class AICRMFORM_Field_Mapping {
 	/**
 	 * Map form data to CRM field format.
 	 *
+	 * Handles:
+	 * - Direct field mappings
+	 * - Split mappings (e.g., "your-name" -> first_name + last_name)
+	 *
 	 * @param array $form_data The form submission data.
 	 * @param array $field_mapping The mapping of form fields to CRM field IDs.
 	 * @return array The mapped data ready for CRM API.
@@ -314,9 +318,62 @@ class AICRMFORM_Field_Mapping {
 	public static function map_form_data_to_crm( $form_data, $field_mapping ) {
 		$mapped_data = [];
 
+		// First, find split mappings for each form field.
+		$split_mappings = [];
+		foreach ( $field_mapping as $key => $field_id ) {
+			if ( strpos( $key, '__split__' ) !== false ) {
+				$parts      = explode( '__split__', $key );
+				$form_field = $parts[0];
+				$crm_field  = $parts[1];
+
+				if ( ! isset( $split_mappings[ $form_field ] ) ) {
+					$split_mappings[ $form_field ] = [];
+				}
+				$split_mappings[ $form_field ][ $crm_field ] = $field_id;
+			}
+		}
+
 		foreach ( $form_data as $form_field => $value ) {
+			// Check for split mappings first.
+			if ( isset( $split_mappings[ $form_field ] ) ) {
+				$value_str = is_string( $value ) ? trim( $value ) : '';
+
+				// If we have both first_name and last_name split mappings, split the value.
+				if ( isset( $split_mappings[ $form_field ]['first_name'] ) &&
+					 isset( $split_mappings[ $form_field ]['last_name'] ) ) {
+
+					if ( strpos( $value_str, ' ' ) !== false ) {
+						$name_parts  = explode( ' ', $value_str, 2 );
+						$first_name  = trim( $name_parts[0] );
+						$last_name   = trim( $name_parts[1] ?? '' );
+					} else {
+						$first_name = $value_str;
+						$last_name  = '';
+					}
+
+					$mapped_data[ $split_mappings[ $form_field ]['first_name'] ] = $first_name;
+					$mapped_data[ $split_mappings[ $form_field ]['last_name'] ]  = $last_name;
+
+					error_log( sprintf(
+						'AI CRM Form: Split mapping "%s" = "%s" -> first_name="%s", last_name="%s"',
+						$form_field,
+						$value_str,
+						$first_name,
+						$last_name
+					) );
+					continue;
+				}
+
+				// Handle other split mappings.
+				foreach ( $split_mappings[ $form_field ] as $crm_field => $field_id ) {
+					$mapped_data[ $field_id ] = $value;
+				}
+				continue;
+			}
+
+			// Regular direct mapping.
 			if ( isset( $field_mapping[ $form_field ] ) ) {
-				$field_id                = $field_mapping[ $form_field ];
+				$field_id                 = $field_mapping[ $form_field ];
 				$mapped_data[ $field_id ] = $value;
 			}
 		}

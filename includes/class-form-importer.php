@@ -43,10 +43,32 @@ class AICRMFORM_Form_Importer {
 	private $generator;
 
 	/**
+	 * AI Client instance.
+	 *
+	 * @var AICRMFORM_AI_Client|null
+	 */
+	private $ai_client;
+
+	/**
 	 * Constructor.
 	 */
 	public function __construct() {
 		$this->generator = new AICRMFORM_Form_Generator();
+		$this->init_ai_client();
+	}
+
+	/**
+	 * Initialize AI client if configured.
+	 */
+	private function init_ai_client() {
+		$settings = get_option( 'aicrmform_settings', [] );
+		$api_key  = $settings['ai_api_key'] ?? '';
+
+		if ( ! empty( $api_key ) ) {
+			$provider = $settings['ai_provider'] ?? 'groq';
+			$model    = $settings['ai_model'] ?? 'llama-3.3-70b-versatile';
+			$this->ai_client = new AICRMFORM_AI_Client( $api_key, $provider, $model );
+		}
 	}
 
 	/**
@@ -306,6 +328,219 @@ class AICRMFORM_Form_Importer {
 	}
 
 	/**
+	 * Use AI to intelligently map form fields to CRM fields.
+	 *
+	 * @param array $fields Array of form fields.
+	 * @return array Updated fields with AI-suggested mappings.
+	 */
+	public function ai_map_fields( $fields ) {
+		if ( ! $this->ai_client || ! $this->ai_client->isConfigured() ) {
+			error_log( 'AI CRM Form: AI client not configured, using fallback mapping' );
+			return $fields;
+		}
+
+		// Get available CRM fields.
+		$available_crm_fields = $this->get_available_crm_fields_for_ai();
+
+		// Build field info for AI prompt.
+		$field_info = [];
+		foreach ( $fields as $field ) {
+			$field_info[] = [
+				'name'  => $field['name'] ?? '',
+				'label' => $field['label'] ?? '',
+				'type'  => $field['type'] ?? 'text',
+			];
+		}
+
+		// Build AI prompt.
+		$prompt = $this->build_ai_mapping_prompt( $field_info, $available_crm_fields );
+
+		// Set system instruction for mapping.
+		$this->ai_client->setSystemInstruction(
+			'You are a CRM field mapping expert. Your task is to map form fields to CRM fields. ' .
+			'Respond ONLY with valid JSON, no explanation or markdown. ' .
+			'For name fields that contain full names (like "your-name" or "full_name"), split them into first_name AND last_name. ' .
+			'Be intelligent about mapping - "your-email" should map to "email", "your-name" should map to both "first_name" and "last_name".'
+		);
+
+		try {
+			$response = $this->ai_client->chat( $prompt );
+
+			if ( is_array( $response ) && isset( $response['error'] ) ) {
+				error_log( 'AI CRM Form: AI mapping error - ' . $response['error'] );
+				return $fields;
+			}
+
+			// Parse AI response.
+			$mappings = $this->parse_ai_mapping_response( $response );
+
+			if ( empty( $mappings ) ) {
+				error_log( 'AI CRM Form: Could not parse AI mapping response' );
+				return $fields;
+			}
+
+			// Apply mappings to fields.
+			$fields = $this->apply_ai_mappings( $fields, $mappings );
+
+			error_log( 'AI CRM Form: AI field mapping successful - ' . wp_json_encode( $mappings ) );
+
+		} catch ( \Exception $e ) {
+			error_log( 'AI CRM Form: AI mapping exception - ' . $e->getMessage() );
+		}
+
+		return $fields;
+	}
+
+	/**
+	 * Get available CRM fields formatted for AI prompt.
+	 *
+	 * @return array CRM fields info.
+	 */
+	private function get_available_crm_fields_for_ai() {
+		return [
+			'first_name'              => 'First name of the contact',
+			'last_name'               => 'Last name / surname of the contact',
+			'email'                   => 'Email address',
+			'phone_number'            => 'Phone number',
+			'mobile_phone'            => 'Mobile phone number',
+			'message'                 => 'Message, inquiry, comments, or any text content',
+			'company_name'            => 'Company or organization name',
+			'company_website'         => 'Company website URL',
+			'primary_address_line1'   => 'Street address line 1',
+			'primary_address_line2'   => 'Street address line 2',
+			'primary_address_city'    => 'City',
+			'primary_address_state'   => 'State or province',
+			'primary_address_postal'  => 'Postal / ZIP code',
+			'primary_address_country' => 'Country',
+			'source_name'             => 'Lead source or how they heard about us',
+			'utm_source'              => 'UTM source parameter',
+			'utm_medium'              => 'UTM medium parameter',
+			'utm_campaign'            => 'UTM campaign parameter',
+		];
+	}
+
+	/**
+	 * Build AI prompt for field mapping.
+	 *
+	 * @param array $field_info  Form field information.
+	 * @param array $crm_fields  Available CRM fields.
+	 * @return string The prompt.
+	 */
+	private function build_ai_mapping_prompt( $field_info, $crm_fields ) {
+		$fields_json     = wp_json_encode( $field_info, JSON_PRETTY_PRINT );
+		$crm_fields_json = wp_json_encode( $crm_fields, JSON_PRETTY_PRINT );
+
+		return <<<PROMPT
+Map these form fields to CRM fields. For each form field, determine which CRM field(s) it should map to.
+
+IMPORTANT RULES:
+1. If a field is a "name" or "full name" field (like "your-name"), it should be SPLIT into BOTH "first_name" and "last_name"
+2. Subject fields should map to "message" 
+3. Email fields should map to "email"
+4. Phone/tel fields should map to "phone_number"
+5. Message/comment/textarea fields should map to "message"
+6. If a field doesn't clearly match any CRM field, use null
+
+Form Fields:
+{$fields_json}
+
+Available CRM Fields:
+{$crm_fields_json}
+
+Respond with a JSON object where:
+- Keys are the form field names
+- Values are either:
+  - A string (single CRM field name)
+  - An array (for split mappings like ["first_name", "last_name"])
+  - null (if no mapping)
+
+Example response:
+{
+  "your-name": ["first_name", "last_name"],
+  "your-email": "email",
+  "your-subject": "message",
+  "your-message": "message",
+  "random-field": null
+}
+
+JSON response:
+PROMPT;
+	}
+
+	/**
+	 * Parse AI mapping response.
+	 *
+	 * @param string $response AI response.
+	 * @return array Parsed mappings.
+	 */
+	private function parse_ai_mapping_response( $response ) {
+		// Try to extract JSON from response.
+		$json_start = strpos( $response, '{' );
+		$json_end   = strrpos( $response, '}' );
+
+		if ( false === $json_start || false === $json_end ) {
+			return [];
+		}
+
+		$json_string = substr( $response, $json_start, $json_end - $json_start + 1 );
+		$parsed      = json_decode( $json_string, true );
+
+		if ( json_last_error() !== JSON_ERROR_NONE ) {
+			error_log( 'AI CRM Form: JSON parse error - ' . json_last_error_msg() );
+			return [];
+		}
+
+		return $parsed;
+	}
+
+	/**
+	 * Apply AI mappings to form fields.
+	 *
+	 * @param array $fields   Original fields.
+	 * @param array $mappings AI-suggested mappings.
+	 * @return array Updated fields.
+	 */
+	private function apply_ai_mappings( $fields, $mappings ) {
+		$updated_fields = [];
+
+		foreach ( $fields as $field ) {
+			$field_name = $field['name'] ?? '';
+
+			if ( empty( $field_name ) || ! isset( $mappings[ $field_name ] ) ) {
+				$updated_fields[] = $field;
+				continue;
+			}
+
+			$mapping = $mappings[ $field_name ];
+
+			// Handle split mappings (e.g., name -> first_name + last_name).
+			if ( is_array( $mapping ) && count( $mapping ) > 1 ) {
+				// This field needs to be split - mark it specially.
+				$field['crm_mapping']       = $mapping[0]; // Primary mapping.
+				$field['crm_mapping_split'] = $mapping;    // All mappings for splitting.
+				$field['field_id']          = AICRMFORM_Field_Mapping::get_field_id( $mapping[0] );
+				$updated_fields[] = $field;
+			} elseif ( is_array( $mapping ) ) {
+				// Single item array.
+				$crm_field              = $mapping[0];
+				$field['crm_mapping']   = $crm_field;
+				$field['field_id']      = AICRMFORM_Field_Mapping::get_field_id( $crm_field );
+				$updated_fields[] = $field;
+			} elseif ( ! empty( $mapping ) ) {
+				// String mapping.
+				$field['crm_mapping'] = $mapping;
+				$field['field_id']    = AICRMFORM_Field_Mapping::get_field_id( $mapping );
+				$updated_fields[] = $field;
+			} else {
+				// No mapping.
+				$updated_fields[] = $field;
+			}
+		}
+
+		return $updated_fields;
+	}
+
+	/**
 	 * Import a form from another plugin.
 	 *
 	 * @param string $plugin_key Plugin key (e.g., 'cf7').
@@ -333,10 +568,13 @@ class AICRMFORM_Form_Importer {
 			];
 		}
 
+		// Use AI to intelligently map fields if available.
+		$fields_with_mapping = $this->ai_map_fields( $source_form['fields'] );
+
 		// Build form config.
 		$form_config = [
 			'title'            => $source_form['title'],
-			'fields'           => $source_form['fields'],
+			'fields'           => $fields_with_mapping,
 			'submit_text'      => __( 'Submit', 'ai-crm-form' ),
 			'success_message'  => __( 'Thank you for your submission!', 'ai-crm-form' ),
 			'error_message'    => __( 'Something went wrong. Please try again.', 'ai-crm-form' ),
@@ -348,11 +586,34 @@ class AICRMFORM_Form_Importer {
 			],
 		];
 
-		// Build field mapping.
+		// Build field mapping (including split mappings for name fields).
 		$field_mapping = [];
-		foreach ( $source_form['fields'] as $field ) {
-			if ( ! empty( $field['crm_mapping'] ) ) {
-				$field_mapping[ $field['name'] ] = $field['crm_mapping'];
+		foreach ( $fields_with_mapping as $field ) {
+			$field_name = $field['name'] ?? '';
+			if ( empty( $field_name ) ) {
+				continue;
+			}
+
+			// Handle split mappings (e.g., name -> first_name + last_name).
+			if ( ! empty( $field['crm_mapping_split'] ) && is_array( $field['crm_mapping_split'] ) ) {
+				foreach ( $field['crm_mapping_split'] as $crm_field ) {
+					$field_id = AICRMFORM_Field_Mapping::get_field_id( $crm_field );
+					if ( $field_id ) {
+						// Store the split mapping info.
+						$field_mapping[ $field_name . '__split__' . $crm_field ] = $field_id;
+					}
+				}
+				// Also store primary mapping.
+				if ( ! empty( $field['field_id'] ) ) {
+					$field_mapping[ $field_name ] = $field['field_id'];
+				}
+			} elseif ( ! empty( $field['field_id'] ) ) {
+				$field_mapping[ $field_name ] = $field['field_id'];
+			} elseif ( ! empty( $field['crm_mapping'] ) ) {
+				$field_id = AICRMFORM_Field_Mapping::get_field_id( $field['crm_mapping'] );
+				if ( $field_id ) {
+					$field_mapping[ $field_name ] = $field_id;
+				}
 			}
 		}
 
