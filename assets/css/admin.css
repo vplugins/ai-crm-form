@@ -2435,3 +2435,89 @@
 	max-width: 300px;
 	line-height: 1.5;
 }
+
+/* ============================
+   EDIT FORM MODAL TABS
+   ============================ */
+
+.aicrmform-edit-tabs {
+	display: flex;
+	gap: 0;
+	margin-bottom: 20px;
+	border-bottom: 2px solid var(--aicrmform-gray-200);
+}
+
+.aicrmform-edit-tab {
+	padding: 12px 24px;
+	font-size: 14px;
+	font-weight: 500;
+	color: var(--aicrmform-gray-600);
+	background: transparent;
+	border: none;
+	border-bottom: 2px solid transparent;
+	margin-bottom: -2px;
+	cursor: pointer;
+	transition: all 0.2s ease;
+}
+
+.aicrmform-edit-tab:hover {
+	color: var(--aicrmform-primary);
+	background: var(--aicrmform-gray-50);
+}
+
+.aicrmform-edit-tab.active {
+	color: var(--aicrmform-primary);
+	border-bottom-color: var(--aicrmform-primary);
+	background: transparent;
+}
+
+.aicrmform-edit-tab-content {
+	animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+	from { opacity: 0; transform: translateY(-5px); }
+	to { opacity: 1; transform: translateY(0); }
+}
+
+.aicrmform-edit-fields-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 16px;
+}
+
+.aicrmform-edit-fields-header p {
+	margin: 0;
+}
+
+#edit-form-fields-container {
+	min-height: 100px;
+	background: var(--aicrmform-gray-50);
+	border: 1px dashed var(--aicrmform-gray-300);
+	border-radius: var(--aicrmform-radius);
+	padding: 12px;
+}
+
+#edit-form-fields-container .aicrmform-field-item {
+	background: #fff;
+	margin-bottom: 8px;
+}
+
+#edit-form-fields-container .aicrmform-field-item:last-child {
+	margin-bottom: 0;
+}
+
+#edit-form-fields-container .aicrmform-empty-fields {
+	background: transparent;
+	border: none;
+}
+
+/* Edit field modal - higher z-index */
+#edit-field-modal {
+	z-index: 100002;
+}
+
+#edit-field-modal .aicrmform-modal {
+	max-width: 550px;
+}

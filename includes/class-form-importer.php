@@ -323,7 +323,7 @@ class AICRMFORM_Form_Importer {
 
 		// Get settings for CRM form ID.
 		$settings    = get_option( 'aicrmform_settings', [] );
-		$crm_form_id = $settings['crm_form_id'] ?? '';
+		$crm_form_id = $settings['form_id'] ?? '';
 
 		// Save the form.
 		// save_form( $form_config, $crm_form_id, $name = null, $description = null )

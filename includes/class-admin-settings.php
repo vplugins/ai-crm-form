@@ -1157,6 +1157,9 @@ class AICRMFORM_Admin_Settings {
 									<option value="email"><?php esc_html_e( 'Email', 'ai-crm-form' ); ?></option>
 									<option value="phone_number"><?php esc_html_e( 'Phone Number', 'ai-crm-form' ); ?></option>
 									<option value="mobile_phone"><?php esc_html_e( 'Mobile Phone', 'ai-crm-form' ); ?></option>
+									<option value="additional_emails"><?php esc_html_e( 'Additional Emails', 'ai-crm-form' ); ?></option>
+									<option value="tags"><?php esc_html_e( 'Tags', 'ai-crm-form' ); ?></option>
+									<option value="message"><?php esc_html_e( 'Message', 'ai-crm-form' ); ?></option>
 								</optgroup>
 								<optgroup label="<?php esc_attr_e( 'Address', 'ai-crm-form' ); ?>">
 									<option value="primary_address_line1"><?php esc_html_e( 'Address Line 1', 'ai-crm-form' ); ?></option>
@@ -1168,11 +1171,37 @@ class AICRMFORM_Admin_Settings {
 								</optgroup>
 								<optgroup label="<?php esc_attr_e( 'Company', 'ai-crm-form' ); ?>">
 									<option value="company_name"><?php esc_html_e( 'Company Name', 'ai-crm-form' ); ?></option>
-									<option value="company_website"><?php esc_html_e( 'Website', 'ai-crm-form' ); ?></option>
+									<option value="company_website"><?php esc_html_e( 'Company Website', 'ai-crm-form' ); ?></option>
+									<option value="company_phone"><?php esc_html_e( 'Company Phone', 'ai-crm-form' ); ?></option>
+									<option value="company_address_line1"><?php esc_html_e( 'Company Address', 'ai-crm-form' ); ?></option>
+									<option value="company_address_city"><?php esc_html_e( 'Company City', 'ai-crm-form' ); ?></option>
+									<option value="company_address_state"><?php esc_html_e( 'Company State', 'ai-crm-form' ); ?></option>
+									<option value="company_address_postal"><?php esc_html_e( 'Company Postal Code', 'ai-crm-form' ); ?></option>
+									<option value="company_address_country"><?php esc_html_e( 'Company Country', 'ai-crm-form' ); ?></option>
+									<option value="company_linkedin_url"><?php esc_html_e( 'LinkedIn URL', 'ai-crm-form' ); ?></option>
+									<option value="company_facebook_url"><?php esc_html_e( 'Facebook URL', 'ai-crm-form' ); ?></option>
+									<option value="company_instagram_url"><?php esc_html_e( 'Instagram URL', 'ai-crm-form' ); ?></option>
+									<option value="company_twitter_url"><?php esc_html_e( 'Twitter URL', 'ai-crm-form' ); ?></option>
 								</optgroup>
-								<optgroup label="<?php esc_attr_e( 'Other', 'ai-crm-form' ); ?>">
-									<option value="message"><?php esc_html_e( 'Message', 'ai-crm-form' ); ?></option>
-									<option value="source_name"><?php esc_html_e( 'Lead Source', 'ai-crm-form' ); ?></option>
+								<optgroup label="<?php esc_attr_e( 'Lead & Source', 'ai-crm-form' ); ?>">
+									<option value="source_name"><?php esc_html_e( 'Source Name', 'ai-crm-form' ); ?></option>
+									<option value="original_source"><?php esc_html_e( 'Original Source', 'ai-crm-form' ); ?></option>
+									<option value="lead_score"><?php esc_html_e( 'Lead Score', 'ai-crm-form' ); ?></option>
+									<option value="lead_quality"><?php esc_html_e( 'Lead Quality', 'ai-crm-form' ); ?></option>
+								</optgroup>
+								<optgroup label="<?php esc_attr_e( 'UTM Tracking', 'ai-crm-form' ); ?>">
+									<option value="utm_source"><?php esc_html_e( 'UTM Source', 'ai-crm-form' ); ?></option>
+									<option value="utm_medium"><?php esc_html_e( 'UTM Medium', 'ai-crm-form' ); ?></option>
+									<option value="utm_campaign"><?php esc_html_e( 'UTM Campaign', 'ai-crm-form' ); ?></option>
+									<option value="utm_term"><?php esc_html_e( 'UTM Term', 'ai-crm-form' ); ?></option>
+									<option value="utm_content"><?php esc_html_e( 'UTM Content', 'ai-crm-form' ); ?></option>
+									<option value="gclid"><?php esc_html_e( 'Google Click ID', 'ai-crm-form' ); ?></option>
+									<option value="fbclid"><?php esc_html_e( 'Facebook Click ID', 'ai-crm-form' ); ?></option>
+									<option value="msclkid"><?php esc_html_e( 'Microsoft Click ID', 'ai-crm-form' ); ?></option>
+								</optgroup>
+								<optgroup label="<?php esc_attr_e( 'Consent', 'ai-crm-form' ); ?>">
+									<option value="marketing_email_consent_status"><?php esc_html_e( 'Email Marketing Consent', 'ai-crm-form' ); ?></option>
+									<option value="sms_consent_status"><?php esc_html_e( 'SMS Consent', 'ai-crm-form' ); ?></option>
 								</optgroup>
 							</select>
 						</div>
