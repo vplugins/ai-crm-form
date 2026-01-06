@@ -51,6 +51,7 @@
 		$(document).on('click', '.aicrmform-preview-form', previewForm);
 		$(document).on('click', '.aicrmform-edit-form', editForm);
 		$(document).on('click', '.aicrmform-view-submission', viewSubmission);
+		$(document).on('click', '.aicrmform-repair-mappings', repairMappings);
 
 		// Field group toggles (for any remaining field groups)
 		$('.aicrmform-field-group-toggle').on('click', toggleFieldGroup);
@@ -1557,6 +1558,161 @@
 					});
 			}
 		);
+	}
+
+	/**
+	 * Repair form field mappings.
+	 */
+	function repairMappings(e) {
+		e.preventDefault();
+		const $btn = $(this);
+		const formId = $btn.data('form-id');
+		const $card = $btn.closest('.aicrmform-form-card-pro');
+		const formName = $card.find('h3').text();
+
+		// Show confirmation with AI option
+		showRepairConfirm(
+			'Repair Field Mappings',
+			'This will regenerate CRM field mappings for "' + formName + '".\n\nWould you like to use AI to help with ambiguous mappings?',
+			formId
+		);
+	}
+
+	/**
+	 * Show repair confirmation dialog with AI option.
+	 */
+	function showRepairConfirm(title, message, formId) {
+		const modalHtml = `
+			<div class="aicrmform-modal aicrmform-modal-confirm" id="repair-confirm-modal">
+				<div class="aicrmform-modal-content" style="max-width: 450px;">
+					<div class="aicrmform-modal-header">
+						<h2>${title}</h2>
+						<button type="button" class="aicrmform-modal-close">&times;</button>
+					</div>
+					<div class="aicrmform-modal-body">
+						<p style="white-space: pre-wrap;">${message}</p>
+						<div class="aicrmform-form-row" style="margin-top: 15px;">
+							<label class="aicrmform-checkbox-label">
+								<input type="checkbox" id="repair-use-ai" ${aicrmformAdmin.hasAiKey ? '' : 'disabled'}>
+								<span>Use AI for better mapping suggestions ${aicrmformAdmin.hasAiKey ? '' : '(AI not configured)'}</span>
+							</label>
+						</div>
+					</div>
+					<div class="aicrmform-modal-footer">
+						<button type="button" class="aicrmform-btn aicrmform-btn-secondary" data-action="cancel">Cancel</button>
+						<button type="button" class="aicrmform-btn aicrmform-btn-primary" data-action="repair">
+							<span class="dashicons dashicons-admin-tools" style="margin-right: 5px;"></span>
+							Repair Mappings
+						</button>
+					</div>
+				</div>
+			</div>
+		`;
+
+		$('body').append(modalHtml);
+		const $modal = $('#repair-confirm-modal');
+		$modal.fadeIn(200);
+
+		// Handle cancel
+		$modal.find('[data-action="cancel"], .aicrmform-modal-close').on('click', function() {
+			$modal.fadeOut(200, function() {
+				$(this).remove();
+			});
+		});
+
+		// Handle repair
+		$modal.find('[data-action="repair"]').on('click', function() {
+			const useAi = $('#repair-use-ai').is(':checked');
+			const $repairBtn = $(this);
+			
+			$repairBtn.prop('disabled', true).html('<span class="aicrmform-spinner"></span> Repairing...');
+
+			$.ajax({
+				url: aicrmformAdmin.restUrl + 'forms/' + formId + '/repair-mappings',
+				method: 'POST',
+				headers: { 'X-WP-Nonce': aicrmformAdmin.nonce },
+				contentType: 'application/json',
+				data: JSON.stringify({ use_ai: useAi }),
+			})
+				.done(function(response) {
+					$modal.fadeOut(200, function() {
+						$(this).remove();
+					});
+
+					if (response.success) {
+						let message = 'Field mappings repaired successfully!';
+						
+						if (response.mapping_changes && response.mapping_changes.length > 0) {
+							message += '\n\nMappings updated:\n• ' + response.mapping_changes.join('\n• ');
+						}
+						
+						if (response.unmapped_fields && response.unmapped_fields.length > 0) {
+							message += '\n\nUnmapped fields (need manual mapping):\n• ' + response.unmapped_fields.join('\n• ');
+						}
+
+						showAlert('Repair Complete', message);
+						showToast('Field mappings repaired!', 'success');
+					} else {
+						showToast(response.error || 'Failed to repair mappings.', 'error');
+					}
+				})
+				.fail(function(xhr) {
+					$modal.fadeOut(200, function() {
+						$(this).remove();
+					});
+					const error = xhr.responseJSON?.error || 'Failed to repair mappings.';
+					showToast(error, 'error');
+				});
+		});
+
+		// Close on backdrop click
+		$modal.on('click', function(e) {
+			if ($(e.target).is('.aicrmform-modal')) {
+				$modal.fadeOut(200, function() {
+					$(this).remove();
+				});
+			}
+		});
+	}
+
+	/**
+	 * Show alert dialog.
+	 */
+	function showAlert(title, message) {
+		const modalHtml = `
+			<div class="aicrmform-modal aicrmform-modal-alert" id="alert-modal">
+				<div class="aicrmform-modal-content" style="max-width: 500px;">
+					<div class="aicrmform-modal-header">
+						<h2>${title}</h2>
+						<button type="button" class="aicrmform-modal-close">&times;</button>
+					</div>
+					<div class="aicrmform-modal-body">
+						<pre style="white-space: pre-wrap; font-family: inherit; margin: 0; background: #f5f5f5; padding: 15px; border-radius: 4px; max-height: 300px; overflow-y: auto;">${message}</pre>
+					</div>
+					<div class="aicrmform-modal-footer">
+						<button type="button" class="aicrmform-btn aicrmform-btn-primary" data-action="ok">OK</button>
+					</div>
+				</div>
+			</div>
+		`;
+
+		$('body').append(modalHtml);
+		const $modal = $('#alert-modal');
+		$modal.fadeIn(200);
+
+		$modal.find('[data-action="ok"], .aicrmform-modal-close').on('click', function() {
+			$modal.fadeOut(200, function() {
+				$(this).remove();
+			});
+		});
+
+		$modal.on('click', function(e) {
+			if ($(e.target).is('.aicrmform-modal')) {
+				$modal.fadeOut(200, function() {
+					$(this).remove();
+				});
+			}
+		});
 	}
 
 	/**

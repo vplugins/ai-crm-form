@@ -81,6 +81,28 @@ class AICRMFORM_REST_API {
 			]
 		);
 
+		// Get form debug info (for troubleshooting).
+		register_rest_route(
+			$this->namespace,
+			'/forms/(?P<id>\d+)/debug',
+			[
+				'methods'             => 'GET',
+				'callback'            => [ $this, 'get_form_debug' ],
+				'permission_callback' => [ $this, 'admin_permission_check' ],
+			]
+		);
+
+		// Repair form field mappings.
+		register_rest_route(
+			$this->namespace,
+			'/forms/(?P<id>\d+)/repair-mappings',
+			[
+				'methods'             => 'POST',
+				'callback'            => [ $this, 'repair_form_mappings' ],
+				'permission_callback' => [ $this, 'admin_permission_check' ],
+			]
+		);
+
 		// Update form.
 		register_rest_route(
 			$this->namespace,
@@ -367,6 +389,400 @@ class AICRMFORM_REST_API {
 			],
 			200
 		);
+	}
+
+	/**
+	 * Get form debug information.
+	 *
+	 * @param WP_REST_Request $request The request object.
+	 * @return WP_REST_Response The response.
+	 */
+	public function get_form_debug( $request ) {
+		$form_id   = (int) $request->get_param( 'id' );
+		$generator = new AICRMFORM_Form_Generator();
+		$form      = $generator->get_form( $form_id );
+
+		if ( ! $form ) {
+			return new WP_REST_Response(
+				[
+					'success' => false,
+					'error'   => __( 'Form not found.', 'ai-crm-form' ),
+				],
+				404
+			);
+		}
+
+		// Build detailed debug info.
+		$debug_info = [
+			'form_id'         => $form->id,
+			'form_name'       => $form->name,
+			'crm_form_id'     => $form->crm_form_id,
+			'status'          => $form->status,
+			'field_mapping'   => $form->field_mapping,
+			'fields'          => [],
+		];
+
+		// Extract field details.
+		if ( ! empty( $form->form_config['fields'] ) ) {
+			foreach ( $form->form_config['fields'] as $field ) {
+				$field_name  = $field['name'] ?? 'unknown';
+				$crm_mapping = $field['field_id'] ?? $field['crm_mapping'] ?? '';
+
+				// Get the actual FieldID that would be used.
+				$resolved_field_id = null;
+				if ( ! empty( $crm_mapping ) ) {
+					if ( strpos( $crm_mapping, 'FieldID-' ) === 0 ) {
+						$resolved_field_id = $crm_mapping;
+					} else {
+						$resolved_field_id = AICRMFORM_Field_Mapping::get_field_id( $crm_mapping );
+					}
+				}
+
+				$debug_info['fields'][] = [
+					'name'              => $field_name,
+					'label'             => $field['label'] ?? '',
+					'type'              => $field['type'] ?? 'text',
+					'crm_mapping_raw'   => $crm_mapping,
+					'crm_field_id'      => $resolved_field_id,
+					'in_field_mapping'  => isset( $form->field_mapping[ $field_name ] ) ? $form->field_mapping[ $field_name ] : null,
+					'mapping_mismatch'  => ( $resolved_field_id && isset( $form->field_mapping[ $field_name ] ) )
+						? ( $resolved_field_id !== $form->field_mapping[ $field_name ] )
+						: null,
+				];
+			}
+		}
+
+		// Check for potential issues.
+		$issues = [];
+
+		if ( empty( $form->crm_form_id ) ) {
+			$issues[] = 'CRM Form ID is empty';
+		}
+
+		if ( empty( $form->field_mapping ) || count( $form->field_mapping ) === 0 ) {
+			$issues[] = 'Field mapping is empty - no fields will be sent to CRM';
+		}
+
+		foreach ( $debug_info['fields'] as $field ) {
+			if ( empty( $field['crm_field_id'] ) && ! empty( $field['crm_mapping_raw'] ) ) {
+				$issues[] = sprintf(
+					'Field "%s" has mapping "%s" which could not be resolved to a CRM Field ID',
+					$field['name'],
+					$field['crm_mapping_raw']
+				);
+			}
+
+			if ( empty( $field['in_field_mapping'] ) && ! empty( $field['crm_field_id'] ) ) {
+				$issues[] = sprintf(
+					'Field "%s" has CRM mapping but is not in stored field_mapping (form may need re-save)',
+					$field['name']
+				);
+			}
+		}
+
+		$debug_info['issues'] = $issues;
+		$debug_info['has_issues'] = count( $issues ) > 0;
+
+		return new WP_REST_Response(
+			[
+				'success' => true,
+				'debug'   => $debug_info,
+			],
+			200
+		);
+	}
+
+	/**
+	 * Repair form field mappings.
+	 *
+	 * This regenerates the field_mapping based on the form config fields,
+	 * optionally using AI to help with ambiguous mappings.
+	 *
+	 * @param WP_REST_Request $request The request object.
+	 * @return WP_REST_Response The response.
+	 */
+	public function repair_form_mappings( $request ) {
+		$form_id = (int) $request->get_param( 'id' );
+		$use_ai  = (bool) $request->get_param( 'use_ai' );
+
+		$generator = new AICRMFORM_Form_Generator();
+		$form      = $generator->get_form( $form_id );
+
+		if ( ! $form ) {
+			return new WP_REST_Response(
+				[
+					'success' => false,
+					'error'   => __( 'Form not found.', 'ai-crm-form' ),
+				],
+				404
+			);
+		}
+
+		// Get fields from form config.
+		$fields = $form->form_config['fields'] ?? [];
+
+		if ( empty( $fields ) ) {
+			return new WP_REST_Response(
+				[
+					'success' => false,
+					'error'   => __( 'Form has no fields to map.', 'ai-crm-form' ),
+				],
+				400
+			);
+		}
+
+		// Build new field mapping.
+		$new_field_mapping = [];
+		$unmapped_fields   = [];
+		$mapping_changes   = [];
+
+		foreach ( $fields as &$field ) {
+			$field_name = $field['name'] ?? '';
+			if ( empty( $field_name ) ) {
+				continue;
+			}
+
+			// Try to get existing mapping first.
+			$existing_mapping = $field['field_id'] ?? $field['crm_mapping'] ?? '';
+
+			// Resolve to full FieldID.
+			$field_id = null;
+
+			if ( ! empty( $existing_mapping ) ) {
+				if ( strpos( $existing_mapping, 'FieldID-' ) === 0 ) {
+					$field_id = $existing_mapping;
+				} else {
+					$field_id = AICRMFORM_Field_Mapping::get_field_id( $existing_mapping );
+				}
+			}
+
+			// If no mapping found, try to guess.
+			if ( empty( $field_id ) ) {
+				$guessed_mapping = $this->guess_crm_mapping_for_repair( $field_name, $field['label'] ?? '' );
+				if ( ! empty( $guessed_mapping ) ) {
+					$field_id = AICRMFORM_Field_Mapping::get_field_id( $guessed_mapping );
+					if ( $field_id ) {
+						$field['crm_mapping'] = $guessed_mapping;
+						$mapping_changes[] = sprintf(
+							'%s → %s (%s)',
+							$field_name,
+							$guessed_mapping,
+							$field_id
+						);
+					}
+				}
+			}
+
+			if ( $field_id ) {
+				$new_field_mapping[ $field_name ] = $field_id;
+				$field['field_id'] = $field_id;
+			} else {
+				$unmapped_fields[] = $field_name;
+			}
+		}
+		unset( $field );
+
+		// If use_ai is requested and there are unmapped fields, try AI mapping.
+		if ( $use_ai && ! empty( $unmapped_fields ) ) {
+			$ai_mappings = $this->get_ai_field_mappings( $unmapped_fields, $fields );
+			foreach ( $ai_mappings as $field_name => $crm_mapping ) {
+				$field_id = AICRMFORM_Field_Mapping::get_field_id( $crm_mapping );
+				if ( $field_id ) {
+					$new_field_mapping[ $field_name ] = $field_id;
+					$mapping_changes[] = sprintf(
+						'%s → %s (%s) [AI suggested]',
+						$field_name,
+						$crm_mapping,
+						$field_id
+					);
+
+					// Update the field in form_config.
+					foreach ( $fields as &$field ) {
+						if ( ( $field['name'] ?? '' ) === $field_name ) {
+							$field['crm_mapping'] = $crm_mapping;
+							$field['field_id']    = $field_id;
+							break;
+						}
+					}
+					unset( $field );
+
+					// Remove from unmapped list.
+					$unmapped_fields = array_diff( $unmapped_fields, [ $field_name ] );
+				}
+			}
+		}
+
+		// Update the form config with new mappings.
+		$form->form_config['fields'] = $fields;
+
+		// Save to database.
+		global $wpdb;
+		$table_name = $wpdb->prefix . 'aicrmform_forms';
+
+		$result = $wpdb->update(
+			$table_name,
+			[
+				'form_config'   => wp_json_encode( $form->form_config ),
+				'field_mapping' => wp_json_encode( $new_field_mapping ),
+			],
+			[ 'id' => $form_id ],
+			[ '%s', '%s' ],
+			[ '%d' ]
+		); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+
+		if ( false === $result ) {
+			return new WP_REST_Response(
+				[
+					'success' => false,
+					'error'   => __( 'Failed to update form mappings.', 'ai-crm-form' ),
+				],
+				500
+			);
+		}
+
+		return new WP_REST_Response(
+			[
+				'success'         => true,
+				'message'         => __( 'Field mappings repaired successfully.', 'ai-crm-form' ),
+				'field_mapping'   => $new_field_mapping,
+				'mapping_changes' => $mapping_changes,
+				'unmapped_fields' => $unmapped_fields,
+			],
+			200
+		);
+	}
+
+	/**
+	 * Guess CRM mapping based on field name and label (for repair).
+	 *
+	 * @param string $field_name  The field name.
+	 * @param string $field_label The field label.
+	 * @return string The guessed CRM mapping or empty string.
+	 */
+	private function guess_crm_mapping_for_repair( $field_name, $field_label = '' ) {
+		// Combine name and label for better guessing.
+		$text_to_match = strtolower( $field_name . ' ' . $field_label );
+
+		// Remove common prefixes.
+		$clean_text = preg_replace( '/^(your|user|contact|my|the|form|field)[_-]?\s*/i', '', $text_to_match );
+
+		// Mappings with keywords.
+		$mappings = [
+			'first_name'              => [ 'firstname', 'first_name', 'first name', 'fname', 'given' ],
+			'last_name'               => [ 'lastname', 'last_name', 'last name', 'lname', 'surname', 'family' ],
+			'email'                   => [ 'email', 'mail', 'e-mail' ],
+			'phone_number'            => [ 'phone', 'tel', 'telephone', 'mobile', 'cell' ],
+			'company_name'            => [ 'company', 'organization', 'org', 'business' ],
+			'company_website'         => [ 'website', 'url', 'site', 'web' ],
+			'primary_address_line1'   => [ 'address', 'street', 'addr' ],
+			'primary_address_city'    => [ 'city', 'town' ],
+			'primary_address_state'   => [ 'state', 'province', 'region' ],
+			'primary_address_postal'  => [ 'zip', 'postal', 'postcode' ],
+			'primary_address_country' => [ 'country' ],
+			'message'                 => [ 'message', 'comment', 'inquiry', 'question', 'subject', 'body', 'content' ],
+			'source_name'             => [ 'source', 'referral', 'how did you hear' ],
+		];
+
+		// Try matching.
+		foreach ( $mappings as $crm_field => $keywords ) {
+			foreach ( $keywords as $keyword ) {
+				if ( strpos( $clean_text, $keyword ) !== false ) {
+					return $crm_field;
+				}
+			}
+		}
+
+		// Special case: generic "name" maps to first_name.
+		if ( preg_match( '/\bname\b/', $clean_text ) && ! preg_match( '/\b(first|last|full|company)\b/', $clean_text ) ) {
+			return 'first_name';
+		}
+
+		return '';
+	}
+
+	/**
+	 * Get AI-suggested field mappings for unmapped fields.
+	 *
+	 * @param array $unmapped_fields List of unmapped field names.
+	 * @param array $all_fields      All form fields for context.
+	 * @return array Mapping of field_name => crm_mapping.
+	 */
+	private function get_ai_field_mappings( $unmapped_fields, $all_fields ) {
+		$mappings = [];
+
+		// Check if AI is configured.
+		$settings = get_option( 'aicrmform_settings', [] );
+		$api_key  = $settings['ai_api_key'] ?? '';
+
+		if ( empty( $api_key ) ) {
+			return $mappings;
+		}
+
+		// Get available CRM fields.
+		$available_fields = array_keys( array_merge(
+			AICRMFORM_Field_Mapping::CONTACT_FIELDS,
+			AICRMFORM_Field_Mapping::STANDARD_CONTACT_FIELDS,
+			AICRMFORM_Field_Mapping::UTM_FIELDS,
+			AICRMFORM_Field_Mapping::CONSENT_FIELDS,
+			AICRMFORM_Field_Mapping::COMPANY_FIELDS
+		) );
+
+		// Build context about all fields.
+		$fields_context = [];
+		foreach ( $all_fields as $field ) {
+			$fields_context[] = sprintf(
+				'- %s (label: "%s", type: %s)',
+				$field['name'] ?? 'unknown',
+				$field['label'] ?? '',
+				$field['type'] ?? 'text'
+			);
+		}
+
+		// Build prompt.
+		$prompt = sprintf(
+			"You are a CRM field mapping expert. Given the following form fields that need to be mapped to CRM fields, suggest the best mapping.\n\n" .
+			"Form fields to map:\n%s\n\n" .
+			"Available CRM field names:\n%s\n\n" .
+			"For each form field, respond with ONLY a JSON object mapping form field names to CRM field names. " .
+			"Only include mappings you are confident about. Use null for fields that have no clear mapping.\n\n" .
+			"Example response: {\"your-name\": \"first_name\", \"your-email\": \"email\", \"random-field\": null}",
+			implode( "\n", array_map( function ( $name ) use ( $all_fields ) {
+				$field = array_filter( $all_fields, function ( $f ) use ( $name ) {
+					return ( $f['name'] ?? '' ) === $name;
+				} );
+				$field = reset( $field );
+				return sprintf( '- %s (label: "%s")', $name, $field['label'] ?? '' );
+			}, $unmapped_fields ) ),
+			implode( ', ', $available_fields )
+		);
+
+		try {
+			$ai_client = new AICRMFORM_AI_Client();
+			$response  = $ai_client->chat( $prompt );
+
+			if ( is_string( $response ) ) {
+				// Extract JSON from response.
+				$json_start = strpos( $response, '{' );
+				$json_end   = strrpos( $response, '}' );
+
+				if ( false !== $json_start && false !== $json_end ) {
+					$json_string = substr( $response, $json_start, $json_end - $json_start + 1 );
+					$parsed      = json_decode( $json_string, true );
+
+					if ( is_array( $parsed ) ) {
+						foreach ( $parsed as $field_name => $crm_field ) {
+							if ( ! empty( $crm_field ) && in_array( $crm_field, $available_fields, true ) ) {
+								$mappings[ $field_name ] = $crm_field;
+							}
+						}
+					}
+				}
+			}
+		} catch ( \Exception $e ) {
+			error_log( 'AI CRM Form: AI mapping error - ' . $e->getMessage() );
+		}
+
+		return $mappings;
 	}
 
 	/**

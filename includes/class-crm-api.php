@@ -77,6 +77,13 @@ class AICRMFORM_CRM_API {
 			],
 		];
 
+		// Log the payload being sent to CRM API.
+		error_log( sprintf(
+			'AI CRM Form: Sending to CRM API - URL: %s, Payload: %s',
+			$this->api_url,
+			wp_json_encode( $payload, JSON_PRETTY_PRINT )
+		) );
+
 		// Send the request.
 		$response = wp_remote_post(
 			$this->api_url,

@@ -547,6 +547,9 @@ class AICRMFORM_Admin_Settings {
 								<button type="button" class="aicrmform-action-btn aicrmform-edit-form" data-form-id="<?php echo esc_attr( $form->id ); ?>" title="<?php esc_attr_e( 'Edit', 'ai-crm-form' ); ?>">
 									<span class="dashicons dashicons-edit"></span>
 								</button>
+								<button type="button" class="aicrmform-action-btn aicrmform-repair-mappings" data-form-id="<?php echo esc_attr( $form->id ); ?>" title="<?php esc_attr_e( 'Repair Field Mappings', 'ai-crm-form' ); ?>">
+									<span class="dashicons dashicons-admin-tools"></span>
+								</button>
 								<button type="button" class="aicrmform-action-btn aicrmform-action-btn-danger aicrmform-delete-form" data-form-id="<?php echo esc_attr( $form->id ); ?>" title="<?php esc_attr_e( 'Delete', 'ai-crm-form' ); ?>">
 									<span class="dashicons dashicons-trash"></span>
 								</button>
