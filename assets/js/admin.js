@@ -312,6 +312,9 @@
 		let hasActiveSources = false;
 		let html = '';
 
+		// Get default CRM Form ID from the form builder page if available
+		const defaultCrmFormId = $('#crm-form-id').val() || '';
+
 		for (const [key, source] of Object.entries(sources)) {
 			if (source.active && source.forms && source.forms.length > 0) {
 				hasActiveSources = true;
@@ -320,6 +323,19 @@
 					'<h4><span class="dashicons dashicons-admin-plugins"></span> ' +
 					escapeHtml(source.name) +
 					'</h4>';
+
+				// Add CRM Form ID input at the top of each source
+				html += '<div class="aicrmform-import-crm-id-row" style="margin-bottom: 16px; padding: 12px; background: #f0f6fc; border-radius: 6px; border: 1px solid #c3d9ed;">';
+				html += '<label style="display: block; margin-bottom: 6px; font-weight: 500; color: #1e3a5f;">';
+				html += '<span class="dashicons dashicons-cloud" style="color: #2271b1; margin-right: 4px;"></span>';
+				html += 'CRM Form ID <span style="color: #d63638;">*</span></label>';
+				html += '<input type="text" class="aicrmform-import-crm-form-id aicrmform-input" data-plugin="' + escapeHtml(key) + '" ';
+				html += 'value="' + escapeHtml(defaultCrmFormId) + '" ';
+				html += 'placeholder="FormConfigID-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" ';
+				html += 'style="width: 100%; margin-bottom: 4px;">';
+				html += '<p style="margin: 0; font-size: 12px; color: #50575e;">Required for CRM integration. Get this from your CRM dashboard.</p>';
+				html += '</div>';
+
 				html += '<div class="aicrmform-import-forms-list">';
 
 				source.forms.forEach(function (form) {
@@ -366,6 +382,24 @@
 	 * Import a form.
 	 */
 	function importForm(plugin, formId, formTitle, useSameShortcode, $btn) {
+		// Get the CRM Form ID from the input field
+		const crmFormId = $('.aicrmform-import-crm-form-id[data-plugin="' + plugin + '"]').val().trim();
+
+		// Validate CRM Form ID
+		if (!crmFormId) {
+			showToast('CRM Form ID is required to import forms.', 'error');
+			$('.aicrmform-import-crm-form-id[data-plugin="' + plugin + '"]').focus();
+			return;
+		}
+
+		// Validate format
+		const pattern = /^FormConfigID-[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
+		if (!pattern.test(crmFormId)) {
+			showToast('Invalid CRM Form ID format. Expected: FormConfigID-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'error');
+			$('.aicrmform-import-crm-form-id[data-plugin="' + plugin + '"]').focus();
+			return;
+		}
+
 		const originalText = $btn.html();
 		$btn.prop('disabled', true).html(
 			'<span class="spinner is-active" style="float: none; margin: 0;"></span>'
@@ -380,6 +414,7 @@
 				plugin: plugin,
 				form_id: formId,
 				use_same_shortcode: useSameShortcode,
+				crm_form_id: crmFormId,
 			}),
 		})
 			.done(function (response) {

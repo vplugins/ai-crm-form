@@ -277,9 +277,10 @@ class AICRMFORM_Form_Importer {
 	 * @param string $plugin_key Plugin key (e.g., 'cf7').
 	 * @param int    $form_id Source form ID.
 	 * @param bool   $use_same_shortcode Whether to use same shortcode after import.
+	 * @param string $crm_form_id Optional CRM Form ID override.
 	 * @return array Result with success status and data.
 	 */
-	public function import_form( $plugin_key, $form_id, $use_same_shortcode = false ) {
+	public function import_form( $plugin_key, $form_id, $use_same_shortcode = false, $crm_form_id = null ) {
 		// Get the source form.
 		$forms = $this->get_plugin_forms( $plugin_key );
 		$source_form = null;
@@ -321,12 +322,30 @@ class AICRMFORM_Form_Importer {
 			}
 		}
 
-		// Get settings for CRM form ID.
-		$settings    = get_option( 'aicrmform_settings', [] );
-		$crm_form_id = $settings['form_id'] ?? '';
+		// Get CRM form ID - use provided value or fall back to settings.
+		if ( empty( $crm_form_id ) ) {
+			$settings    = get_option( 'aicrmform_settings', [] );
+			$crm_form_id = $settings['form_id'] ?? '';
+		}
+
+		// Validate CRM Form ID.
+		if ( empty( $crm_form_id ) ) {
+			return [
+				'success' => false,
+				'error'   => __( 'CRM Form ID is required. Please configure a default CRM Form ID in Settings or provide one during import.', 'ai-crm-form' ),
+			];
+		}
+
+		// Validate CRM Form ID format.
+		$pattern = '/^FormConfigID-[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i';
+		if ( ! preg_match( $pattern, $crm_form_id ) ) {
+			return [
+				'success' => false,
+				'error'   => __( 'Invalid CRM Form ID format. Expected: FormConfigID-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'ai-crm-form' ),
+			];
+		}
 
 		// Save the form.
-		// save_form( $form_config, $crm_form_id, $name = null, $description = null )
 		$result = $this->generator->save_form(
 			$form_config,
 			$crm_form_id,

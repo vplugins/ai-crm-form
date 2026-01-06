@@ -643,6 +643,7 @@ class AICRMFORM_REST_API {
 		$plugin_key = sanitize_text_field( $request->get_param( 'plugin' ) );
 		$form_id    = (int) $request->get_param( 'form_id' );
 		$use_same_shortcode = (bool) $request->get_param( 'use_same_shortcode' );
+		$crm_form_id = sanitize_text_field( $request->get_param( 'crm_form_id' ) ?? '' );
 
 		if ( empty( $plugin_key ) || empty( $form_id ) ) {
 			return new WP_REST_Response(
@@ -655,7 +656,7 @@ class AICRMFORM_REST_API {
 		}
 
 		$importer = new AICRMFORM_Form_Importer();
-		$result   = $importer->import_form( $plugin_key, $form_id, $use_same_shortcode );
+		$result   = $importer->import_form( $plugin_key, $form_id, $use_same_shortcode, $crm_form_id );
 
 		$status_code = $result['success'] ? 200 : 400;
 
