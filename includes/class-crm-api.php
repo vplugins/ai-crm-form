@@ -151,7 +151,53 @@ class AICRMFORM_CRM_API {
 	 */
 	public function submit_with_mapping( $form_data, $field_mapping, $form_id ) {
 		$mapped_data = AICRMFORM_Field_Mapping::map_form_data_to_crm( $form_data, $field_mapping );
+
+		// Smart preprocessing: handle combined name fields.
+		$mapped_data = $this->preprocess_mapped_data( $mapped_data );
+
+		// Log the final mapped data for debugging.
+		error_log( sprintf(
+			'AI CRM Form: Final mapped data for CRM API: %s',
+			wp_json_encode( $mapped_data, JSON_PRETTY_PRINT )
+		) );
+
 		return $this->submit( $mapped_data, $form_id );
+	}
+
+	/**
+	 * Preprocess mapped data to handle special cases.
+	 *
+	 * This handles:
+	 * - Splitting combined name fields into first_name + last_name
+	 * - Combining subject + message into message field
+	 *
+	 * @param array $mapped_data Data with CRM Field IDs as keys.
+	 * @return array Preprocessed data.
+	 */
+	private function preprocess_mapped_data( $mapped_data ) {
+		$first_name_id = AICRMFORM_Field_Mapping::get_field_id( 'first_name' );
+		$last_name_id  = AICRMFORM_Field_Mapping::get_field_id( 'last_name' );
+
+		// If we have first_name but not last_name, and first_name contains a space,
+		// split it into first_name and last_name.
+		if ( isset( $mapped_data[ $first_name_id ] ) && ! isset( $mapped_data[ $last_name_id ] ) ) {
+			$full_name = trim( $mapped_data[ $first_name_id ] );
+
+			if ( strpos( $full_name, ' ' ) !== false ) {
+				$name_parts = explode( ' ', $full_name, 2 );
+				$mapped_data[ $first_name_id ] = trim( $name_parts[0] );
+				$mapped_data[ $last_name_id ]  = trim( $name_parts[1] ?? '' );
+
+				error_log( sprintf(
+					'AI CRM Form: Split full name "%s" into first_name="%s", last_name="%s"',
+					$full_name,
+					$mapped_data[ $first_name_id ],
+					$mapped_data[ $last_name_id ]
+				) );
+			}
+		}
+
+		return $mapped_data;
 	}
 
 	/**
