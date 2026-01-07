@@ -285,9 +285,53 @@
 	line-height: 1.4;
 }
 
+/* Theme Styling Note - shown when theme styling is enabled */
+.aicrmform-theme-styling-note {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+	padding: 16px;
+	background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+	border: 1px solid #4caf50;
+	border-radius: 8px;
+	margin-bottom: 20px;
+}
+
+.aicrmform-theme-styling-note .dashicons {
+	color: #2e7d32;
+	font-size: 20px;
+	width: 20px;
+	height: 20px;
+	flex-shrink: 0;
+	margin-top: 2px;
+}
+
+.aicrmform-note-content {
+	flex: 1;
+}
+
+.aicrmform-note-content strong {
+	display: block;
+	font-size: 14px;
+	color: #1b5e20;
+	margin-bottom: 4px;
+}
+
+.aicrmform-note-content p {
+	margin: 0;
+	font-size: 13px;
+	color: #2e7d32;
+	line-height: 1.5;
+}
+
 /* Style options wrapper - hide when theme styling is active */
 .aicrmform-theme-styling-active .aicrmform-style-options {
 	display: none !important;
+}
+
+/* Show the note when theme styling is active */
+.aicrmform-theme-styling-active .aicrmform-theme-styling-note {
+	display: flex !important;
 }
 
 .aicrmform-style-grid {

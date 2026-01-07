@@ -3,7 +3,7 @@
  * Plugin Name: AI CRM Form
  * Plugin URI: https://github.com/rajanvijayan/ai-crm-form
  * Description: AI-powered form generator that submits to CRM API. Generate dynamic forms using AI and capture leads seamlessly.
- * Version: 1.4.0
+ * Version: 1.4.1
  * Author: Rajan Vijayan
  * Author URI: https://rajanvijayan.com
  * License: GPL v2 or later
@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define plugin constants.
-define( 'AICRMFORM_VERSION', '1.4.0' );
+define( 'AICRMFORM_VERSION', '1.4.1' );
 define( 'AICRMFORM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'AICRMFORM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'AICRMFORM_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
@@ -405,21 +405,8 @@ class AI_CRM_Form {
 	 * Enqueue frontend scripts.
 	 */
 	public function frontend_scripts() {
-		$settings = get_option( 'aicrmform_settings', [] );
-
-		// Load Google Font if configured.
-		$font_family = $settings['default_font_family'] ?? '';
-		if ( ! empty( $font_family ) ) {
-			$font_slug = str_replace( ' ', '+', $font_family );
-			wp_enqueue_style(
-				'aicrmform-google-fonts',
-				'https://fonts.googleapis.com/css2?family=' . esc_attr( $font_slug ) . ':wght@400;500;600;700&display=swap',
-				[],
-				AICRMFORM_VERSION
-			);
-		}
-
-		wp_enqueue_style(
+		// Register styles (will be enqueued conditionally per form in the shortcode).
+		wp_register_style(
 			'aicrmform-frontend',
 			AICRMFORM_PLUGIN_URL . 'assets/css/form.css',
 			[],
