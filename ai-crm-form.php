@@ -68,15 +68,35 @@ class AI_CRM_Form {
 			require_once AICRMFORM_PLUGIN_DIR . 'vendor/autoload.php';
 		}
 
-		// Load plugin classes.
+		// Load core plugin classes.
 		require_once AICRMFORM_PLUGIN_DIR . 'includes/class-field-mapping.php';
 		require_once AICRMFORM_PLUGIN_DIR . 'includes/class-crm-api.php';
 		require_once AICRMFORM_PLUGIN_DIR . 'includes/class-ai-client.php';
 		require_once AICRMFORM_PLUGIN_DIR . 'includes/class-form-generator.php';
+
+		// Load form integrations (scalable structure).
+		$this->load_integrations();
+
 		require_once AICRMFORM_PLUGIN_DIR . 'includes/class-form-importer.php';
 		require_once AICRMFORM_PLUGIN_DIR . 'includes/class-admin-settings.php';
 		require_once AICRMFORM_PLUGIN_DIR . 'includes/class-rest-api.php';
 		require_once AICRMFORM_PLUGIN_DIR . 'includes/class-form-shortcode.php';
+	}
+
+	/**
+	 * Load form plugin integrations.
+	 */
+	private function load_integrations() {
+		// Load integration base classes.
+		require_once AICRMFORM_PLUGIN_DIR . 'includes/integrations/interface-form-integration.php';
+		require_once AICRMFORM_PLUGIN_DIR . 'includes/integrations/abstract-form-integration.php';
+
+		// Load specific integrations.
+		require_once AICRMFORM_PLUGIN_DIR . 'includes/integrations/contact-form-7/class-cf7-integration.php';
+		require_once AICRMFORM_PLUGIN_DIR . 'includes/integrations/gravity-forms/class-gravity-forms-integration.php';
+
+		// Load integration manager.
+		require_once AICRMFORM_PLUGIN_DIR . 'includes/integrations/class-integration-manager.php';
 	}
 
 	/**
