@@ -2865,3 +2865,212 @@
 		gap: 12px;
 	}
 }
+
+/* ============================
+   SUBMISSION DETAIL MODAL
+   ============================ */
+
+.aicrmform-submission-detail {
+	max-width: 700px;
+}
+
+.aicrmform-submission-detail .aicrmform-modal-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 20px 24px;
+	border-bottom: 1px solid var(--aicrmform-gray-200);
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	border-radius: var(--aicrmform-radius) var(--aicrmform-radius) 0 0;
+}
+
+.aicrmform-submission-header-content {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+}
+
+.aicrmform-submission-detail .aicrmform-modal-header h3 {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin: 0;
+	color: #fff;
+	font-size: 18px;
+}
+
+.aicrmform-submission-detail .aicrmform-modal-header h3 .dashicons {
+	font-size: 22px;
+	width: 22px;
+	height: 22px;
+	opacity: 0.9;
+}
+
+.aicrmform-submission-detail .aicrmform-modal-close {
+	background: rgba(255, 255, 255, 0.2);
+	border: none;
+	color: #fff;
+	font-size: 24px;
+	width: 36px;
+	height: 36px;
+	border-radius: 50%;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: background 0.2s;
+}
+
+.aicrmform-submission-detail .aicrmform-modal-close:hover {
+	background: rgba(255, 255, 255, 0.3);
+}
+
+.aicrmform-submission-detail .aicrmform-status-pill {
+	padding: 6px 14px;
+	font-size: 13px;
+	font-weight: 500;
+}
+
+/* Metadata Section */
+.aicrmform-submission-meta {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 16px;
+	padding: 20px;
+	background: var(--aicrmform-gray-50);
+	border-bottom: 1px solid var(--aicrmform-gray-200);
+}
+
+.aicrmform-meta-item {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+}
+
+.aicrmform-meta-item > .dashicons {
+	font-size: 20px;
+	width: 20px;
+	height: 20px;
+	color: var(--aicrmform-primary);
+	margin-top: 2px;
+}
+
+.aicrmform-meta-label {
+	display: block;
+	font-size: 11px;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	color: var(--aicrmform-gray-500);
+	margin-bottom: 2px;
+}
+
+.aicrmform-meta-value {
+	display: block;
+	font-size: 14px;
+	color: var(--aicrmform-gray-800);
+	font-weight: 500;
+}
+
+/* Form Data Section */
+.aicrmform-submission-data {
+	padding: 24px;
+}
+
+.aicrmform-submission-data h4,
+.aicrmform-crm-response h4 {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin: 0 0 16px 0;
+	font-size: 15px;
+	color: var(--aicrmform-gray-700);
+}
+
+.aicrmform-submission-data h4 .dashicons,
+.aicrmform-crm-response h4 .dashicons {
+	color: var(--aicrmform-primary);
+	font-size: 18px;
+	width: 18px;
+	height: 18px;
+}
+
+.aicrmform-data-grid {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 16px;
+}
+
+.aicrmform-data-item {
+	background: var(--aicrmform-gray-50);
+	border: 1px solid var(--aicrmform-gray-200);
+	border-radius: 8px;
+	padding: 14px 16px;
+}
+
+.aicrmform-data-item.full-width {
+	grid-column: 1 / -1;
+}
+
+.aicrmform-data-label {
+	display: block;
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	color: var(--aicrmform-gray-500);
+	margin-bottom: 6px;
+}
+
+.aicrmform-data-value {
+	display: block;
+	font-size: 14px;
+	color: var(--aicrmform-gray-800);
+	line-height: 1.5;
+	word-break: break-word;
+}
+
+.aicrmform-data-value em {
+	color: var(--aicrmform-gray-400);
+	font-style: italic;
+}
+
+.aicrmform-no-data {
+	color: var(--aicrmform-gray-500);
+	font-style: italic;
+	text-align: center;
+	padding: 20px;
+}
+
+/* CRM Response Section */
+.aicrmform-crm-response {
+	padding: 0 24px 24px;
+}
+
+.aicrmform-code-block {
+	background: var(--aicrmform-gray-800);
+	color: #a5f3fc;
+	padding: 16px;
+	border-radius: 8px;
+	font-size: 12px;
+	font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+	overflow-x: auto;
+	max-height: 200px;
+	margin: 0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+	.aicrmform-submission-meta {
+		grid-template-columns: 1fr;
+	}
+
+	.aicrmform-data-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.aicrmform-submission-header-content {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 8px;
+	}
+}

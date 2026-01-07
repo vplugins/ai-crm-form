@@ -411,8 +411,8 @@
 		let hasActiveSources = false;
 		let html = '';
 
-		// Get default CRM Form ID from the form builder page if available
-		const defaultCrmFormId = $('#crm-form-id').val() || '';
+		// Get default CRM Form ID from settings or form builder page if available
+		const defaultCrmFormId = $('#crm-form-id').val() || aicrmformAdmin.defaultCrmFormId || '';
 
 		for (const [key, source] of Object.entries(sources)) {
 			if (source.active && source.forms && source.forms.length > 0) {
@@ -2776,33 +2776,112 @@
 		}).done(function (response) {
 			if (response.success && response.submission) {
 				const sub = response.submission;
-				let html = '<div class="aicrmform-modal-overlay" id="submission-modal">';
-				html += '<div class="aicrmform-modal aicrmform-modal-lg">';
-				html +=
-					'<div class="aicrmform-modal-header"><h3>Submission #' + sub.id + '</h3></div>';
-				html += '<div class="aicrmform-modal-body">';
-				html += '<table class="widefat" style="margin-bottom: 20px;">';
-				if (sub.submission_data) {
-					Object.entries(sub.submission_data).forEach(function ([key, value]) {
-						html +=
-							'<tr><td><strong>' +
-							escapeHtml(key) +
-							'</strong></td><td>' +
-							escapeHtml(String(value)) +
-							'</td></tr>';
-					});
+				
+				// Determine status class and icon
+				const statusClass = (sub.status === 'success' || sub.status === 'sent') ? 'success' : 
+					(sub.status === 'pending' ? 'warning' : 'error');
+				const statusIcon = statusClass === 'success' ? 'yes-alt' : 
+					(statusClass === 'warning' ? 'clock' : 'warning');
+				
+				// Format date
+				const submittedDate = new Date(sub.created_at);
+				const formattedDate = submittedDate.toLocaleDateString('en-US', {
+					weekday: 'long',
+					year: 'numeric',
+					month: 'long',
+					day: 'numeric',
+					hour: '2-digit',
+					minute: '2-digit'
+				});
+
+				// Format field name for display (convert snake_case to Title Case)
+				function formatFieldName(name) {
+					return name
+						.replace(/^input_\d+_\d+$/, 'Field') // Handle Gravity Forms field names
+						.replace(/[-_]/g, ' ')
+						.replace(/\b\w/g, function(l) { return l.toUpperCase(); });
 				}
-				html += '</table>';
-				html +=
-					'<p><strong>Status:</strong> ' +
-					sub.status +
-					' | <strong>IP:</strong> ' +
-					sub.ip_address +
-					'</p>';
-				html += '</div>';
-				html +=
-					'<div class="aicrmform-modal-footer"><button type="button" class="button" onclick="jQuery(\'#submission-modal\').remove();">Close</button></div>';
-				html += '</div></div>';
+
+				let html = `
+				<div class="aicrmform-modal-overlay" id="submission-modal">
+					<div class="aicrmform-modal aicrmform-modal-lg aicrmform-submission-detail">
+						<div class="aicrmform-modal-header">
+							<div class="aicrmform-submission-header-content">
+								<h3>
+									<span class="dashicons dashicons-email-alt"></span>
+									Submission #${sub.id}
+								</h3>
+								<span class="aicrmform-status-pill ${statusClass}">
+									<span class="dashicons dashicons-${statusIcon}"></span>
+									${sub.status.charAt(0).toUpperCase() + sub.status.slice(1)}
+								</span>
+							</div>
+							<button type="button" class="aicrmform-modal-close" onclick="jQuery('#submission-modal').remove();">&times;</button>
+						</div>
+						<div class="aicrmform-modal-body">
+							<!-- Metadata Section -->
+							<div class="aicrmform-submission-meta">
+								<div class="aicrmform-meta-item">
+									<span class="dashicons dashicons-calendar-alt"></span>
+									<div>
+										<span class="aicrmform-meta-label">Submitted</span>
+										<span class="aicrmform-meta-value">${formattedDate}</span>
+									</div>
+								</div>
+								<div class="aicrmform-meta-item">
+									<span class="dashicons dashicons-admin-site-alt3"></span>
+									<div>
+										<span class="aicrmform-meta-label">IP Address</span>
+										<span class="aicrmform-meta-value">${escapeHtml(sub.ip_address)}</span>
+									</div>
+								</div>
+								<div class="aicrmform-meta-item">
+									<span class="dashicons dashicons-format-aside"></span>
+									<div>
+										<span class="aicrmform-meta-label">Form ID</span>
+										<span class="aicrmform-meta-value">${escapeHtml(String(sub.form_id))}</span>
+									</div>
+								</div>
+							</div>
+
+							<!-- Form Data Section -->
+							<div class="aicrmform-submission-data">
+								<h4>
+									<span class="dashicons dashicons-list-view"></span>
+									Submitted Data
+								</h4>
+								<div class="aicrmform-data-grid">
+									${sub.submission_data ? Object.entries(sub.submission_data).map(function([key, value]) {
+										const displayValue = Array.isArray(value) ? value.join(', ') : String(value);
+										const isLongText = displayValue.length > 100;
+										return `
+											<div class="aicrmform-data-item ${isLongText ? 'full-width' : ''}">
+												<span class="aicrmform-data-label">${escapeHtml(formatFieldName(key))}</span>
+												<span class="aicrmform-data-value">${escapeHtml(displayValue) || '<em>Empty</em>'}</span>
+											</div>
+										`;
+									}).join('') : '<p class="aicrmform-no-data">No submission data available</p>'}
+								</div>
+							</div>
+
+							${sub.crm_response ? `
+							<!-- CRM Response Section -->
+							<div class="aicrmform-crm-response">
+								<h4>
+									<span class="dashicons dashicons-cloud"></span>
+									CRM Response
+								</h4>
+								<pre class="aicrmform-code-block">${escapeHtml(JSON.stringify(sub.crm_response, null, 2))}</pre>
+							</div>
+							` : ''}
+						</div>
+						<div class="aicrmform-modal-footer">
+							<button type="button" class="button button-secondary" onclick="jQuery('#submission-modal').remove();">
+								Close
+							</button>
+						</div>
+					</div>
+				</div>`;
 
 				const $modal = $(html);
 				$('body').append($modal);

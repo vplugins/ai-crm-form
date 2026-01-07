@@ -430,7 +430,7 @@ class AICRMFORM_Admin_Settings {
 					<p class="aicrmform-page-subtitle"><?php esc_html_e( 'Manage your lead capture forms', 'ai-crm-form' ); ?></p>
 				</div>
 				<div class="aicrmform-page-header-actions">
-					<button type="button" id="import-form-btn" class="button button-secondary button-large">
+					<button type="button" id="import-form-btn" class="button button-primary button-large">
 						<span class="dashicons dashicons-download"></span>
 						<?php esc_html_e( 'Import Form', 'ai-crm-form' ); ?>
 					</button>
