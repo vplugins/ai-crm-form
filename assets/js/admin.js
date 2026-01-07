@@ -541,15 +541,17 @@
 					};
 					console.log('AI CRM Form: Imported from plugin:', plugin, '- Total imported plugins:', Object.keys(importedPlugins));
 
-					// Clear any pending dialog timeout from previous import
+					// Clear any pending dialog timeout - we'll reset it
 					if (pendingImportDialogTimeout) {
 						clearTimeout(pendingImportDialogTimeout);
+						pendingImportDialogTimeout = null;
 					}
 
 					// Offer to disable the source plugin(s) (delayed to allow for multiple imports)
+					// Each new import resets the timer, so dialog shows 2s after LAST import
 					pendingImportDialogTimeout = setTimeout(function () {
 						showImportCompleteDialog();
-					}, 1500);
+					}, 2000);
 				} else {
 					$btn.prop('disabled', false).html(originalText);
 					showToast(response.error || 'Failed to import form.', 'error');
@@ -607,13 +609,13 @@
 			title,
 			confirmMsg,
 			function () {
+				// Clear the imported plugins tracking ONLY when user clicks Yes
+				importedPlugins = {};
 				// Deactivate all imported plugins
 				deactivateMultiplePlugins(pluginsToDeactivate);
 			}
 		);
-
-		// Clear the imported plugins tracking
-		importedPlugins = {};
+		// Note: importedPlugins is cleared in hideConfirmModal when user clicks No
 	}
 
 	/**
