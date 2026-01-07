@@ -729,6 +729,19 @@ class AICRMFORM_Admin_Settings {
 							<span class="dashicons dashicons-arrow-down-alt2"></span>
 						</div>
 						<div class="aicrmform-card-body" style="display: none;">
+							<!-- Use Theme Styling Toggle -->
+							<div class="aicrmform-theme-styling-toggle">
+								<label class="aicrmform-toggle-switch">
+									<input type="checkbox" id="use-theme-styling">
+									<span class="aicrmform-toggle-slider"></span>
+								</label>
+								<div class="aicrmform-toggle-content">
+									<span class="aicrmform-toggle-label"><?php esc_html_e( 'Use Theme Styling', 'ai-crm-form' ); ?></span>
+									<span class="aicrmform-toggle-description"><?php esc_html_e( 'Disable plugin styles and let your theme control the form appearance.', 'ai-crm-form' ); ?></span>
+								</div>
+							</div>
+
+							<div class="aicrmform-style-options" id="style-options">
 							<div class="aicrmform-style-grid">
 								<div class="aicrmform-form-row">
 									<label for="style-font-family"><?php esc_html_e( 'Font Family', 'ai-crm-form' ); ?></label>
@@ -796,6 +809,7 @@ class AICRMFORM_Admin_Settings {
 								<label for="custom-css"><?php esc_html_e( 'Custom CSS', 'ai-crm-form' ); ?></label>
 								<textarea id="custom-css" class="aicrmform-textarea aicrmform-code-editor" rows="4" placeholder="/* Your custom styles */"></textarea>
 							</div>
+							</div><!-- /.aicrmform-style-options -->
 						</div>
 					</div>
 				</div>

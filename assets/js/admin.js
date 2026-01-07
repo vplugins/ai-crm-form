@@ -118,6 +118,9 @@
 		// Form Import
 		initFormImport();
 
+		// Theme Styling Toggle
+		initThemeStylingToggle();
+
 		// Collapsible Cards
 		initCollapsibleCards();
 
@@ -220,6 +223,36 @@
 		$(
 			'#style-primary-color, #style-border-radius, #style-label-position, #style-button-width'
 		).on('change', updateLivePreview);
+	}
+
+	/**
+	 * Initialize theme styling toggle functionality.
+	 */
+	function initThemeStylingToggle() {
+		const $toggle = $('#use-theme-styling');
+		const $styleOptions = $('#style-options');
+		
+		if (!$toggle.length) return;
+
+		// Handle toggle change
+		$toggle.on('change', function() {
+			if ($(this).is(':checked')) {
+				$styleOptions.addClass('disabled');
+			} else {
+				$styleOptions.removeClass('disabled');
+			}
+			updateLivePreview();
+		});
+
+		// Also handle in edit form modal
+		$(document).on('change', '#edit-use-theme-styling', function() {
+			const $editStyleOptions = $('#edit-style-options');
+			if ($(this).is(':checked')) {
+				$editStyleOptions.addClass('disabled');
+			} else {
+				$editStyleOptions.removeClass('disabled');
+			}
+		});
 	}
 
 	/**
@@ -1546,6 +1579,7 @@
 			success_message: $('#success-message').val() || 'Thank you for your submission!',
 			error_message: $('#error-message').val() || 'Something went wrong.',
 			styles: {
+				use_theme_styling: $('#use-theme-styling').is(':checked'),
 				font_family: $('#style-font-family').val(),
 				font_size: $('#style-font-size').val(),
 				background_color: $('#style-background-color').val(),
@@ -2184,6 +2218,19 @@
 
 		// Tab Content: Styling
 		html += '<div class="aicrmform-edit-tab-content" id="edit-tab-styling" style="display: none;">';
+		
+		// Use Theme Styling Toggle
+		html += '<div class="aicrmform-theme-styling-toggle">';
+		html += '<label class="aicrmform-toggle-switch">';
+		html += '<input type="checkbox" id="edit-use-theme-styling"' + (styles.use_theme_styling ? ' checked' : '') + '>';
+		html += '<span class="aicrmform-toggle-slider"></span>';
+		html += '</label>';
+		html += '<div class="aicrmform-toggle-content">';
+		html += '<span class="aicrmform-toggle-label">Use Theme Styling</span>';
+		html += '<span class="aicrmform-toggle-description">Disable plugin styles and let your theme control the form appearance.</span>';
+		html += '</div></div>';
+
+		html += '<div class="aicrmform-style-options' + (styles.use_theme_styling ? ' disabled' : '') + '" id="edit-style-options">';
 		html +=
 			'<div class="aicrmform-style-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">';
 
@@ -2314,9 +2361,10 @@
 			'<div class="aicrmform-form-row" style="margin-top: 16px;"><label>Custom CSS</label><textarea id="edit-custom-css" class="aicrmform-textarea" rows="3" placeholder="/* Your custom styles */">' +
 			escapeHtml(customCss) +
 			'</textarea></div>';
-		html += '</div>';
+		html += '</div>'; // Close style-grid
+		html += '</div>'; // Close style-options
 
-		html += '</div>';
+		html += '</div>'; // Close tab content
 		html += '<div class="aicrmform-modal-footer">';
 		html += '<button type="button" class="button" id="cancel-edit">Cancel</button>';
 		html +=
@@ -2396,6 +2444,7 @@
 
 			// Update styles in form config
 			formConfig.styles = {
+				use_theme_styling: $modal.find('#edit-use-theme-styling').is(':checked'),
 				font_family: $modal.find('#edit-font-family').val(),
 				font_size: $modal.find('#edit-font-size').val(),
 				background_color: $modal.find('#edit-background-color').val(),

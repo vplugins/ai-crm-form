@@ -457,6 +457,13 @@ class AICRMFORM_Form_Shortcode {
 
 		// Add style-based classes.
 		$styles = $form_config['styles'] ?? [];
+		
+		// Check if theme styling is enabled.
+		$use_theme_styling = isset( $styles['use_theme_styling'] ) && $styles['use_theme_styling'];
+		if ( $use_theme_styling ) {
+			$wrapper_class .= ' aicrmform-theme-styled';
+		}
+		
 		if ( ! empty( $styles['label_position'] ) ) {
 			$wrapper_class .= ' aicrmform-labels-' . sanitize_html_class( $styles['label_position'] );
 		}
@@ -554,6 +561,17 @@ class AICRMFORM_Form_Shortcode {
 		$custom_css = $form_config['custom_css'] ?? '';
 		$settings   = get_option( 'aicrmform_settings', [] );
 		$css        = '';
+
+		// If "Use Theme Styling" is enabled, return empty CSS (only HTML will be rendered).
+		$use_theme_styling = isset( $styles['use_theme_styling'] ) && $styles['use_theme_styling'];
+		if ( $use_theme_styling ) {
+			// Only return custom CSS if provided (user might still want to add minor tweaks).
+			if ( ! empty( $custom_css ) ) {
+				$selector = '.aicrmform-wrapper-' . $form_id;
+				$css     .= str_replace( '.aicrmform-form', $selector . ' .aicrmform-form', $custom_css );
+			}
+			return $css;
+		}
 
 		// Get default styling from settings.
 		$font_family       = $styles['font_family'] ?? $settings['default_font_family'] ?? '';

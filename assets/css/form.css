@@ -400,3 +400,77 @@
 		box-shadow: 0 0 0 3px rgba(0, 150, 221, 0.2);
 	}
 }
+
+/* ============================
+   THEME STYLING MODE
+   When enabled, removes all plugin styles
+   so the theme can control appearance
+   ============================ */
+
+.aicrmform-wrapper.aicrmform-theme-styled {
+	max-width: none;
+	font-family: inherit;
+}
+
+.aicrmform-wrapper.aicrmform-theme-styled .aicrmform-form {
+	background: transparent;
+	border: none;
+	border-radius: 0;
+	padding: 0;
+	box-shadow: none;
+}
+
+.aicrmform-wrapper.aicrmform-theme-styled .aicrmform-field {
+	margin-bottom: 1em;
+}
+
+.aicrmform-wrapper.aicrmform-theme-styled .aicrmform-field label {
+	font-weight: inherit;
+	font-size: inherit;
+	color: inherit;
+}
+
+.aicrmform-wrapper.aicrmform-theme-styled .aicrmform-field input,
+.aicrmform-wrapper.aicrmform-theme-styled .aicrmform-field select,
+.aicrmform-wrapper.aicrmform-theme-styled .aicrmform-field textarea {
+	font-family: inherit;
+	font-size: inherit;
+	padding: 0.5em;
+	border: 1px solid currentColor;
+	border-radius: 0;
+	background: transparent;
+	color: inherit;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.aicrmform-wrapper.aicrmform-theme-styled .aicrmform-field input:focus,
+.aicrmform-wrapper.aicrmform-theme-styled .aicrmform-field select:focus,
+.aicrmform-wrapper.aicrmform-theme-styled .aicrmform-field textarea:focus {
+	outline: 2px solid currentColor;
+	outline-offset: 2px;
+	box-shadow: none;
+}
+
+.aicrmform-wrapper.aicrmform-theme-styled .aicrmform-button {
+	font-family: inherit;
+	font-size: inherit;
+	padding: 0.75em 1.5em;
+	background: currentColor;
+	color: inherit;
+	border: 1px solid currentColor;
+	border-radius: 0;
+	cursor: pointer;
+}
+
+.aicrmform-wrapper.aicrmform-theme-styled .aicrmform-button:hover {
+	opacity: 0.9;
+}
+
+.aicrmform-wrapper.aicrmform-theme-styled .aicrmform-success,
+.aicrmform-wrapper.aicrmform-theme-styled .aicrmform-error {
+	padding: 1em;
+	margin-bottom: 1em;
+	border: 1px solid currentColor;
+	background: transparent;
+}
