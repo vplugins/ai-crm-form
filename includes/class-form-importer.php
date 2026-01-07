@@ -644,7 +644,7 @@ PROMPT;
 		$result = $this->generator->save_form(
 			$form_config,
 			$crm_form_id,
-			$source_form['title'] . ' (Imported)',
+			$source_form['title'],
 			'Imported from ' . $this->supported_plugins[ $plugin_key ]['name']
 		);
 
