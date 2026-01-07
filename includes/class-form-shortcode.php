@@ -679,34 +679,34 @@ class AICRMFORM_Form_Shortcode {
 			case 'select':
 				$html   .= '<select id="aicrmform-' . $name . '" name="' . $name . '" data-field-id="' . $field_id . '" ' . $req_attr . '>';
 				$html   .= '<option value="">' . esc_html__( 'Select...', 'ai-crm-form' ) . '</option>';
-				$options = $field['options'] ?? [];
+				$options = $this->normalize_options( $field['options'] ?? [] );
 				foreach ( $options as $option ) {
-					$html .= '<option value="' . esc_attr( $option ) . '">' . esc_html( $option ) . '</option>';
+					$html .= '<option value="' . esc_attr( $option['value'] ) . '">' . esc_html( $option['label'] ) . '</option>';
 				}
 				$html .= '</select>';
 				break;
 
 			case 'checkbox':
-				$options = $field['options'] ?? [ $label ];
+				$options = $this->normalize_options( $field['options'] ?? [ $label ] );
 				$html   .= '<div class="aicrmform-checkbox-group">';
 				foreach ( $options as $index => $option ) {
 					$option_id = $name . '-' . $index;
 					$html     .= '<label class="aicrmform-checkbox-label" for="aicrmform-' . esc_attr( $option_id ) . '">';
-					$html     .= '<input type="checkbox" id="aicrmform-' . esc_attr( $option_id ) . '" name="' . $name . '[]" value="' . esc_attr( $option ) . '" data-field-id="' . $field_id . '">';
-					$html     .= '<span>' . esc_html( $option ) . '</span>';
+					$html     .= '<input type="checkbox" id="aicrmform-' . esc_attr( $option_id ) . '" name="' . $name . '[]" value="' . esc_attr( $option['value'] ) . '" data-field-id="' . $field_id . '">';
+					$html     .= '<span>' . esc_html( $option['label'] ) . '</span>';
 					$html     .= '</label>';
 				}
 				$html .= '</div>';
 				break;
 
 			case 'radio':
-				$options = $field['options'] ?? [];
+				$options = $this->normalize_options( $field['options'] ?? [] );
 				$html   .= '<div class="aicrmform-radio-group">';
 				foreach ( $options as $index => $option ) {
 					$option_id = $name . '-' . $index;
 					$html     .= '<label class="aicrmform-radio-label" for="aicrmform-' . esc_attr( $option_id ) . '">';
-					$html     .= '<input type="radio" id="aicrmform-' . esc_attr( $option_id ) . '" name="' . $name . '" value="' . esc_attr( $option ) . '" data-field-id="' . $field_id . '" ' . $req_attr . '>';
-					$html     .= '<span>' . esc_html( $option ) . '</span>';
+					$html     .= '<input type="radio" id="aicrmform-' . esc_attr( $option_id ) . '" name="' . $name . '" value="' . esc_attr( $option['value'] ) . '" data-field-id="' . $field_id . '" ' . $req_attr . '>';
+					$html     .= '<span>' . esc_html( $option['label'] ) . '</span>';
 					$html     .= '</label>';
 				}
 				$html .= '</div>';
@@ -747,5 +747,35 @@ class AICRMFORM_Form_Shortcode {
 		$html .= '</div>';
 
 		return $html;
+	}
+
+	/**
+	 * Normalize options to a consistent format.
+	 *
+	 * Handles both string options (from CF7) and array options with label/value (from Gravity Forms).
+	 *
+	 * @param array $options Raw options array.
+	 * @return array Normalized options with 'label' and 'value' keys.
+	 */
+	private function normalize_options( $options ) {
+		$normalized = [];
+
+		foreach ( $options as $option ) {
+			if ( is_array( $option ) ) {
+				// Already in array format (Gravity Forms style).
+				$normalized[] = [
+					'label' => $option['label'] ?? $option['text'] ?? $option['value'] ?? '',
+					'value' => $option['value'] ?? $option['label'] ?? '',
+				];
+			} else {
+				// String format (CF7 style).
+				$normalized[] = [
+					'label' => (string) $option,
+					'value' => (string) $option,
+				];
+			}
+		}
+
+		return $normalized;
 	}
 }
