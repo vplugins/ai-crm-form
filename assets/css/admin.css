@@ -1051,12 +1051,27 @@
 	color: var(--aicrmform-gray-500);
 }
 
+.aicrmform-page-header-actions {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
 .aicrmform-page-header-actions .button-large {
 	display: inline-flex;
 	align-items: center;
 	gap: 8px;
 	padding: 12px 24px;
 	font-size: 14px;
+	height: auto;
+	line-height: 1;
+}
+
+.aicrmform-page-header-actions .button-large .dashicons {
+	font-size: 18px;
+	width: 18px;
+	height: 18px;
+	line-height: 1;
 }
 
 /* Empty State */
