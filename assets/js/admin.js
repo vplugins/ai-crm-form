@@ -339,12 +339,9 @@
 		});
 	}
 
-	// Track pending import dialog timeout
+	// Track imported plugins for the disable dialog
 	let pendingImportDialogTimeout = null;
-	let lastImportedPlugin = null;
-	let lastImportedPluginDisplayName = null;
-	let lastImportedFormId = null;
-	let lastUsedSameShortcode = false;
+	let importedPlugins = {}; // Track all plugins imported in this session
 
 	/**
 	 * Initialize Form Import.
@@ -535,18 +532,20 @@
 					};
 					const pluginDisplayName = pluginNames[plugin] || plugin;
 
-					// Store this import's info (for the dialog that will show)
-					lastImportedPlugin = plugin;
-					lastImportedPluginDisplayName = pluginDisplayName;
-					lastImportedFormId = response.form_id;
-					lastUsedSameShortcode = useSameShortcode;
+					// Track this plugin as imported
+					importedPlugins[plugin] = {
+						key: plugin,
+						displayName: pluginDisplayName,
+						formId: response.form_id,
+						useSameShortcode: useSameShortcode
+					};
 
 					// Clear any pending dialog timeout from previous import
 					if (pendingImportDialogTimeout) {
 						clearTimeout(pendingImportDialogTimeout);
 					}
 
-					// Offer to disable the source plugin (delayed to allow for multiple imports)
+					// Offer to disable the source plugin(s) (delayed to allow for multiple imports)
 					pendingImportDialogTimeout = setTimeout(function () {
 						showImportCompleteDialog();
 					}, 1500);
@@ -562,41 +561,105 @@
 	}
 
 	/**
-	 * Show the import complete dialog with option to disable plugin.
+	 * Show the import complete dialog with option to disable plugin(s).
 	 */
 	function showImportCompleteDialog() {
-		// Use the stored values from the most recent import
-		const plugin = lastImportedPlugin;
-		const pluginDisplayName = lastImportedPluginDisplayName;
-		const formId = lastImportedFormId;
-		const useSameShortcode = lastUsedSameShortcode;
+		pendingImportDialogTimeout = null;
 
-		if (!plugin || !pluginDisplayName) {
+		// Get list of imported plugins
+		const pluginKeys = Object.keys(importedPlugins);
+		
+		if (pluginKeys.length === 0) {
 			return;
 		}
 
-		let confirmMsg = 'Would you like to disable ' + pluginDisplayName + '?';
-		if (useSameShortcode) {
-			confirmMsg +=
-				' Your existing shortcodes will continue to work with the imported form.';
+		// Build list of plugin names
+		const pluginDisplayNames = pluginKeys.map(function(key) {
+			return importedPlugins[key].displayName;
+		});
+
+		let title, confirmMsg;
+		
+		if (pluginKeys.length === 1) {
+			// Single plugin imported
+			const pluginInfo = importedPlugins[pluginKeys[0]];
+			title = 'Disable ' + pluginInfo.displayName + '?';
+			confirmMsg = 'Would you like to disable ' + pluginInfo.displayName + '?';
+			if (pluginInfo.useSameShortcode) {
+				confirmMsg += ' Your existing shortcodes will continue to work with the imported form.';
+			} else {
+				confirmMsg += ' You may need to update your shortcodes to [ai_crm_form id="' + pluginInfo.formId + '"]';
+			}
 		} else {
-			confirmMsg +=
-				' You may need to update your shortcodes to [ai_crm_form id="' +
-				formId +
-				'"]';
+			// Multiple plugins imported
+			title = 'Disable Source Plugins?';
+			confirmMsg = 'Would you like to disable the following plugins?\n\n• ' + pluginDisplayNames.join('\n• ') + 
+				'\n\nYour existing shortcodes will continue to work with the imported forms.';
 		}
 
+		// Store the plugins to deactivate (capture in closure)
+		const pluginsToDeactivate = Object.assign({}, importedPlugins);
+
 		showConfirm(
-			'Disable ' + pluginDisplayName + '?',
+			title,
 			confirmMsg,
 			function () {
-				// Deactivate the plugin
-				deactivatePlugin(plugin, pluginDisplayName);
+				// Deactivate all imported plugins
+				deactivateMultiplePlugins(pluginsToDeactivate);
 			}
 		);
 
-		// Clear the stored values
-		pendingImportDialogTimeout = null;
+		// Clear the imported plugins tracking
+		importedPlugins = {};
+	}
+
+	/**
+	 * Deactivate multiple plugins.
+	 *
+	 * @param {Object} plugins Object of plugin info to deactivate.
+	 */
+	function deactivateMultiplePlugins(plugins) {
+		const pluginKeys = Object.keys(plugins);
+		const pluginNames = pluginKeys.map(function(key) {
+			return plugins[key].displayName;
+		});
+
+		showToast('Deactivating ' + pluginNames.join(' and ') + '...', 'info');
+
+		// Deactivate plugins one by one
+		let completed = 0;
+		let errors = [];
+
+		pluginKeys.forEach(function(pluginKey) {
+			$.ajax({
+				url: aicrmformAdmin.restUrl + 'deactivate-plugin',
+				method: 'POST',
+				headers: { 'X-WP-Nonce': aicrmformAdmin.nonce },
+				contentType: 'application/json',
+				data: JSON.stringify({ plugin: pluginKey }),
+			})
+				.done(function (response) {
+					if (!response.success) {
+						errors.push(plugins[pluginKey].displayName);
+					}
+				})
+				.fail(function () {
+					errors.push(plugins[pluginKey].displayName);
+				})
+				.always(function () {
+					completed++;
+					if (completed === pluginKeys.length) {
+						// All requests completed
+						if (errors.length === 0) {
+							showToast(pluginNames.join(' and ') + ' deactivated successfully!', 'success');
+						} else {
+							showToast('Failed to deactivate: ' + errors.join(', '), 'error');
+						}
+						$('#import-form-modal').hide();
+						window.location.href = aicrmformAdmin.adminUrl + '?page=ai-crm-form-forms';
+					}
+				});
+		});
 	}
 
 	/**
@@ -1666,18 +1729,14 @@
 			confirmCancelCallback();
 		} else {
 			// Default behavior for import dialogs: redirect to forms page
-			if (lastImportedPlugin) {
+			if (Object.keys(importedPlugins).length > 0) {
+				importedPlugins = {};
 				$('#import-form-modal').hide();
 				window.location.href = aicrmformAdmin.adminUrl + '?page=ai-crm-form-forms';
 			}
 		}
 		confirmCallback = null;
 		confirmCancelCallback = null;
-		// Clear import state
-		lastImportedPlugin = null;
-		lastImportedPluginDisplayName = null;
-		lastImportedFormId = null;
-		lastUsedSameShortcode = false;
 	}
 
 	function executeConfirm() {
@@ -1685,11 +1744,6 @@
 		$('#aicrmform-confirm-modal').hide();
 		confirmCallback = null;
 		confirmCancelCallback = null;
-		// Clear import state
-		lastImportedPlugin = null;
-		lastImportedPluginDisplayName = null;
-		lastImportedFormId = null;
-		lastUsedSameShortcode = false;
 		// Execute the callback
 		if (callback) {
 			callback();
