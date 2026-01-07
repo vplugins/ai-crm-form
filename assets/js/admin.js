@@ -339,6 +339,13 @@
 		});
 	}
 
+	// Track pending import dialog timeout
+	let pendingImportDialogTimeout = null;
+	let lastImportedPlugin = null;
+	let lastImportedPluginDisplayName = null;
+	let lastImportedFormId = null;
+	let lastUsedSameShortcode = false;
+
 	/**
 	 * Initialize Form Import.
 	 */
@@ -528,33 +535,21 @@
 					};
 					const pluginDisplayName = pluginNames[plugin] || plugin;
 
-					// Offer to disable the source plugin
-					setTimeout(function () {
-						let confirmMsg = 'Would you like to disable ' + pluginDisplayName + '?';
-						if (useSameShortcode) {
-							confirmMsg +=
-								' Your existing shortcodes will continue to work with the imported form.';
-						} else {
-							confirmMsg +=
-								' You may need to update your shortcodes to [ai_crm_form id="' +
-								response.form_id +
-								'"]';
-						}
+					// Store this import's info (for the dialog that will show)
+					lastImportedPlugin = plugin;
+					lastImportedPluginDisplayName = pluginDisplayName;
+					lastImportedFormId = response.form_id;
+					lastUsedSameShortcode = useSameShortcode;
 
-						showConfirm(
-							'Disable ' + pluginDisplayName + '?',
-							confirmMsg,
-							function () {
-								// Deactivate the plugin
-								deactivatePlugin(plugin, pluginDisplayName);
-							},
-							function () {
-								$('#import-form-modal').hide();
-								window.location.href =
-									aicrmformAdmin.adminUrl + '?page=ai-crm-form-forms';
-							}
-						);
-					}, 1000);
+					// Clear any pending dialog timeout from previous import
+					if (pendingImportDialogTimeout) {
+						clearTimeout(pendingImportDialogTimeout);
+					}
+
+					// Offer to disable the source plugin (delayed to allow for multiple imports)
+					pendingImportDialogTimeout = setTimeout(function () {
+						showImportCompleteDialog();
+					}, 1500);
 				} else {
 					$btn.prop('disabled', false).html(originalText);
 					showToast(response.error || 'Failed to import form.', 'error');
@@ -564,6 +559,44 @@
 				$btn.prop('disabled', false).html(originalText);
 				showToast('Failed to import form.', 'error');
 			});
+	}
+
+	/**
+	 * Show the import complete dialog with option to disable plugin.
+	 */
+	function showImportCompleteDialog() {
+		// Use the stored values from the most recent import
+		const plugin = lastImportedPlugin;
+		const pluginDisplayName = lastImportedPluginDisplayName;
+		const formId = lastImportedFormId;
+		const useSameShortcode = lastUsedSameShortcode;
+
+		if (!plugin || !pluginDisplayName) {
+			return;
+		}
+
+		let confirmMsg = 'Would you like to disable ' + pluginDisplayName + '?';
+		if (useSameShortcode) {
+			confirmMsg +=
+				' Your existing shortcodes will continue to work with the imported form.';
+		} else {
+			confirmMsg +=
+				' You may need to update your shortcodes to [ai_crm_form id="' +
+				formId +
+				'"]';
+		}
+
+		showConfirm(
+			'Disable ' + pluginDisplayName + '?',
+			confirmMsg,
+			function () {
+				// Deactivate the plugin
+				deactivatePlugin(plugin, pluginDisplayName);
+			}
+		);
+
+		// Clear the stored values
+		pendingImportDialogTimeout = null;
 	}
 
 	/**
@@ -1616,24 +1649,51 @@
 	// ==================== CONFIRMATION MODAL ====================
 
 	let confirmCallback = null;
+	let confirmCancelCallback = null;
 
-	function showConfirm(title, message, callback) {
+	function showConfirm(title, message, callback, cancelCallback) {
 		$('#aicrmform-confirm-title').text(title);
 		$('#aicrmform-confirm-message').text(message);
 		confirmCallback = callback;
+		confirmCancelCallback = cancelCallback || null;
 		$('#aicrmform-confirm-modal').show();
 	}
 
 	function hideConfirmModal() {
 		$('#aicrmform-confirm-modal').hide();
+		// Call cancel callback if provided
+		if (confirmCancelCallback) {
+			confirmCancelCallback();
+		} else {
+			// Default behavior for import dialogs: redirect to forms page
+			if (lastImportedPlugin) {
+				$('#import-form-modal').hide();
+				window.location.href = aicrmformAdmin.adminUrl + '?page=ai-crm-form-forms';
+			}
+		}
 		confirmCallback = null;
+		confirmCancelCallback = null;
+		// Clear import state
+		lastImportedPlugin = null;
+		lastImportedPluginDisplayName = null;
+		lastImportedFormId = null;
+		lastUsedSameShortcode = false;
 	}
 
 	function executeConfirm() {
-		if (confirmCallback) {
-			confirmCallback();
+		const callback = confirmCallback;
+		$('#aicrmform-confirm-modal').hide();
+		confirmCallback = null;
+		confirmCancelCallback = null;
+		// Clear import state
+		lastImportedPlugin = null;
+		lastImportedPluginDisplayName = null;
+		lastImportedFormId = null;
+		lastUsedSameShortcode = false;
+		// Execute the callback
+		if (callback) {
+			callback();
 		}
-		hideConfirmModal();
 	}
 
 	// ==================== FORMS LIST PAGE FUNCTIONS ====================
