@@ -430,6 +430,10 @@ class AICRMFORM_Admin_Settings {
 					<p class="aicrmform-page-subtitle"><?php esc_html_e( 'Manage your lead capture forms', 'ai-crm-form' ); ?></p>
 				</div>
 				<div class="aicrmform-page-header-actions">
+					<button type="button" id="import-form-btn" class="button button-primary button-large">
+						<span class="dashicons dashicons-download"></span>
+						<?php esc_html_e( 'Import Form', 'ai-crm-form' ); ?>
+					</button>
 					<a href="<?php echo esc_url( admin_url( 'admin.php?page=ai-crm-form-generator' ) ); ?>" class="button button-primary button-large">
 						<span class="dashicons dashicons-plus-alt2"></span>
 						<?php esc_html_e( 'Create Form', 'ai-crm-form' ); ?>
@@ -578,6 +582,30 @@ class AICRMFORM_Admin_Settings {
 				</div>
 			</div>
 		</div>
+
+		<!-- Import Form Modal -->
+		<div id="import-form-modal" class="aicrmform-modal-overlay" style="display: none;">
+			<div class="aicrmform-modal aicrmform-modal-md">
+				<div class="aicrmform-modal-header">
+					<h3><?php esc_html_e( 'Import Form', 'ai-crm-form' ); ?></h3>
+					<button type="button" class="aicrmform-modal-close">&times;</button>
+				</div>
+				<div class="aicrmform-modal-body">
+					<div id="import-loading" style="text-align: center; padding: 40px;">
+						<span class="spinner is-active" style="float: none;"></span>
+						<p><?php esc_html_e( 'Loading available forms...', 'ai-crm-form' ); ?></p>
+					</div>
+					<div id="import-content" style="display: none;">
+						<div id="import-no-plugins" class="aicrmform-empty-state" style="display: none;">
+							<span class="dashicons dashicons-warning" style="font-size: 48px; color: #f59e0b;"></span>
+							<h3><?php esc_html_e( 'No Form Plugins Found', 'ai-crm-form' ); ?></h3>
+							<p><?php esc_html_e( 'Install and activate Contact Form 7 or Gravity Forms to import forms.', 'ai-crm-form' ); ?></p>
+						</div>
+						<div id="import-sources-list"></div>
+					</div>
+				</div>
+			</div>
+		</div>
 		<?php
 	}
 
@@ -701,6 +729,19 @@ class AICRMFORM_Admin_Settings {
 							<span class="dashicons dashicons-arrow-down-alt2"></span>
 						</div>
 						<div class="aicrmform-card-body" style="display: none;">
+							<!-- Use Theme Styling Toggle -->
+							<div class="aicrmform-theme-styling-toggle">
+								<label class="aicrmform-toggle-switch">
+									<input type="checkbox" id="use-theme-styling">
+									<span class="aicrmform-toggle-slider"></span>
+								</label>
+								<div class="aicrmform-toggle-content">
+									<span class="aicrmform-toggle-label"><?php esc_html_e( 'Use Theme Styling', 'ai-crm-form' ); ?></span>
+									<span class="aicrmform-toggle-description"><?php esc_html_e( 'Disable plugin styles and let your theme control the form appearance.', 'ai-crm-form' ); ?></span>
+								</div>
+							</div>
+
+							<div class="aicrmform-style-options" id="style-options">
 							<div class="aicrmform-style-grid">
 								<div class="aicrmform-form-row">
 									<label for="style-font-family"><?php esc_html_e( 'Font Family', 'ai-crm-form' ); ?></label>
@@ -768,6 +809,7 @@ class AICRMFORM_Admin_Settings {
 								<label for="custom-css"><?php esc_html_e( 'Custom CSS', 'ai-crm-form' ); ?></label>
 								<textarea id="custom-css" class="aicrmform-textarea aicrmform-code-editor" rows="4" placeholder="/* Your custom styles */"></textarea>
 							</div>
+							</div><!-- /.aicrmform-style-options -->
 						</div>
 					</div>
 				</div>
@@ -1315,10 +1357,18 @@ class AICRMFORM_Admin_Settings {
 	 */
 	public function render_submissions_page() {
 		$crm_api     = new AICRMFORM_CRM_API();
+		$generator   = new AICRMFORM_Form_Generator();
+		$forms       = $generator->get_all_forms();
 		$submissions = $crm_api->get_all_submissions();
 		$total_submissions = count( $submissions );
 		$success_count = count( array_filter( $submissions, fn( $s ) => 'success' === $s->status || 'sent' === $s->status ) );
 		$pending_count = count( array_filter( $submissions, fn( $s ) => 'pending' === $s->status ) );
+		$failed_count  = count( array_filter( $submissions, fn( $s ) => 'failed' === $s->status || 'error' === $s->status ) );
+
+		// Pagination settings.
+		$per_page     = 20;
+		$current_page = isset( $_GET['paged'] ) ? max( 1, intval( $_GET['paged'] ) ) : 1;
+		$total_pages  = ceil( $total_submissions / $per_page );
 		?>
 		<div class="wrap aicrmform-admin aicrmform-submissions-page">
 			<!-- Page Header -->
@@ -1327,6 +1377,31 @@ class AICRMFORM_Admin_Settings {
 					<h1><?php esc_html_e( 'Submissions', 'ai-crm-form' ); ?></h1>
 					<p class="aicrmform-page-subtitle"><?php esc_html_e( 'View and manage form submissions', 'ai-crm-form' ); ?></p>
 				</div>
+				<?php if ( ! empty( $submissions ) ) : ?>
+				<div class="aicrmform-page-header-actions">
+					<div class="aicrmform-export-dropdown">
+						<button type="button" id="export-btn" class="button button-secondary button-large">
+							<span class="dashicons dashicons-download"></span>
+							<?php esc_html_e( 'Export', 'ai-crm-form' ); ?>
+							<span class="dashicons dashicons-arrow-down-alt2"></span>
+						</button>
+					<div class="aicrmform-dropdown-menu" id="export-menu" style="display: none;">
+						<a href="#" id="export-csv" class="aicrmform-dropdown-item">
+							<span class="dashicons dashicons-media-spreadsheet"></span>
+							<?php esc_html_e( 'Export All (CSV)', 'ai-crm-form' ); ?>
+						</a>
+						<a href="#" id="export-csv-filtered" class="aicrmform-dropdown-item">
+							<span class="dashicons dashicons-filter"></span>
+							<?php esc_html_e( 'Export Filtered (CSV)', 'ai-crm-form' ); ?>
+						</a>
+						<a href="#" id="export-csv-selected" class="aicrmform-dropdown-item">
+							<span class="dashicons dashicons-yes"></span>
+							<?php esc_html_e( 'Export Selected (CSV)', 'ai-crm-form' ); ?>
+						</a>
+					</div>
+					</div>
+				</div>
+				<?php endif; ?>
 			</div>
 
 			<?php if ( empty( $submissions ) ) : ?>
@@ -1374,77 +1449,187 @@ class AICRMFORM_Admin_Settings {
 							<span class="aicrmform-stat-label"><?php esc_html_e( 'Synced to CRM', 'ai-crm-form' ); ?></span>
 						</div>
 					</div>
-					<?php if ( $pending_count > 0 ) : ?>
-					<div class="aicrmform-stat-item">
-						<div class="aicrmform-stat-icon aicrmform-stat-icon-warning">
-							<span class="dashicons dashicons-clock"></span>
-						</div>
-						<div class="aicrmform-stat-content">
-							<span class="aicrmform-stat-value"><?php echo esc_html( $pending_count ); ?></span>
-							<span class="aicrmform-stat-label"><?php esc_html_e( 'Pending', 'ai-crm-form' ); ?></span>
-						</div>
+				<?php if ( $pending_count > 0 ) : ?>
+				<div class="aicrmform-stat-item">
+					<div class="aicrmform-stat-icon aicrmform-stat-icon-warning">
+						<span class="dashicons dashicons-clock"></span>
 					</div>
-					<?php endif; ?>
+					<div class="aicrmform-stat-content">
+						<span class="aicrmform-stat-value"><?php echo esc_html( $pending_count ); ?></span>
+						<span class="aicrmform-stat-label"><?php esc_html_e( 'Pending', 'ai-crm-form' ); ?></span>
+					</div>
+				</div>
+				<?php endif; ?>
+				<?php if ( $failed_count > 0 ) : ?>
+				<div class="aicrmform-stat-item">
+					<div class="aicrmform-stat-icon aicrmform-stat-icon-error">
+						<span class="dashicons dashicons-warning"></span>
+					</div>
+					<div class="aicrmform-stat-content">
+						<span class="aicrmform-stat-value"><?php echo esc_html( $failed_count ); ?></span>
+						<span class="aicrmform-stat-label"><?php esc_html_e( 'Failed', 'ai-crm-form' ); ?></span>
+					</div>
+				</div>
+				<?php endif; ?>
+			</div>
+
+			<!-- Filters -->
+			<div class="aicrmform-filters-bar">
+				<div class="aicrmform-filter-group">
+					<label for="filter-status"><?php esc_html_e( 'Status', 'ai-crm-form' ); ?></label>
+					<select id="filter-status" class="aicrmform-filter-select">
+						<option value=""><?php esc_html_e( 'All Statuses', 'ai-crm-form' ); ?></option>
+						<option value="success"><?php esc_html_e( 'Success', 'ai-crm-form' ); ?></option>
+						<option value="sent"><?php esc_html_e( 'Sent', 'ai-crm-form' ); ?></option>
+						<option value="pending"><?php esc_html_e( 'Pending', 'ai-crm-form' ); ?></option>
+						<option value="failed"><?php esc_html_e( 'Failed', 'ai-crm-form' ); ?></option>
+					</select>
+				</div>
+				<div class="aicrmform-filter-group">
+					<label for="filter-form"><?php esc_html_e( 'Form', 'ai-crm-form' ); ?></label>
+					<select id="filter-form" class="aicrmform-filter-select">
+						<option value=""><?php esc_html_e( 'All Forms', 'ai-crm-form' ); ?></option>
+						<?php foreach ( $forms as $form ) : ?>
+						<option value="<?php echo esc_attr( $form->id ); ?>"><?php echo esc_html( $form->name ); ?></option>
+						<?php endforeach; ?>
+					</select>
+				</div>
+				<div class="aicrmform-filter-group">
+					<label for="filter-date-from"><?php esc_html_e( 'From', 'ai-crm-form' ); ?></label>
+					<input type="date" id="filter-date-from" class="aicrmform-filter-input">
+				</div>
+				<div class="aicrmform-filter-group">
+					<label for="filter-date-to"><?php esc_html_e( 'To', 'ai-crm-form' ); ?></label>
+					<input type="date" id="filter-date-to" class="aicrmform-filter-input">
+				</div>
+				<div class="aicrmform-filter-actions">
+					<button type="button" id="apply-filters" class="button button-primary">
+						<span class="dashicons dashicons-filter"></span>
+						<?php esc_html_e( 'Apply', 'ai-crm-form' ); ?>
+					</button>
+					<button type="button" id="clear-filters" class="button button-secondary">
+						<?php esc_html_e( 'Clear', 'ai-crm-form' ); ?>
+					</button>
+				</div>
+			</div>
+
+			<!-- Submissions Table -->
+			<div class="aicrmform-card">
+				<div class="aicrmform-card-header">
+					<h2><?php esc_html_e( 'Submissions', 'ai-crm-form' ); ?></h2>
+					<span class="aicrmform-results-count" id="results-count">
+						<?php
+						/* translators: %d: number of submissions */
+						printf( esc_html__( 'Showing %d submissions', 'ai-crm-form' ), $total_submissions );
+						?>
+					</span>
+				</div>
+				<div class="aicrmform-table-container">
+					<table class="aicrmform-table" id="submissions-table">
+						<thead>
+							<tr>
+								<th class="aicrmform-th-checkbox">
+									<input type="checkbox" id="select-all-submissions" title="<?php esc_attr_e( 'Select All', 'ai-crm-form' ); ?>">
+								</th>
+								<th class="aicrmform-th-id"><?php esc_html_e( 'ID', 'ai-crm-form' ); ?></th>
+								<th><?php esc_html_e( 'Form', 'ai-crm-form' ); ?></th>
+								<th><?php esc_html_e( 'Status', 'ai-crm-form' ); ?></th>
+								<th><?php esc_html_e( 'IP Address', 'ai-crm-form' ); ?></th>
+								<th><?php esc_html_e( 'Submitted', 'ai-crm-form' ); ?></th>
+								<th class="aicrmform-th-actions"><?php esc_html_e( 'Actions', 'ai-crm-form' ); ?></th>
+							</tr>
+						</thead>
+						<tbody id="submissions-tbody">
+							<?php
+							foreach ( $submissions as $submission ) :
+								$status_class = 'success' === $submission->status || 'sent' === $submission->status ? 'success' : ( 'pending' === $submission->status ? 'warning' : 'error' );
+								$form_name    = $submission->form_id;
+								// Try to get actual form name.
+								foreach ( $forms as $form ) {
+									if ( (string) $form->id === (string) $submission->form_id ) {
+										$form_name = $form->name;
+										break;
+									}
+								}
+								?>
+								<tr class="submission-row" 
+									data-status="<?php echo esc_attr( $submission->status ); ?>" 
+									data-form-id="<?php echo esc_attr( $submission->form_id ); ?>"
+									data-date="<?php echo esc_attr( gmdate( 'Y-m-d', strtotime( $submission->created_at ) ) ); ?>">
+									<td class="aicrmform-td-checkbox">
+										<input type="checkbox" class="submission-checkbox" value="<?php echo esc_attr( $submission->id ); ?>">
+									</td>
+									<td class="aicrmform-td-id">
+										<span class="aicrmform-submission-id">#<?php echo esc_html( $submission->id ); ?></span>
+									</td>
+									<td>
+										<span class="aicrmform-form-name"><?php echo esc_html( $form_name ); ?></span>
+									</td>
+									<td>
+										<span class="aicrmform-status-pill <?php echo esc_attr( $status_class ); ?>">
+											<?php if ( 'success' === $status_class ) : ?>
+												<span class="dashicons dashicons-yes"></span>
+											<?php elseif ( 'warning' === $status_class ) : ?>
+												<span class="dashicons dashicons-clock"></span>
+											<?php else : ?>
+												<span class="dashicons dashicons-warning"></span>
+											<?php endif; ?>
+											<?php echo esc_html( ucfirst( $submission->status ) ); ?>
+										</span>
+									</td>
+									<td>
+										<span class="aicrmform-ip"><?php echo esc_html( $submission->ip_address ); ?></span>
+									</td>
+									<td>
+										<span class="aicrmform-date"><?php echo esc_html( gmdate( 'M j, Y', strtotime( $submission->created_at ) ) ); ?></span>
+										<span class="aicrmform-time"><?php echo esc_html( gmdate( 'g:i A', strtotime( $submission->created_at ) ) ); ?></span>
+									</td>
+									<td class="aicrmform-td-actions">
+										<button type="button" class="aicrmform-action-btn aicrmform-view-submission" data-submission-id="<?php echo esc_attr( $submission->id ); ?>" title="<?php esc_attr_e( 'View Details', 'ai-crm-form' ); ?>">
+											<span class="dashicons dashicons-visibility"></span>
+										</button>
+									</td>
+								</tr>
+							<?php endforeach; ?>
+						</tbody>
+					</table>
 				</div>
 
-				<!-- Submissions Table -->
-				<div class="aicrmform-card">
-					<div class="aicrmform-card-header">
-						<h2><?php esc_html_e( 'Recent Submissions', 'ai-crm-form' ); ?></h2>
+				<!-- Pagination -->
+				<?php if ( $total_pages > 1 ) : ?>
+				<div class="aicrmform-pagination">
+					<div class="aicrmform-pagination-info">
+						<?php
+						$start = ( ( $current_page - 1 ) * $per_page ) + 1;
+						$end   = min( $current_page * $per_page, $total_submissions );
+						/* translators: 1: start number, 2: end number, 3: total submissions */
+						printf( esc_html__( 'Showing %1$d-%2$d of %3$d', 'ai-crm-form' ), $start, $end, $total_submissions );
+						?>
 					</div>
-					<div class="aicrmform-table-container">
-						<table class="aicrmform-table">
-							<thead>
-								<tr>
-									<th class="aicrmform-th-id"><?php esc_html_e( 'ID', 'ai-crm-form' ); ?></th>
-									<th><?php esc_html_e( 'Form', 'ai-crm-form' ); ?></th>
-									<th><?php esc_html_e( 'Status', 'ai-crm-form' ); ?></th>
-									<th><?php esc_html_e( 'IP Address', 'ai-crm-form' ); ?></th>
-									<th><?php esc_html_e( 'Submitted', 'ai-crm-form' ); ?></th>
-									<th class="aicrmform-th-actions"><?php esc_html_e( 'Actions', 'ai-crm-form' ); ?></th>
-								</tr>
-							</thead>
-							<tbody>
-								<?php
-								foreach ( $submissions as $submission ) :
-									$status_class = 'success' === $submission->status || 'sent' === $submission->status ? 'success' : ( 'pending' === $submission->status ? 'warning' : 'default' );
-									?>
-									<tr>
-										<td class="aicrmform-td-id">
-											<span class="aicrmform-submission-id">#<?php echo esc_html( $submission->id ); ?></span>
-										</td>
-										<td>
-											<span class="aicrmform-form-name"><?php echo esc_html( $submission->form_id ); ?></span>
-										</td>
-										<td>
-											<span class="aicrmform-status-pill <?php echo esc_attr( $status_class ); ?>">
-												<?php if ( 'success' === $status_class ) : ?>
-													<span class="dashicons dashicons-yes"></span>
-												<?php elseif ( 'warning' === $status_class ) : ?>
-													<span class="dashicons dashicons-clock"></span>
-												<?php endif; ?>
-												<?php echo esc_html( ucfirst( $submission->status ) ); ?>
-											</span>
-										</td>
-										<td>
-											<span class="aicrmform-ip"><?php echo esc_html( $submission->ip_address ); ?></span>
-										</td>
-										<td>
-											<span class="aicrmform-date"><?php echo esc_html( gmdate( 'M j, Y', strtotime( $submission->created_at ) ) ); ?></span>
-											<span class="aicrmform-time"><?php echo esc_html( gmdate( 'g:i A', strtotime( $submission->created_at ) ) ); ?></span>
-										</td>
-										<td class="aicrmform-td-actions">
-											<button type="button" class="aicrmform-action-btn aicrmform-view-submission" data-submission-id="<?php echo esc_attr( $submission->id ); ?>" title="<?php esc_attr_e( 'View Details', 'ai-crm-form' ); ?>">
-												<span class="dashicons dashicons-visibility"></span>
-											</button>
-										</td>
-									</tr>
-								<?php endforeach; ?>
-							</tbody>
-						</table>
+					<div class="aicrmform-pagination-controls" id="pagination-controls">
+						<button type="button" class="aicrmform-page-btn" data-page="1" <?php disabled( $current_page, 1 ); ?>>
+							<span class="dashicons dashicons-controls-skipback"></span>
+						</button>
+						<button type="button" class="aicrmform-page-btn" data-page="<?php echo esc_attr( max( 1, $current_page - 1 ) ); ?>" <?php disabled( $current_page, 1 ); ?>>
+							<span class="dashicons dashicons-arrow-left-alt2"></span>
+						</button>
+						<span class="aicrmform-page-info">
+							<?php
+							/* translators: 1: current page, 2: total pages */
+							printf( esc_html__( 'Page %1$d of %2$d', 'ai-crm-form' ), $current_page, $total_pages );
+							?>
+						</span>
+						<button type="button" class="aicrmform-page-btn" data-page="<?php echo esc_attr( min( $total_pages, $current_page + 1 ) ); ?>" <?php disabled( $current_page, $total_pages ); ?>>
+							<span class="dashicons dashicons-arrow-right-alt2"></span>
+						</button>
+						<button type="button" class="aicrmform-page-btn" data-page="<?php echo esc_attr( $total_pages ); ?>" <?php disabled( $current_page, $total_pages ); ?>>
+							<span class="dashicons dashicons-controls-skipforward"></span>
+						</button>
 					</div>
 				</div>
-			<?php endif; ?>
+				<?php endif; ?>
+			</div>
+		<?php endif; ?>
 		</div>
 
 		<!-- Toast Notification -->

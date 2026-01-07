@@ -2,7 +2,7 @@
 /**
  * Form Importer Class
  *
- * Handles importing forms from other plugins like Contact Form 7.
+ * Handles importing forms from other plugins like Contact Form 7 and Gravity Forms.
  *
  * @package AI_CRM_Form
  */
@@ -17,23 +17,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 class AICRMFORM_Form_Importer {
 
 	/**
-	 * Supported plugins for import.
+	 * Integration Manager instance.
 	 *
-	 * @var array
+	 * @var AICRMFORM_Integration_Manager
 	 */
-	private $supported_plugins = [
-		'cf7' => [
-			'name'        => 'Contact Form 7',
-			'slug'        => 'contact-form-7/wp-contact-form-7.php',
-			'check_class' => 'WPCF7_ContactForm',
-		],
-		// Future plugins can be added here.
-		// 'gravity' => [
-		//     'name'        => 'Gravity Forms',
-		//     'slug'        => 'gravityforms/gravityforms.php',
-		//     'check_class' => 'GFForms',
-		// ],
-	];
+	private $integration_manager;
 
 	/**
 	 * Form Generator instance.
@@ -53,7 +41,8 @@ class AICRMFORM_Form_Importer {
 	 * Constructor.
 	 */
 	public function __construct() {
-		$this->generator = new AICRMFORM_Form_Generator();
+		$this->integration_manager = AICRMFORM_Integration_Manager::get_instance();
+		$this->generator           = new AICRMFORM_Form_Generator();
 		$this->init_ai_client();
 	}
 
@@ -74,22 +63,12 @@ class AICRMFORM_Form_Importer {
 	/**
 	 * Get available plugins for import.
 	 *
+	 * Uses the Integration Manager for a scalable approach.
+	 *
 	 * @return array List of available plugins.
 	 */
 	public function get_available_plugins() {
-		$available = [];
-
-		foreach ( $this->supported_plugins as $key => $plugin ) {
-			$is_active = class_exists( $plugin['check_class'] );
-			$available[ $key ] = [
-				'name'      => $plugin['name'],
-				'slug'      => $plugin['slug'],
-				'active'    => $is_active,
-				'forms'     => $is_active ? $this->get_plugin_forms( $key ) : [],
-			];
-		}
-
-		return $available;
+		return $this->integration_manager->get_all_info();
 	}
 
 	/**
@@ -99,163 +78,16 @@ class AICRMFORM_Form_Importer {
 	 * @return array List of forms.
 	 */
 	public function get_plugin_forms( $plugin_key ) {
-		switch ( $plugin_key ) {
-			case 'cf7':
-				return $this->get_cf7_forms();
-			default:
-				return [];
-		}
+		return $this->integration_manager->get_forms( $plugin_key );
 	}
 
 	/**
-	 * Get Contact Form 7 forms.
+	 * Get supported plugins list.
 	 *
-	 * @return array List of CF7 forms.
+	 * @return array List of supported plugins.
 	 */
-	private function get_cf7_forms() {
-		if ( ! class_exists( 'WPCF7_ContactForm' ) ) {
-			return [];
-		}
-
-		$forms = [];
-		$cf7_forms = WPCF7_ContactForm::find();
-
-		foreach ( $cf7_forms as $cf7_form ) {
-			// Get the hash if it exists.
-			$hash = get_post_meta( $cf7_form->id(), '_hash', true );
-
-			$forms[] = [
-				'id'     => $cf7_form->id(),
-				'hash'   => $hash ?: '',
-				'title'  => $cf7_form->title(),
-				'fields' => $this->parse_cf7_form( $cf7_form ),
-			];
-		}
-
-		return $forms;
-	}
-
-	/**
-	 * Parse CF7 form to extract fields.
-	 *
-	 * @param WPCF7_ContactForm $cf7_form CF7 form object.
-	 * @return array Parsed fields.
-	 */
-	private function parse_cf7_form( $cf7_form ) {
-		$fields = [];
-		$form_content = $cf7_form->prop( 'form' );
-
-		// Parse CF7 shortcode tags.
-		$pattern = '/\[(\w+)(?:\*)?(?:\s+([^\]]+))?\]/';
-		preg_match_all( $pattern, $form_content, $matches, PREG_SET_ORDER );
-
-		foreach ( $matches as $match ) {
-			$tag_type = $match[1];
-			$attrs_string = isset( $match[2] ) ? $match[2] : '';
-
-			// Skip submit buttons for now.
-			if ( 'submit' === $tag_type ) {
-				continue;
-			}
-
-			$field = $this->parse_cf7_tag( $tag_type, $attrs_string );
-			if ( $field ) {
-				$fields[] = $field;
-			}
-		}
-
-		return $fields;
-	}
-
-	/**
-	 * Parse a CF7 tag into our field format.
-	 *
-	 * @param string $tag_type Tag type.
-	 * @param string $attrs_string Attributes string.
-	 * @return array|null Parsed field or null.
-	 */
-	private function parse_cf7_tag( $tag_type, $attrs_string ) {
-		// Parse attributes.
-		$attrs = [];
-		$name = '';
-		$options = [];
-
-		// Split by whitespace.
-		$parts = preg_split( '/\s+/', trim( $attrs_string ) );
-
-		foreach ( $parts as $part ) {
-			if ( empty( $part ) ) {
-				continue;
-			}
-
-			// Check for name (first part without special chars).
-			if ( empty( $name ) && preg_match( '/^[a-zA-Z_][a-zA-Z0-9_-]*$/', $part ) ) {
-				$name = $part;
-				continue;
-			}
-
-			// Check for placeholder.
-			if ( preg_match( '/^placeholder:(.+)$/', $part, $m ) ) {
-				$attrs['placeholder'] = str_replace( '"', '', $m[1] );
-				continue;
-			}
-
-			// Check for class.
-			if ( preg_match( '/^class:(.+)$/', $part, $m ) ) {
-				$attrs['class'] = $m[1];
-				continue;
-			}
-
-			// Check for id.
-			if ( preg_match( '/^id:(.+)$/', $part, $m ) ) {
-				$attrs['id'] = $m[1];
-				continue;
-			}
-
-			// Check for options (quoted strings).
-			if ( preg_match( '/^"([^"]+)"$/', $part, $m ) ) {
-				$options[] = $m[1];
-			}
-		}
-
-		// Map CF7 types to our types.
-		$type_map = [
-			'text'     => 'text',
-			'email'    => 'email',
-			'tel'      => 'tel',
-			'url'      => 'url',
-			'textarea' => 'textarea',
-			'select'   => 'select',
-			'checkbox' => 'checkbox',
-			'radio'    => 'radio',
-			'number'   => 'number',
-			'date'     => 'date',
-			'file'     => 'file',
-		];
-
-		// Handle required fields (marked with *).
-		$is_required = strpos( $tag_type, '*' ) !== false;
-		$base_type = str_replace( '*', '', $tag_type );
-
-		if ( ! isset( $type_map[ $base_type ] ) ) {
-			return null;
-		}
-
-		$field = [
-			'type'        => $type_map[ $base_type ],
-			'name'        => $name ?: 'field_' . wp_generate_password( 6, false ),
-			'label'       => ucfirst( str_replace( [ '-', '_' ], ' ', $name ) ),
-			'placeholder' => $attrs['placeholder'] ?? '',
-			'required'    => $is_required,
-			'crm_mapping' => $this->guess_crm_mapping( $name ),
-		];
-
-		// Add options for select/checkbox/radio.
-		if ( in_array( $base_type, [ 'select', 'checkbox', 'radio' ], true ) && ! empty( $options ) ) {
-			$field['options'] = $options;
-		}
-
-		return $field;
+	public function get_supported_plugins() {
+		return $this->integration_manager->get_supported_plugins();
 	}
 
 	/**
@@ -543,23 +375,25 @@ PROMPT;
 	/**
 	 * Import a form from another plugin.
 	 *
-	 * @param string $plugin_key Plugin key (e.g., 'cf7').
+	 * @param string $plugin_key Plugin key (e.g., 'cf7', 'gravity').
 	 * @param int    $form_id Source form ID.
 	 * @param bool   $use_same_shortcode Whether to use same shortcode after import.
 	 * @param string $crm_form_id Optional CRM Form ID override.
 	 * @return array Result with success status and data.
 	 */
 	public function import_form( $plugin_key, $form_id, $use_same_shortcode = false, $crm_form_id = null ) {
-		// Get the source form.
-		$forms = $this->get_plugin_forms( $plugin_key );
-		$source_form = null;
+		// Check if integration exists and is available.
+		$integration = $this->integration_manager->get_integration( $plugin_key );
 
-		foreach ( $forms as $form ) {
-			if ( (int) $form['id'] === (int) $form_id ) {
-				$source_form = $form;
-				break;
-			}
+		if ( ! $integration || ! $integration->is_available() ) {
+			return [
+				'success' => false,
+				'error'   => __( 'Form plugin integration not available.', 'ai-crm-form' ),
+			];
 		}
+
+		// Get the source form using the integration.
+		$source_form = $integration->get_form( $form_id );
 
 		if ( ! $source_form ) {
 			return [
@@ -645,7 +479,7 @@ PROMPT;
 			$form_config,
 			$crm_form_id,
 			$source_form['title'],
-			'Imported from ' . $this->supported_plugins[ $plugin_key ]['name']
+			'Imported from ' . $integration->get_name()
 		);
 
 		// Check if save was successful.

@@ -118,6 +118,9 @@
 		// Form Import
 		initFormImport();
 
+		// Theme Styling Toggle
+		initThemeStylingToggle();
+
 		// Collapsible Cards
 		initCollapsibleCards();
 
@@ -143,6 +146,9 @@
 		$(document).on('click', '.aicrmform-edit-form', editForm);
 		$(document).on('click', '.aicrmform-view-submission', viewSubmission);
 		$(document).on('click', '.aicrmform-repair-mappings', repairMappings);
+
+		// Submissions page functionality
+		initSubmissionsPage();
 
 		// Field group toggles (for any remaining field groups)
 		$('.aicrmform-field-group-toggle').on('click', toggleFieldGroup);
@@ -217,6 +223,36 @@
 		$(
 			'#style-primary-color, #style-border-radius, #style-label-position, #style-button-width'
 		).on('change', updateLivePreview);
+	}
+
+	/**
+	 * Initialize theme styling toggle functionality.
+	 */
+	function initThemeStylingToggle() {
+		const $toggle = $('#use-theme-styling');
+		const $cardBody = $toggle.closest('.aicrmform-card-body');
+		
+		if (!$toggle.length) return;
+
+		// Handle toggle change - add class to parent to hide options via CSS
+		$toggle.on('change', function() {
+			if ($(this).is(':checked')) {
+				$cardBody.addClass('aicrmform-theme-styling-active');
+			} else {
+				$cardBody.removeClass('aicrmform-theme-styling-active');
+			}
+			updateLivePreview();
+		});
+
+		// Also handle in edit form modal
+		$(document).on('change', '#edit-use-theme-styling', function() {
+			const $tabContent = $(this).closest('.aicrmform-edit-tab-content');
+			if ($(this).is(':checked')) {
+				$tabContent.addClass('aicrmform-theme-styling-active');
+			} else {
+				$tabContent.removeClass('aicrmform-theme-styling-active');
+			}
+		});
 	}
 
 	/**
@@ -339,12 +375,16 @@
 		});
 	}
 
+	// Track imported plugins for the disable dialog
+	let pendingImportDialogTimeout = null;
+	let importedPlugins = {}; // Track all plugins imported in this session
+
 	/**
 	 * Initialize Form Import.
 	 */
 	function initFormImport() {
-		// Open import modal
-		$('#open-import-modal').on('click', function () {
+		// Open import modal (works on both Forms page and Form Builder page)
+		$('#open-import-modal, #import-form-btn').on('click', function () {
 			$('#import-form-modal').show();
 			loadImportSources();
 		});
@@ -404,8 +444,8 @@
 		let hasActiveSources = false;
 		let html = '';
 
-		// Get default CRM Form ID from the form builder page if available
-		const defaultCrmFormId = $('#crm-form-id').val() || '';
+		// Get default CRM Form ID from settings or form builder page if available
+		const defaultCrmFormId = $('#crm-form-id').val() || aicrmformAdmin.defaultCrmFormId || '';
 
 		for (const [key, source] of Object.entries(sources)) {
 			if (source.active && source.forms && source.forms.length > 0) {
@@ -521,33 +561,35 @@
 					}
 					showToast(successMsg, 'success');
 
-					// Offer to disable the source plugin
-					setTimeout(function () {
-						let confirmMsg = 'Would you like to disable Contact Form 7?';
-						if (useSameShortcode) {
-							confirmMsg +=
-								' Your existing shortcodes will continue to work with the imported form.';
-						} else {
-							confirmMsg +=
-								' You may need to update your shortcodes to [ai_crm_form id="' +
-								response.form_id +
-								'"]';
-						}
+					// Get the source plugin name
+					const pluginNames = {
+						'cf7': 'Contact Form 7',
+						'gravity': 'Gravity Forms'
+					};
+					const pluginDisplayName = pluginNames[plugin] || plugin;
 
-						showConfirm(
-							'Disable Contact Form 7?',
-							confirmMsg,
-							function () {
-								// Deactivate the plugin
-								deactivatePlugin(plugin);
-							},
-							function () {
-								$('#import-form-modal').hide();
-								window.location.href =
-									aicrmformAdmin.adminUrl + '?page=ai-crm-form-forms';
-							}
-						);
-					}, 1000);
+					// If a confirm dialog is currently showing, close it (we'll show a new one with all plugins)
+					$('#aicrmform-confirm-modal').hide();
+					
+					// Track this plugin as imported
+					importedPlugins[plugin] = {
+						key: plugin,
+						displayName: pluginDisplayName,
+						formId: response.form_id,
+						useSameShortcode: useSameShortcode
+					};
+
+					// Clear any pending dialog timeout - we'll reset it
+					if (pendingImportDialogTimeout) {
+						clearTimeout(pendingImportDialogTimeout);
+						pendingImportDialogTimeout = null;
+					}
+
+					// Offer to disable the source plugin(s) (delayed to allow for multiple imports)
+					// Each new import resets the timer, so dialog shows 2s after LAST import
+					pendingImportDialogTimeout = setTimeout(function () {
+						showImportCompleteDialog();
+					}, 2000);
 				} else {
 					$btn.prop('disabled', false).html(originalText);
 					showToast(response.error || 'Failed to import form.', 'error');
@@ -560,10 +602,120 @@
 	}
 
 	/**
-	 * Deactivate a plugin.
+	 * Show the import complete dialog with option to disable plugin(s).
 	 */
-	function deactivatePlugin(pluginKey) {
-		showToast('Deactivating plugin...', 'info');
+	function showImportCompleteDialog() {
+		pendingImportDialogTimeout = null;
+
+		// Get list of imported plugins
+		const pluginKeys = Object.keys(importedPlugins);
+		
+		if (pluginKeys.length === 0) {
+			return;
+		}
+
+		// Build list of plugin names
+		const pluginDisplayNames = pluginKeys.map(function(key) {
+			return importedPlugins[key].displayName;
+		});
+
+		let title, confirmMsg;
+		
+		if (pluginKeys.length === 1) {
+			// Single plugin imported
+			const pluginInfo = importedPlugins[pluginKeys[0]];
+			title = 'Disable ' + pluginInfo.displayName + '?';
+			confirmMsg = 'Would you like to disable ' + pluginInfo.displayName + '?';
+			if (pluginInfo.useSameShortcode) {
+				confirmMsg += ' Your existing shortcodes will continue to work with the imported form.';
+			} else {
+				confirmMsg += ' You may need to update your shortcodes to [ai_crm_form id="' + pluginInfo.formId + '"]';
+			}
+		} else {
+			// Multiple plugins imported
+			title = 'Disable Source Plugins?';
+			confirmMsg = 'Would you like to disable the following plugins?\n\n• ' + pluginDisplayNames.join('\n• ') + 
+				'\n\nYour existing shortcodes will continue to work with the imported forms.';
+		}
+
+		// Store the plugins to deactivate (capture in closure)
+		const pluginsToDeactivate = Object.assign({}, importedPlugins);
+
+		showConfirm(
+			title,
+			confirmMsg,
+			function () {
+				// User clicked Yes - clear tracking and deactivate all imported plugins
+				importedPlugins = {};
+				deactivateMultiplePlugins(pluginsToDeactivate);
+			},
+			function () {
+				// User clicked No - clear tracking and go to forms page
+				importedPlugins = {};
+				$('#import-form-modal').hide();
+				window.location.href = aicrmformAdmin.adminUrl + '?page=ai-crm-form-forms';
+			}
+		);
+	}
+
+	/**
+	 * Deactivate multiple plugins.
+	 *
+	 * @param {Object} plugins Object of plugin info to deactivate.
+	 */
+	function deactivateMultiplePlugins(plugins) {
+		const pluginKeys = Object.keys(plugins);
+		const pluginNames = pluginKeys.map(function(key) {
+			return plugins[key].displayName;
+		});
+
+		showToast('Deactivating ' + pluginNames.join(' and ') + '...', 'info');
+
+		// Deactivate plugins in parallel
+		let completed = 0;
+		let errors = [];
+
+		pluginKeys.forEach(function(pluginKey) {
+			$.ajax({
+				url: aicrmformAdmin.restUrl + 'deactivate-plugin',
+				method: 'POST',
+				headers: { 'X-WP-Nonce': aicrmformAdmin.nonce },
+				contentType: 'application/json',
+				data: JSON.stringify({ plugin: pluginKey }),
+			})
+				.done(function (response) {
+					if (!response.success) {
+						errors.push(plugins[pluginKey].displayName);
+					}
+				})
+				.fail(function () {
+					errors.push(plugins[pluginKey].displayName);
+				})
+				.always(function () {
+					completed++;
+					if (completed === pluginKeys.length) {
+						// All requests completed
+						if (errors.length === 0) {
+							showToast(pluginNames.join(' and ') + ' deactivated successfully!', 'success');
+						} else {
+							showToast('Failed to deactivate: ' + errors.join(', '), 'error');
+						}
+						$('#import-form-modal').hide();
+						window.location.href = aicrmformAdmin.adminUrl + '?page=ai-crm-form-forms';
+					}
+				});
+		});
+	}
+
+	/**
+	 * Deactivate a plugin.
+	 *
+	 * @param {string} pluginKey Plugin key (e.g., 'cf7', 'gravity').
+	 * @param {string} pluginDisplayName Human-readable plugin name.
+	 */
+	function deactivatePlugin(pluginKey, pluginDisplayName) {
+		pluginDisplayName = pluginDisplayName || pluginKey;
+		showToast('Deactivating ' + pluginDisplayName + '...', 'info');
 
 		$.ajax({
 			url: aicrmformAdmin.restUrl + 'deactivate-plugin',
@@ -574,7 +726,7 @@
 		})
 			.done(function (response) {
 				if (response.success) {
-					showToast('Contact Form 7 has been deactivated!', 'success');
+					showToast(pluginDisplayName + ' has been deactivated!', 'success');
 				} else {
 					showToast(response.error || 'Could not deactivate plugin.', 'error');
 				}
@@ -1427,6 +1579,7 @@
 			success_message: $('#success-message').val() || 'Thank you for your submission!',
 			error_message: $('#error-message').val() || 'Something went wrong.',
 			styles: {
+				use_theme_styling: $('#use-theme-styling').is(':checked'),
 				font_family: $('#style-font-family').val(),
 				font_size: $('#style-font-size').val(),
 				background_color: $('#style-background-color').val(),
@@ -1605,24 +1758,42 @@
 	// ==================== CONFIRMATION MODAL ====================
 
 	let confirmCallback = null;
+	let confirmCancelCallback = null;
 
-	function showConfirm(title, message, callback) {
+	function showConfirm(title, message, callback, cancelCallback) {
 		$('#aicrmform-confirm-title').text(title);
 		$('#aicrmform-confirm-message').text(message);
 		confirmCallback = callback;
+		confirmCancelCallback = cancelCallback || null;
 		$('#aicrmform-confirm-modal').show();
 	}
 
 	function hideConfirmModal() {
 		$('#aicrmform-confirm-modal').hide();
+		// Call cancel callback if provided
+		if (confirmCancelCallback) {
+			confirmCancelCallback();
+		} else {
+			// Default behavior for import dialogs: redirect to forms page
+			if (Object.keys(importedPlugins).length > 0) {
+				importedPlugins = {};
+				$('#import-form-modal').hide();
+				window.location.href = aicrmformAdmin.adminUrl + '?page=ai-crm-form-forms';
+			}
+		}
 		confirmCallback = null;
+		confirmCancelCallback = null;
 	}
 
 	function executeConfirm() {
-		if (confirmCallback) {
-			confirmCallback();
+		const callback = confirmCallback;
+		$('#aicrmform-confirm-modal').hide();
+		confirmCallback = null;
+		confirmCancelCallback = null;
+		// Execute the callback
+		if (callback) {
+			callback();
 		}
-		hideConfirmModal();
 	}
 
 	// ==================== FORMS LIST PAGE FUNCTIONS ====================
@@ -2047,6 +2218,19 @@
 
 		// Tab Content: Styling
 		html += '<div class="aicrmform-edit-tab-content" id="edit-tab-styling" style="display: none;">';
+		
+		// Use Theme Styling Toggle
+		html += '<div class="aicrmform-theme-styling-toggle">';
+		html += '<label class="aicrmform-toggle-switch">';
+		html += '<input type="checkbox" id="edit-use-theme-styling"' + (styles.use_theme_styling ? ' checked' : '') + '>';
+		html += '<span class="aicrmform-toggle-slider"></span>';
+		html += '</label>';
+		html += '<div class="aicrmform-toggle-content">';
+		html += '<span class="aicrmform-toggle-label">Use Theme Styling</span>';
+		html += '<span class="aicrmform-toggle-description">Disable plugin styles and let your theme control the form appearance.</span>';
+		html += '</div></div>';
+
+		html += '<div class="aicrmform-style-options" id="edit-style-options"' + (styles.use_theme_styling ? ' style="display: none;"' : '') + '>';
 		html +=
 			'<div class="aicrmform-style-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">';
 
@@ -2177,9 +2361,10 @@
 			'<div class="aicrmform-form-row" style="margin-top: 16px;"><label>Custom CSS</label><textarea id="edit-custom-css" class="aicrmform-textarea" rows="3" placeholder="/* Your custom styles */">' +
 			escapeHtml(customCss) +
 			'</textarea></div>';
-		html += '</div>';
+		html += '</div>'; // Close style-grid
+		html += '</div>'; // Close style-options
 
-		html += '</div>';
+		html += '</div>'; // Close tab content
 		html += '<div class="aicrmform-modal-footer">';
 		html += '<button type="button" class="button" id="cancel-edit">Cancel</button>';
 		html +=
@@ -2191,6 +2376,11 @@
 		const $modal = $(html);
 		$modal.data('form-config', form.form_config);
 		$('body').append($modal);
+
+		// Apply initial theme styling toggle state
+		if (styles.use_theme_styling) {
+			$modal.find('#edit-tab-styling').addClass('aicrmform-theme-styling-active');
+		}
 
 		// Render the fields in the edit modal
 		renderEditFormFields();
@@ -2259,6 +2449,7 @@
 
 			// Update styles in form config
 			formConfig.styles = {
+				use_theme_styling: $modal.find('#edit-use-theme-styling').is(':checked'),
 				font_family: $modal.find('#edit-font-family').val(),
 				font_size: $modal.find('#edit-font-size').val(),
 				background_color: $modal.find('#edit-background-color').val(),
@@ -2639,33 +2830,112 @@
 		}).done(function (response) {
 			if (response.success && response.submission) {
 				const sub = response.submission;
-				let html = '<div class="aicrmform-modal-overlay" id="submission-modal">';
-				html += '<div class="aicrmform-modal aicrmform-modal-lg">';
-				html +=
-					'<div class="aicrmform-modal-header"><h3>Submission #' + sub.id + '</h3></div>';
-				html += '<div class="aicrmform-modal-body">';
-				html += '<table class="widefat" style="margin-bottom: 20px;">';
-				if (sub.submission_data) {
-					Object.entries(sub.submission_data).forEach(function ([key, value]) {
-						html +=
-							'<tr><td><strong>' +
-							escapeHtml(key) +
-							'</strong></td><td>' +
-							escapeHtml(String(value)) +
-							'</td></tr>';
-					});
+				
+				// Determine status class and icon
+				const statusClass = (sub.status === 'success' || sub.status === 'sent') ? 'success' : 
+					(sub.status === 'pending' ? 'warning' : 'error');
+				const statusIcon = statusClass === 'success' ? 'yes-alt' : 
+					(statusClass === 'warning' ? 'clock' : 'warning');
+				
+				// Format date
+				const submittedDate = new Date(sub.created_at);
+				const formattedDate = submittedDate.toLocaleDateString('en-US', {
+					weekday: 'long',
+					year: 'numeric',
+					month: 'long',
+					day: 'numeric',
+					hour: '2-digit',
+					minute: '2-digit'
+				});
+
+				// Format field name for display (convert snake_case to Title Case)
+				function formatFieldName(name) {
+					return name
+						.replace(/^input_\d+_\d+$/, 'Field') // Handle Gravity Forms field names
+						.replace(/[-_]/g, ' ')
+						.replace(/\b\w/g, function(l) { return l.toUpperCase(); });
 				}
-				html += '</table>';
-				html +=
-					'<p><strong>Status:</strong> ' +
-					sub.status +
-					' | <strong>IP:</strong> ' +
-					sub.ip_address +
-					'</p>';
-				html += '</div>';
-				html +=
-					'<div class="aicrmform-modal-footer"><button type="button" class="button" onclick="jQuery(\'#submission-modal\').remove();">Close</button></div>';
-				html += '</div></div>';
+
+				let html = `
+				<div class="aicrmform-modal-overlay" id="submission-modal">
+					<div class="aicrmform-modal aicrmform-modal-lg aicrmform-submission-detail">
+						<div class="aicrmform-modal-header">
+							<div class="aicrmform-submission-header-content">
+								<h3>
+									<span class="dashicons dashicons-email-alt"></span>
+									Submission #${sub.id}
+								</h3>
+								<span class="aicrmform-status-pill ${statusClass}">
+									<span class="dashicons dashicons-${statusIcon}"></span>
+									${sub.status.charAt(0).toUpperCase() + sub.status.slice(1)}
+								</span>
+							</div>
+							<button type="button" class="aicrmform-modal-close" onclick="jQuery('#submission-modal').remove();">&times;</button>
+						</div>
+						<div class="aicrmform-modal-body">
+							<!-- Metadata Section -->
+							<div class="aicrmform-submission-meta">
+								<div class="aicrmform-meta-item">
+									<span class="dashicons dashicons-calendar-alt"></span>
+									<div>
+										<span class="aicrmform-meta-label">Submitted</span>
+										<span class="aicrmform-meta-value">${formattedDate}</span>
+									</div>
+								</div>
+								<div class="aicrmform-meta-item">
+									<span class="dashicons dashicons-admin-site-alt3"></span>
+									<div>
+										<span class="aicrmform-meta-label">IP Address</span>
+										<span class="aicrmform-meta-value">${escapeHtml(sub.ip_address)}</span>
+									</div>
+								</div>
+								<div class="aicrmform-meta-item">
+									<span class="dashicons dashicons-format-aside"></span>
+									<div>
+										<span class="aicrmform-meta-label">Form ID</span>
+										<span class="aicrmform-meta-value">${escapeHtml(String(sub.form_id))}</span>
+									</div>
+								</div>
+							</div>
+
+							<!-- Form Data Section -->
+							<div class="aicrmform-submission-data">
+								<h4>
+									<span class="dashicons dashicons-list-view"></span>
+									Submitted Data
+								</h4>
+								<div class="aicrmform-data-grid">
+									${sub.submission_data ? Object.entries(sub.submission_data).map(function([key, value]) {
+										const displayValue = Array.isArray(value) ? value.join(', ') : String(value);
+										const isLongText = displayValue.length > 100;
+										return `
+											<div class="aicrmform-data-item ${isLongText ? 'full-width' : ''}">
+												<span class="aicrmform-data-label">${escapeHtml(formatFieldName(key))}</span>
+												<span class="aicrmform-data-value">${escapeHtml(displayValue) || '<em>Empty</em>'}</span>
+											</div>
+										`;
+									}).join('') : '<p class="aicrmform-no-data">No submission data available</p>'}
+								</div>
+							</div>
+
+							${sub.crm_response ? `
+							<!-- CRM Response Section -->
+							<div class="aicrmform-crm-response">
+								<h4>
+									<span class="dashicons dashicons-cloud"></span>
+									CRM Response
+								</h4>
+								<pre class="aicrmform-code-block">${escapeHtml(JSON.stringify(sub.crm_response, null, 2))}</pre>
+							</div>
+							` : ''}
+						</div>
+						<div class="aicrmform-modal-footer">
+							<button type="button" class="button button-secondary" onclick="jQuery('#submission-modal').remove();">
+								Close
+							</button>
+						</div>
+					</div>
+				</div>`;
 
 				const $modal = $(html);
 				$('body').append($modal);
@@ -2674,6 +2944,250 @@
 				});
 			}
 		});
+	}
+
+	/**
+	 * Initialize submissions page functionality (filters, export, pagination).
+	 */
+	function initSubmissionsPage() {
+		// Only run on submissions page
+		if (!$('.aicrmform-submissions-page').length) return;
+
+		const $table = $('#submissions-table');
+		const $tbody = $('#submissions-tbody');
+		const $rows = $tbody.find('.submission-row');
+		const perPage = 20;
+		let currentPage = 1;
+		let filteredRows = $rows;
+
+		// Export dropdown toggle
+		$('#export-btn').on('click', function (e) {
+			e.stopPropagation();
+			$('#export-menu').toggle();
+		});
+
+		// Close dropdown when clicking outside
+		$(document).on('click', function () {
+			$('#export-menu').hide();
+		});
+
+		// Export all as CSV
+		$('#export-csv').on('click', function (e) {
+			e.preventDefault();
+			exportToCSV({}, 'all-submissions');
+			$('#export-menu').hide();
+		});
+
+		// Export filtered as CSV (uses IDs from currently filtered rows)
+		$('#export-csv-filtered').on('click', function (e) {
+			e.preventDefault();
+			// Get IDs of currently filtered/visible rows
+			const ids = [];
+			filteredRows.each(function () {
+				const id = $(this).find('.aicrmform-submission-id').text().replace('#', '').trim();
+				if (id) ids.push(id);
+			});
+			
+			if (ids.length === 0) {
+				showToast('No submissions to export with current filters.', 'warning');
+				$('#export-menu').hide();
+				return;
+			}
+			
+			exportToCSV({ ids: ids.join(',') }, 'filtered-submissions');
+			$('#export-menu').hide();
+		});
+
+		// Export selected as CSV (uses IDs from checked checkboxes)
+		$('#export-csv-selected').on('click', function (e) {
+			e.preventDefault();
+			const ids = [];
+			$('.submission-checkbox:checked').each(function () {
+				ids.push($(this).val());
+			});
+			
+			if (ids.length === 0) {
+				showToast('Please select submissions to export.', 'warning');
+				$('#export-menu').hide();
+				return;
+			}
+			
+			exportToCSV({ ids: ids.join(',') }, 'selected-submissions');
+			$('#export-menu').hide();
+		});
+
+		// Apply filters
+		$('#apply-filters').on('click', applyFilters);
+
+		// Clear filters
+		$('#clear-filters').on('click', function () {
+			$('#filter-status').val('');
+			$('#filter-form').val('');
+			$('#filter-date-from').val('');
+			$('#filter-date-to').val('');
+			applyFilters();
+		});
+
+		// Select all checkbox
+		$('#select-all-submissions').on('change', function () {
+			const isChecked = $(this).is(':checked');
+			filteredRows.find('.submission-checkbox').prop('checked', isChecked);
+		});
+
+		// Apply filters function
+		function applyFilters() {
+			const status = $('#filter-status').val();
+			const formId = $('#filter-form').val();
+			const dateFrom = $('#filter-date-from').val();
+			const dateTo = $('#filter-date-to').val();
+
+			filteredRows = $rows.filter(function () {
+				const $row = $(this);
+				const rowStatus = $row.data('status');
+				const rowFormId = String($row.data('form-id'));
+				const rowDate = $row.data('date');
+
+				// Status filter
+				if (status && rowStatus !== status) return false;
+
+				// Form filter
+				if (formId && rowFormId !== formId) return false;
+
+				// Date from filter
+				if (dateFrom && rowDate < dateFrom) return false;
+
+				// Date to filter
+				if (dateTo && rowDate > dateTo) return false;
+
+				return true;
+			});
+
+			currentPage = 1;
+			updateDisplay();
+		}
+
+		// Update display with pagination
+		function updateDisplay() {
+			// Hide all rows
+			$rows.hide();
+
+			// Calculate pagination
+			const totalFiltered = filteredRows.length;
+			const totalPages = Math.ceil(totalFiltered / perPage);
+			const start = (currentPage - 1) * perPage;
+			const end = start + perPage;
+
+			// Show filtered rows for current page
+			filteredRows.slice(start, end).show();
+
+			// Update results count
+			$('#results-count').text('Showing ' + totalFiltered + ' submissions');
+
+			// Update pagination controls
+			updatePagination(totalFiltered, totalPages);
+		}
+
+		// Update pagination controls
+		function updatePagination(total, totalPages) {
+			const $pagination = $('.aicrmform-pagination');
+			
+			if (totalPages <= 1) {
+				$pagination.hide();
+				return;
+			}
+
+			$pagination.show();
+
+			const start = ((currentPage - 1) * perPage) + 1;
+			const end = Math.min(currentPage * perPage, total);
+
+			$pagination.find('.aicrmform-pagination-info').text('Showing ' + start + '-' + end + ' of ' + total);
+			$pagination.find('.aicrmform-page-info').text('Page ' + currentPage + ' of ' + totalPages);
+
+			// Update button states
+			$pagination.find('.aicrmform-page-btn').each(function () {
+				const $btn = $(this);
+				const page = parseInt($btn.data('page'));
+				
+				if ($btn.find('.dashicons-controls-skipback').length || $btn.find('.dashicons-arrow-left-alt2').length) {
+					$btn.prop('disabled', currentPage === 1);
+				} else {
+					$btn.prop('disabled', currentPage === totalPages);
+				}
+			});
+		}
+
+		// Pagination button clicks
+		$(document).on('click', '.aicrmform-page-btn:not(:disabled)', function () {
+			const $btn = $(this);
+			const totalPages = Math.ceil(filteredRows.length / perPage);
+
+			if ($btn.find('.dashicons-controls-skipback').length) {
+				currentPage = 1;
+			} else if ($btn.find('.dashicons-arrow-left-alt2').length) {
+				currentPage = Math.max(1, currentPage - 1);
+			} else if ($btn.find('.dashicons-arrow-right-alt2').length) {
+				currentPage = Math.min(totalPages, currentPage + 1);
+			} else if ($btn.find('.dashicons-controls-skipforward').length) {
+				currentPage = totalPages;
+			}
+
+			updateDisplay();
+		});
+
+		// Export to CSV function (via API to get full submission data)
+		function exportToCSV(filters, filename) {
+			showToast('Preparing export...', 'info');
+
+			// Build query string
+			const params = new URLSearchParams();
+			if (filters.status) params.append('status', filters.status);
+			if (filters.form_id) params.append('form_id', filters.form_id);
+			if (filters.date_from) params.append('date_from', filters.date_from);
+			if (filters.date_to) params.append('date_to', filters.date_to);
+			if (filters.ids) params.append('ids', filters.ids);
+
+			const url = aicrmformAdmin.restUrl + 'submissions/export' + (params.toString() ? '?' + params.toString() : '');
+
+			$.ajax({
+				url: url,
+				method: 'GET',
+				headers: { 'X-WP-Nonce': aicrmformAdmin.nonce }
+			})
+			.done(function (response) {
+				if (response.success && response.rows) {
+					// Create CSV content
+					let csv = response.headers.map(function (h) {
+						return '"' + String(h).replace(/"/g, '""') + '"';
+					}).join(',') + '\n';
+
+					response.rows.forEach(function (row) {
+						csv += row.map(function (cell) {
+							// Escape quotes and wrap all in quotes for safety
+							const escaped = String(cell || '').replace(/"/g, '""');
+							return '"' + escaped + '"';
+						}).join(',') + '\n';
+					});
+
+					// Download
+					const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+					const link = document.createElement('a');
+					link.href = URL.createObjectURL(blob);
+					link.download = filename + '-' + new Date().toISOString().slice(0, 10) + '.csv';
+					link.click();
+
+					showToast('Exported ' + response.count + ' submissions to CSV', 'success');
+				} else {
+					showToast('Export failed: ' + (response.error || 'Unknown error'), 'error');
+				}
+			})
+			.fail(function () {
+				showToast('Export failed. Please try again.', 'error');
+			});
+		}
+
+		// Initial display
+		updateDisplay();
 	}
 
 	// Initialize on document ready

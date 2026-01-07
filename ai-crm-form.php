@@ -3,7 +3,7 @@
  * Plugin Name: AI CRM Form
  * Plugin URI: https://github.com/rajanvijayan/ai-crm-form
  * Description: AI-powered form generator that submits to CRM API. Generate dynamic forms using AI and capture leads seamlessly.
- * Version: 1.2.0
+ * Version: 1.4.0
  * Author: Rajan Vijayan
  * Author URI: https://rajanvijayan.com
  * License: GPL v2 or later
@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define plugin constants.
-define( 'AICRMFORM_VERSION', '1.2.0' );
+define( 'AICRMFORM_VERSION', '1.4.0' );
 define( 'AICRMFORM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'AICRMFORM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'AICRMFORM_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
@@ -68,15 +68,35 @@ class AI_CRM_Form {
 			require_once AICRMFORM_PLUGIN_DIR . 'vendor/autoload.php';
 		}
 
-		// Load plugin classes.
+		// Load core plugin classes.
 		require_once AICRMFORM_PLUGIN_DIR . 'includes/class-field-mapping.php';
 		require_once AICRMFORM_PLUGIN_DIR . 'includes/class-crm-api.php';
 		require_once AICRMFORM_PLUGIN_DIR . 'includes/class-ai-client.php';
 		require_once AICRMFORM_PLUGIN_DIR . 'includes/class-form-generator.php';
+
+		// Load form integrations (scalable structure).
+		$this->load_integrations();
+
 		require_once AICRMFORM_PLUGIN_DIR . 'includes/class-form-importer.php';
 		require_once AICRMFORM_PLUGIN_DIR . 'includes/class-admin-settings.php';
 		require_once AICRMFORM_PLUGIN_DIR . 'includes/class-rest-api.php';
 		require_once AICRMFORM_PLUGIN_DIR . 'includes/class-form-shortcode.php';
+	}
+
+	/**
+	 * Load form plugin integrations.
+	 */
+	private function load_integrations() {
+		// Load integration base classes.
+		require_once AICRMFORM_PLUGIN_DIR . 'includes/integrations/interface-form-integration.php';
+		require_once AICRMFORM_PLUGIN_DIR . 'includes/integrations/abstract-form-integration.php';
+
+		// Load specific integrations.
+		require_once AICRMFORM_PLUGIN_DIR . 'includes/integrations/contact-form-7/class-cf7-integration.php';
+		require_once AICRMFORM_PLUGIN_DIR . 'includes/integrations/gravity-forms/class-gravity-forms-integration.php';
+
+		// Load integration manager.
+		require_once AICRMFORM_PLUGIN_DIR . 'includes/integrations/class-integration-manager.php';
 	}
 
 	/**
