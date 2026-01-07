@@ -741,6 +741,15 @@ class AICRMFORM_Admin_Settings {
 								</div>
 							</div>
 
+							<!-- Theme Styling Active Note -->
+							<div class="aicrmform-theme-styling-note" id="theme-styling-note" style="display: none;">
+								<span class="dashicons dashicons-info"></span>
+								<div class="aicrmform-note-content">
+									<strong><?php esc_html_e( 'Theme Styling Enabled', 'ai-crm-form' ); ?></strong>
+									<p><?php esc_html_e( 'All plugin styling options are hidden. Your theme will control how the form looks. You can add custom CSS in the "Custom CSS" section below if needed.', 'ai-crm-form' ); ?></p>
+								</div>
+							</div>
+
 							<div class="aicrmform-style-options" id="style-options">
 							<div class="aicrmform-style-grid">
 								<div class="aicrmform-form-row">

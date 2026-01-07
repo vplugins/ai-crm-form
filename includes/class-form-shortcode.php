@@ -485,16 +485,19 @@ class AICRMFORM_Form_Shortcode {
 
 		$html = '';
 
-		// Load Google Font if specified for this form.
-		$font_family = $styles['font_family'] ?? '';
-		if ( ! empty( $font_family ) ) {
-			$font_slug = str_replace( ' ', '+', $font_family );
-			$html     .= '<link href="https://fonts.googleapis.com/css2?family=' . esc_attr( $font_slug ) . ':wght@400;500;600;700&display=swap" rel="stylesheet">';
-		}
+		// Only load custom fonts and styles if theme styling is NOT enabled.
+		if ( ! $use_theme_styling ) {
+			// Load Google Font if specified for this form.
+			$font_family = $styles['font_family'] ?? '';
+			if ( ! empty( $font_family ) ) {
+				$font_slug = str_replace( ' ', '+', $font_family );
+				$html     .= '<link href="https://fonts.googleapis.com/css2?family=' . esc_attr( $font_slug ) . ':wght@400;500;600;700&display=swap" rel="stylesheet">';
+			}
 
-		// Add custom styles.
-		if ( ! empty( $custom_styles ) ) {
-			$html .= '<style>' . $custom_styles . '</style>';
+			// Add custom styles.
+			if ( ! empty( $custom_styles ) ) {
+				$html .= '<style>' . $custom_styles . '</style>';
+			}
 		}
 
 		$html .= '<div class="' . esc_attr( $wrapper_class ) . '"' . $wrapper_style . ' data-form-id="' . esc_attr( $form_id ) . '">';

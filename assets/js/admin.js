@@ -247,10 +247,16 @@
 		// Also handle in edit form modal
 		$(document).on('change', '#edit-use-theme-styling', function() {
 			const $tabContent = $(this).closest('.aicrmform-edit-tab-content');
+			const $note = $tabContent.find('#edit-theme-styling-note');
+			const $styleOptions = $tabContent.find('#edit-style-options');
 			if ($(this).is(':checked')) {
 				$tabContent.addClass('aicrmform-theme-styling-active');
+				$note.show();
+				$styleOptions.hide();
 			} else {
 				$tabContent.removeClass('aicrmform-theme-styling-active');
+				$note.hide();
+				$styleOptions.show();
 			}
 		});
 	}
@@ -2228,6 +2234,14 @@
 		html += '<div class="aicrmform-toggle-content">';
 		html += '<span class="aicrmform-toggle-label">Use Theme Styling</span>';
 		html += '<span class="aicrmform-toggle-description">Disable plugin styles and let your theme control the form appearance.</span>';
+		html += '</div></div>';
+
+		// Theme Styling Note
+		html += '<div class="aicrmform-theme-styling-note" id="edit-theme-styling-note"' + (styles.use_theme_styling ? '' : ' style="display: none;"') + '>';
+		html += '<span class="dashicons dashicons-info"></span>';
+		html += '<div class="aicrmform-note-content">';
+		html += '<strong>Theme Styling Enabled</strong>';
+		html += '<p>All plugin styling options are hidden. Your theme will control how the form looks. You can add custom CSS in the "Custom CSS" section below if needed.</p>';
 		html += '</div></div>';
 
 		html += '<div class="aicrmform-style-options" id="edit-style-options"' + (styles.use_theme_styling ? ' style="display: none;"' : '') + '>';
