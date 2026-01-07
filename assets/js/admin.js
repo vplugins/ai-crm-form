@@ -604,18 +604,24 @@
 
 		// Store the plugins to deactivate (capture in closure)
 		const pluginsToDeactivate = Object.assign({}, importedPlugins);
+		
+		// Clear importedPlugins NOW so subsequent imports start fresh
+		// The pluginsToDeactivate already captured what we need
+		importedPlugins = {};
 
 		showConfirm(
 			title,
 			confirmMsg,
 			function () {
-				// Clear the imported plugins tracking ONLY when user clicks Yes
-				importedPlugins = {};
-				// Deactivate all imported plugins
+				// User clicked Yes - deactivate all imported plugins
 				deactivateMultiplePlugins(pluginsToDeactivate);
+			},
+			function () {
+				// User clicked No - just go to forms page, don't deactivate
+				$('#import-form-modal').hide();
+				window.location.href = aicrmformAdmin.adminUrl + '?page=ai-crm-form-forms';
 			}
 		);
-		// Note: importedPlugins is cleared in hideConfirmModal when user clicks No
 	}
 
 	/**
