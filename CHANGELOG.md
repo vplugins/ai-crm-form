@@ -16,6 +16,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Nothing yet
 
+## [1.4.0] - 2025-01-07
+
+### Added
+- **Import Form Button on Forms Page** - Quick access to import forms directly from Forms list
+- **Submissions Page Enhancements**
+  - Filter bar with status, form, and date range filters
+  - Export dropdown with three options: Export All, Export Filtered, Export Selected
+  - CSV export includes all form field data (not just table columns)
+  - Pagination with 20 items per page
+  - Checkbox column for bulk selection
+  - Display actual form names instead of IDs
+  - Failed submissions stat with error status styling
+- **Redesigned Submission Detail Modal**
+  - Modern gradient header with status badge
+  - Three-column metadata section (Date, IP, Form ID)
+  - Clean data grid layout for form fields
+  - Auto-formatting of field names (snake_case to Title Case)
+  - Full-width layout for long text fields
+  - CRM response section with code block styling
+- **Use Theme Styling Option**
+  - Toggle to disable all plugin styles on frontend
+  - Let your theme control the form appearance
+  - When enabled, styling options are hidden
+  - Adds `aicrmform-theme-styled` class for custom CSS targeting
+  - Minimal reset styles for theme inheritance
+
+### Changed
+- Import Form and Create Form buttons now have matching primary style
+- Improved button alignment in page headers
+- REST API endpoint for exporting submissions with full data
+
+### Fixed
+- Import modal CRM Form ID field not showing on Forms page
+- Styling options toggle not hiding options in Edit Form modal
+
 ## [1.3.0] - 2025-01-07
 
 ### Added
@@ -149,7 +184,8 @@ We use [Semantic Versioning](https://semver.org/):
 - **Development versions** are available on GitHub
 - **Security patches** are released as needed
 
-[Unreleased]: https://github.com/vplugins/ai-crm-form/compare/v1.3.0...HEAD
+[Unreleased]: https://github.com/vplugins/ai-crm-form/compare/v1.4.0...HEAD
+[1.4.0]: https://github.com/vplugins/ai-crm-form/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/vplugins/ai-crm-form/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/vplugins/ai-crm-form/compare/v1.1.1...v1.2.0
 [1.1.1]: https://github.com/vplugins/ai-crm-form/compare/v1.1.0...v1.1.1
