@@ -405,21 +405,8 @@ class AI_CRM_Form {
 	 * Enqueue frontend scripts.
 	 */
 	public function frontend_scripts() {
-		$settings = get_option( 'aicrmform_settings', [] );
-
-		// Load Google Font if configured.
-		$font_family = $settings['default_font_family'] ?? '';
-		if ( ! empty( $font_family ) ) {
-			$font_slug = str_replace( ' ', '+', $font_family );
-			wp_enqueue_style(
-				'aicrmform-google-fonts',
-				'https://fonts.googleapis.com/css2?family=' . esc_attr( $font_slug ) . ':wght@400;500;600;700&display=swap',
-				[],
-				AICRMFORM_VERSION
-			);
-		}
-
-		wp_enqueue_style(
+		// Register styles (will be enqueued conditionally per form in the shortcode).
+		wp_register_style(
 			'aicrmform-frontend',
 			AICRMFORM_PLUGIN_URL . 'assets/css/form.css',
 			[],

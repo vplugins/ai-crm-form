@@ -462,6 +462,9 @@ class AICRMFORM_Form_Shortcode {
 		$use_theme_styling = isset( $styles['use_theme_styling'] ) && $styles['use_theme_styling'];
 		if ( $use_theme_styling ) {
 			$wrapper_class .= ' aicrmform-theme-styled';
+		} else {
+			// Enqueue the plugin stylesheet only when theme styling is NOT enabled.
+			wp_enqueue_style( 'aicrmform-frontend' );
 		}
 		
 		if ( ! empty( $styles['label_position'] ) ) {
