@@ -521,9 +521,16 @@
 					}
 					showToast(successMsg, 'success');
 
+					// Get the source plugin name
+					const pluginNames = {
+						'cf7': 'Contact Form 7',
+						'gravity': 'Gravity Forms'
+					};
+					const pluginDisplayName = pluginNames[plugin] || plugin;
+
 					// Offer to disable the source plugin
 					setTimeout(function () {
-						let confirmMsg = 'Would you like to disable Contact Form 7?';
+						let confirmMsg = 'Would you like to disable ' + pluginDisplayName + '?';
 						if (useSameShortcode) {
 							confirmMsg +=
 								' Your existing shortcodes will continue to work with the imported form.';
@@ -535,11 +542,11 @@
 						}
 
 						showConfirm(
-							'Disable Contact Form 7?',
+							'Disable ' + pluginDisplayName + '?',
 							confirmMsg,
 							function () {
 								// Deactivate the plugin
-								deactivatePlugin(plugin);
+								deactivatePlugin(plugin, pluginDisplayName);
 							},
 							function () {
 								$('#import-form-modal').hide();
@@ -561,9 +568,13 @@
 
 	/**
 	 * Deactivate a plugin.
+	 *
+	 * @param {string} pluginKey Plugin key (e.g., 'cf7', 'gravity').
+	 * @param {string} pluginDisplayName Human-readable plugin name.
 	 */
-	function deactivatePlugin(pluginKey) {
-		showToast('Deactivating plugin...', 'info');
+	function deactivatePlugin(pluginKey, pluginDisplayName) {
+		pluginDisplayName = pluginDisplayName || pluginKey;
+		showToast('Deactivating ' + pluginDisplayName + '...', 'info');
 
 		$.ajax({
 			url: aicrmformAdmin.restUrl + 'deactivate-plugin',
@@ -574,7 +585,7 @@
 		})
 			.done(function (response) {
 				if (response.success) {
-					showToast('Contact Form 7 has been deactivated!', 'success');
+					showToast(pluginDisplayName + ' has been deactivated!', 'success');
 				} else {
 					showToast(response.error || 'Could not deactivate plugin.', 'error');
 				}

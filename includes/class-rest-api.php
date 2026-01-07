@@ -1121,8 +1121,8 @@ class AICRMFORM_REST_API {
 		$plugin_key = sanitize_text_field( $request->get_param( 'plugin' ) );
 
 		$plugin_files = [
-			'cf7' => 'contact-form-7/wp-contact-form-7.php',
-			// Add more plugins here as needed.
+			'cf7'     => 'contact-form-7/wp-contact-form-7.php',
+			'gravity' => 'gravityforms/gravityforms.php',
 		];
 
 		if ( empty( $plugin_key ) || ! isset( $plugin_files[ $plugin_key ] ) ) {
