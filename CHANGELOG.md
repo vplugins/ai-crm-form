@@ -16,6 +16,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Nothing yet
 
+## [1.4.1] - 2025-01-07
+
+### Fixed
+- **Use Theme Styling option not working** - When enabled, the plugin CSS was still being loaded
+  - Plugin stylesheet (`form.css`) is now completely skipped when theme styling is enabled
+  - Google Fonts are not loaded when theme styling is enabled
+  - No custom inline styles are generated when theme styling is enabled
+  - Your theme now has full control over the form appearance
+
+### Added
+- Informational note in admin UI when theme styling is enabled explaining that theme controls form appearance
+
 ## [1.4.0] - 2025-01-07
 
 ### Added
@@ -184,7 +196,8 @@ We use [Semantic Versioning](https://semver.org/):
 - **Development versions** are available on GitHub
 - **Security patches** are released as needed
 
-[Unreleased]: https://github.com/vplugins/ai-crm-form/compare/v1.4.0...HEAD
+[Unreleased]: https://github.com/vplugins/ai-crm-form/compare/v1.4.1...HEAD
+[1.4.1]: https://github.com/vplugins/ai-crm-form/compare/v1.4.0...v1.4.1
 [1.4.0]: https://github.com/vplugins/ai-crm-form/compare/v1.3.0...v1.4.0
 [1.3.0]: https://github.com/vplugins/ai-crm-form/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/vplugins/ai-crm-form/compare/v1.1.1...v1.2.0
