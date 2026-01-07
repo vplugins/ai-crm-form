@@ -307,19 +307,127 @@ class AICRMFORM_Field_Mapping {
 	/**
 	 * Map form data to CRM field format.
 	 *
+	 * Handles:
+	 * - Direct field mappings
+	 * - Split mappings (e.g., "your-name" -> first_name + last_name)
+	 * - Auto-detection of name fields that need splitting
+	 *
 	 * @param array $form_data The form submission data.
 	 * @param array $field_mapping The mapping of form fields to CRM field IDs.
 	 * @return array The mapped data ready for CRM API.
 	 */
 	public static function map_form_data_to_crm( $form_data, $field_mapping ) {
-		$mapped_data = [];
+		$mapped_data    = [];
+		$first_name_id  = self::get_field_id( 'first_name' );
+		$last_name_id   = self::get_field_id( 'last_name' );
+		$has_first_name = false;
+		$has_last_name  = false;
 
-		foreach ( $form_data as $form_field => $value ) {
-			if ( isset( $field_mapping[ $form_field ] ) ) {
-				$field_id                = $field_mapping[ $form_field ];
-				$mapped_data[ $field_id ] = $value;
+		// First, find explicit split mappings.
+		$split_mappings = [];
+		foreach ( $field_mapping as $key => $field_id ) {
+			if ( strpos( $key, '__split__' ) !== false ) {
+				$parts      = explode( '__split__', $key );
+				$form_field = $parts[0];
+				$crm_field  = $parts[1];
+
+				if ( ! isset( $split_mappings[ $form_field ] ) ) {
+					$split_mappings[ $form_field ] = [];
+				}
+				$split_mappings[ $form_field ][ $crm_field ] = $field_id;
 			}
 		}
+
+		// Also auto-detect name fields that map to first_name but need splitting.
+		foreach ( $field_mapping as $form_field => $field_id ) {
+			if ( strpos( $form_field, '__split__' ) !== false ) {
+				continue;
+			}
+
+			// If this field maps to first_name and looks like a combined name field.
+			if ( $field_id === $first_name_id ) {
+				$field_lower = strtolower( $form_field );
+				// Check if it's likely a full name field (contains 'name' but not 'first' or 'last').
+				if ( ( strpos( $field_lower, 'name' ) !== false || strpos( $field_lower, 'full' ) !== false ) &&
+					 strpos( $field_lower, 'first' ) === false &&
+					 strpos( $field_lower, 'last' ) === false ) {
+					// This is likely a full name field - add to split mappings.
+					if ( ! isset( $split_mappings[ $form_field ] ) ) {
+						$split_mappings[ $form_field ] = [
+							'first_name' => $first_name_id,
+							'last_name'  => $last_name_id,
+						];
+						error_log( sprintf(
+							'AI CRM Form: Auto-detected "%s" as full name field, will split into first_name + last_name',
+							$form_field
+						) );
+					}
+				}
+			}
+		}
+
+		foreach ( $form_data as $form_field => $value ) {
+			// Check for split mappings first.
+			if ( isset( $split_mappings[ $form_field ] ) ) {
+				$value_str = is_string( $value ) ? trim( $value ) : '';
+
+				// If we have both first_name and last_name split mappings, split the value.
+				if ( isset( $split_mappings[ $form_field ]['first_name'] ) &&
+					 isset( $split_mappings[ $form_field ]['last_name'] ) ) {
+
+					if ( strpos( $value_str, ' ' ) !== false ) {
+						$name_parts  = explode( ' ', $value_str, 2 );
+						$first_name  = trim( $name_parts[0] );
+						$last_name   = trim( $name_parts[1] ?? '' );
+					} else {
+						$first_name = $value_str;
+						$last_name  = '';
+					}
+
+					$mapped_data[ $split_mappings[ $form_field ]['first_name'] ] = $first_name;
+					$mapped_data[ $split_mappings[ $form_field ]['last_name'] ]  = $last_name;
+					$has_first_name = true;
+					$has_last_name  = true;
+
+					error_log( sprintf(
+						'AI CRM Form: Split "%s" = "%s" -> first_name="%s", last_name="%s"',
+						$form_field,
+						$value_str,
+						$first_name,
+						$last_name
+					) );
+					continue;
+				}
+
+				// Handle other split mappings.
+				foreach ( $split_mappings[ $form_field ] as $crm_field => $field_id ) {
+					$mapped_data[ $field_id ] = $value;
+				}
+				continue;
+			}
+
+			// Regular direct mapping.
+			if ( isset( $field_mapping[ $form_field ] ) ) {
+				$field_id                 = $field_mapping[ $form_field ];
+				$mapped_data[ $field_id ] = $value;
+
+				if ( $field_id === $first_name_id ) {
+					$has_first_name = true;
+				}
+				if ( $field_id === $last_name_id ) {
+					$has_last_name = true;
+				}
+			}
+		}
+
+		// Ensure last_name exists if first_name exists (many CRM schemas require both).
+		if ( $has_first_name && ! $has_last_name ) {
+			$mapped_data[ $last_name_id ] = '';
+			error_log( 'AI CRM Form: Added empty last_name since only first_name was provided' );
+		}
+
+		// Note: We do NOT auto-add empty phone_number as some CRM schemas reject empty values.
+		// If phone_number is required, the form should include a phone field.
 
 		return $mapped_data;
 	}

@@ -77,6 +77,16 @@ class AICRMFORM_CRM_API {
 			],
 		];
 
+		// Store payload for debug.
+		$this->last_payload = $payload;
+
+		// Log the payload being sent to CRM API.
+		error_log( sprintf(
+			'AI CRM Form: Sending to CRM API - URL: %s, Payload: %s',
+			$this->api_url,
+			wp_json_encode( $payload, JSON_PRETTY_PRINT )
+		) );
+
 		// Send the request.
 		$response = wp_remote_post(
 			$this->api_url,
@@ -107,9 +117,28 @@ class AICRMFORM_CRM_API {
 			];
 		}
 
+		// Try to parse error message from response.
+		$error_data    = json_decode( $response_body, true );
+		$error_message = __( 'API request failed.', 'ai-crm-form' );
+
+		if ( ! empty( $error_data['message'] ) ) {
+			$error_message = $error_data['message'];
+		} elseif ( ! empty( $error_data['error'] ) ) {
+			$error_message = is_string( $error_data['error'] ) ? $error_data['error'] : wp_json_encode( $error_data['error'] );
+		}
+
+		// Log the error for debugging.
+		error_log( sprintf(
+			'AI CRM Form: CRM API Error - Code: %d, URL: %s, Form ID: %s, Response: %s',
+			$response_code,
+			$this->api_url,
+			$form_id,
+			$response_body
+		) );
+
 		return [
 			'success'       => false,
-			'error'         => __( 'API request failed.', 'ai-crm-form' ),
+			'error'         => sprintf( __( 'CRM API Error (%d): %s', 'ai-crm-form' ), $response_code, $error_message ),
 			'response_code' => $response_code,
 			'response_body' => $response_body,
 		];
@@ -125,7 +154,105 @@ class AICRMFORM_CRM_API {
 	 */
 	public function submit_with_mapping( $form_data, $field_mapping, $form_id ) {
 		$mapped_data = AICRMFORM_Field_Mapping::map_form_data_to_crm( $form_data, $field_mapping );
+
+		// Smart preprocessing: handle combined name fields.
+		$mapped_data = $this->preprocess_mapped_data( $mapped_data );
+
+		// Log the final mapped data for debugging.
+		error_log( sprintf(
+			'AI CRM Form: Final mapped data for CRM API: %s',
+			wp_json_encode( $mapped_data, JSON_PRETTY_PRINT )
+		) );
+
+		// Store mapped data for debug output.
+		$this->last_mapped_data = $mapped_data;
+
 		return $this->submit( $mapped_data, $form_id );
+	}
+
+	/**
+	 * Get last mapped data (for debugging).
+	 *
+	 * @return array|null
+	 */
+	public function get_last_mapped_data() {
+		return $this->last_mapped_data ?? null;
+	}
+
+	/**
+	 * Get last payload sent to CRM API (for debugging).
+	 *
+	 * @return array|null
+	 */
+	public function get_last_payload() {
+		return $this->last_payload ?? null;
+	}
+
+	/**
+	 * Last mapped data for debugging.
+	 *
+	 * @var array|null
+	 */
+	private $last_mapped_data = null;
+
+	/**
+	 * Last payload sent to CRM API.
+	 *
+	 * @var array|null
+	 */
+	private $last_payload = null;
+
+	/**
+	 * Preprocess mapped data to handle special cases.
+	 *
+	 * This handles:
+	 * - Splitting combined name fields into first_name + last_name
+	 * - Ensuring required fields exist with empty values if not provided
+	 *
+	 * @param array $mapped_data Data with CRM Field IDs as keys.
+	 * @return array Preprocessed data.
+	 */
+	private function preprocess_mapped_data( $mapped_data ) {
+		$first_name_id = AICRMFORM_Field_Mapping::get_field_id( 'first_name' );
+		$last_name_id  = AICRMFORM_Field_Mapping::get_field_id( 'last_name' );
+
+		// If we have first_name but not last_name, handle the name.
+		if ( isset( $mapped_data[ $first_name_id ] ) && ! isset( $mapped_data[ $last_name_id ] ) ) {
+			$full_name = trim( $mapped_data[ $first_name_id ] );
+
+			if ( strpos( $full_name, ' ' ) !== false ) {
+				// Name has space - split into first_name and last_name.
+				$name_parts = explode( ' ', $full_name, 2 );
+				$mapped_data[ $first_name_id ] = trim( $name_parts[0] );
+				$mapped_data[ $last_name_id ]  = trim( $name_parts[1] ?? '' );
+
+				error_log( sprintf(
+					'AI CRM Form: Split full name "%s" into first_name="%s", last_name="%s"',
+					$full_name,
+					$mapped_data[ $first_name_id ],
+					$mapped_data[ $last_name_id ]
+				) );
+			} else {
+				// Single name - still need to provide last_name (empty string).
+				$mapped_data[ $last_name_id ] = '';
+
+				error_log( sprintf(
+					'AI CRM Form: Single name "%s" - added empty last_name',
+					$full_name
+				) );
+			}
+		}
+
+		// Some CRM schemas require phone_number - add placeholder if missing.
+		// The CRM validates phone format, so we use a numeric placeholder.
+		$phone_number_id = AICRMFORM_Field_Mapping::get_field_id( 'phone_number' );
+		if ( ! isset( $mapped_data[ $phone_number_id ] ) || empty( $mapped_data[ $phone_number_id ] ) ) {
+			// Add placeholder phone number for CRM schemas that require it.
+			$mapped_data[ $phone_number_id ] = '0000000000';
+			error_log( 'AI CRM Form: Added placeholder phone_number "0000000000" (field was missing or empty)' );
+		}
+
+		return $mapped_data;
 	}
 
 	/**

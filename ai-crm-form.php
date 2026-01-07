@@ -365,14 +365,18 @@ class AI_CRM_Form {
 			true
 		);
 
+		$settings = get_option( 'aicrmform_settings', [] );
+
 		wp_localize_script(
 			'aicrmform-admin',
 			'aicrmformAdmin',
 			[
-				'ajaxUrl'  => admin_url( 'admin-ajax.php' ),
-				'restUrl'  => rest_url( 'ai-crm-form/v1/' ),
-				'adminUrl' => admin_url( 'admin.php' ),
-				'nonce'    => wp_create_nonce( 'wp_rest' ),
+				'ajaxUrl'           => admin_url( 'admin-ajax.php' ),
+				'restUrl'           => rest_url( 'ai-crm-form/v1/' ),
+				'adminUrl'          => admin_url( 'admin.php' ),
+				'nonce'             => wp_create_nonce( 'wp_rest' ),
+				'hasAiKey'          => ! empty( $settings['ai_api_key'] ),
+				'defaultCrmFormId'  => $settings['form_id'] ?? '',
 			]
 		);
 	}

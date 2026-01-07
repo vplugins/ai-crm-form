@@ -11,6 +11,97 @@
 	let editingFieldIndex = null;
 	let draggedField = null;
 
+	// CRM Field ID to friendly name mapping (reverse lookup) - must match class-field-mapping.php
+	const crmFieldIdToName = {
+		// Contact Fields
+		'FieldID-211d398a-d905-43f8-a8e2-c1c952d4f5cc': 'first_name',
+		'FieldID-a1c64750-0a8e-457b-8575-bcada69db4a1': 'last_name',
+		'FieldID-1bcd68e1-2234-4a0c-9c70-21d9a6ff0ce8': 'phone_number',
+		'FieldID-d2fea894-1e23-4bf6-b488-2cd7a8359dde': 'email',
+		'FieldID-a7b68b66-6820-4a44-9717-f8f4e1d399ce': 'tags',
+		// Standard Contact Fields
+		'FieldID-c11b2495-6f02-4386-9fe0-141067c63c14': 'mobile_phone',
+		'FieldID-6e3bb5c2-8baf-4f94-8b61-9b8a3d3b7a5c': 'additional_emails',
+		'FieldID-e4d82132-ed77-4a2f-8625-1163a04efba1': 'primary_company_id',
+		'FieldID-59dc9adf-6401-4af4-91cb-666ce81acc37': 'primary_address_line1',
+		'FieldID-623fb8a0-c224-4952-af4c-a4e1e3bd5b70': 'primary_address_line2',
+		'FieldID-4fe28279-6e83-4e7c-b310-9474dcd5034d': 'primary_address_city',
+		'FieldID-a215813c-8225-4c21-b646-01b370eefd47': 'primary_address_state',
+		'FieldID-3ba73c58-3fa9-4fbf-b28b-8709837685bc': 'primary_address_postal',
+		'FieldID-aa50a455-c00b-4d6b-98f7-f833332b1b5c': 'primary_address_country',
+		'FieldID-0a2e9d97-3d09-4b7d-a5fd-7308fa8066e1': 'message',
+		'FieldID-d80132b7-4fbe-45dd-92d3-a313286567ac': 'source_name',
+		'FieldID-78e702fa-84c1-46c3-84d9-c59b9f83db88': 'original_source',
+		// UTM Fields
+		'FieldID-2b0c575e-4a6e-4646-bd3d-0e43fa341c9a': 'utm_medium',
+		'FieldID-7edd3d42-41ab-4b53-9141-6f0113046ad5': 'utm_source',
+		'FieldID-dd36880f-73a9-46fc-a254-a9259341df79': 'utm_campaign',
+		'FieldID-31553fd6-ea45-4420-ba1f-9f5eb51956a1': 'utm_term',
+		'FieldID-7df2ac1d-8405-477c-9ae7-98a176c64c10': 'utm_content',
+		'FieldID-a90f2d07-a40c-4c9f-a9f4-20122437beaa': 'gclid',
+		'FieldID-59d59574-50da-4f67-a2fa-f99cf077a6b0': 'fbclid',
+		'FieldID-52ba3729-fe15-41f7-ac87-662d23656c85': 'msclkid',
+		// Consent Fields
+		'FieldID-7e76c322-bf7c-47ed-817a-dc4e2d60402f': 'marketing_email_consent',
+		'FieldID-7c8eda3b-b1b9-44b1-8f88-adff9dbc61fb': 'sms_consent',
+		// Company Fields
+		'FieldID-b2a5d86e-f9ae-11ed-be56-0242ac120002': 'company_name',
+		'FieldID-36785fbc-9c40-4938-92e3-b262d40ef6bb': 'company_address_line1',
+		'FieldID-ac4c2ea1-f8d1-4bdd-8a42-a1ad4127eef6': 'company_address_line2',
+		'FieldID-33b7b0a0-82ed-471b-baa1-87ab958f90d2': 'company_address_city',
+		'FieldID-184fe9c2-b3a8-47c5-85dc-7c3a285c17ac': 'company_address_state',
+		'FieldID-b0e75bc5-59f7-4c54-98a8-510b9ec982ec': 'company_address_postal',
+		'FieldID-daa0c91f-8a0e-4c90-be9c-e53a73789edc': 'company_address_country',
+		'FieldID-f25628fb-eeb3-4d99-8737-44b403758837': 'company_website',
+		'FieldID-fc7ff4ae-b753-4650-9961-42b07bcc6ac6': 'company_phone',
+	};
+
+	/**
+	 * Get friendly name from CRM field ID or mapping.
+	 */
+	function getCrmFriendlyName(mapping) {
+		if (!mapping) return '';
+		
+		// If it's already a friendly name (not a FieldID), return as-is but uppercase
+		if (!mapping.startsWith('FieldID-')) {
+			return mapping.toUpperCase().replace(/_/g, ' ');
+		}
+		
+		// Look up in reverse mapping (case-insensitive)
+		const lowerMapping = mapping.toLowerCase();
+		for (const [fieldId, name] of Object.entries(crmFieldIdToName)) {
+			if (fieldId.toLowerCase() === lowerMapping) {
+				return name.toUpperCase().replace(/_/g, ' ');
+			}
+		}
+		
+		// If not found, show shortened version of FieldID
+		return mapping.substring(0, 20) + '...';
+	}
+
+	/**
+	 * Get CRM mapping key (for dropdown selection) from FieldID or mapping.
+	 */
+	function getCrmMappingKey(mapping) {
+		if (!mapping) return '';
+		
+		// If it's already a friendly name (not a FieldID), return as-is
+		if (!mapping.startsWith('FieldID-')) {
+			return mapping.toLowerCase();
+		}
+		
+		// Look up in reverse mapping (case-insensitive)
+		const lowerMapping = mapping.toLowerCase();
+		for (const [fieldId, name] of Object.entries(crmFieldIdToName)) {
+			if (fieldId.toLowerCase() === lowerMapping) {
+				return name;
+			}
+		}
+		
+		// If not found, return empty
+		return '';
+	}
+
 	/**
 	 * Initialize admin functionality.
 	 */
@@ -51,6 +142,7 @@
 		$(document).on('click', '.aicrmform-preview-form', previewForm);
 		$(document).on('click', '.aicrmform-edit-form', editForm);
 		$(document).on('click', '.aicrmform-view-submission', viewSubmission);
+		$(document).on('click', '.aicrmform-repair-mappings', repairMappings);
 
 		// Field group toggles (for any remaining field groups)
 		$('.aicrmform-field-group-toggle').on('click', toggleFieldGroup);
@@ -102,14 +194,14 @@
 			showConfirm('Clear Form', 'Are you sure you want to clear all fields?', resetForm);
 		});
 
-		// Field actions (edit/delete)
-		$(document).on('click', '.edit-field-btn', function (e) {
+		// Field actions (edit/delete) - Only for the form builder, not the edit modal
+		$(document).on('click', '#form-fields-container .edit-field-btn', function (e) {
 			e.stopPropagation();
 			const index = $(this).closest('.aicrmform-field-item').data('index');
 			openFieldEditor(index);
 		});
 
-		$(document).on('click', '.delete-field-btn', function (e) {
+		$(document).on('click', '#form-fields-container .delete-field-btn', function (e) {
 			e.stopPropagation();
 			const index = $(this).closest('.aicrmform-field-item').data('index');
 			formFields.splice(index, 1);
@@ -312,6 +404,9 @@
 		let hasActiveSources = false;
 		let html = '';
 
+		// Get default CRM Form ID from the form builder page if available
+		const defaultCrmFormId = $('#crm-form-id').val() || '';
+
 		for (const [key, source] of Object.entries(sources)) {
 			if (source.active && source.forms && source.forms.length > 0) {
 				hasActiveSources = true;
@@ -320,6 +415,19 @@
 					'<h4><span class="dashicons dashicons-admin-plugins"></span> ' +
 					escapeHtml(source.name) +
 					'</h4>';
+
+				// Add CRM Form ID input at the top of each source
+				html += '<div class="aicrmform-import-crm-id-row" style="margin-bottom: 16px; padding: 12px; background: #f0f6fc; border-radius: 6px; border: 1px solid #c3d9ed;">';
+				html += '<label style="display: block; margin-bottom: 6px; font-weight: 500; color: #1e3a5f;">';
+				html += '<span class="dashicons dashicons-cloud" style="color: #2271b1; margin-right: 4px;"></span>';
+				html += 'CRM Form ID <span style="color: #d63638;">*</span></label>';
+				html += '<input type="text" class="aicrmform-import-crm-form-id aicrmform-input" data-plugin="' + escapeHtml(key) + '" ';
+				html += 'value="' + escapeHtml(defaultCrmFormId) + '" ';
+				html += 'placeholder="FormConfigID-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" ';
+				html += 'style="width: 100%; margin-bottom: 4px;">';
+				html += '<p style="margin: 0; font-size: 12px; color: #50575e;">Required for CRM integration. Get this from your CRM dashboard.</p>';
+				html += '</div>';
+
 				html += '<div class="aicrmform-import-forms-list">';
 
 				source.forms.forEach(function (form) {
@@ -366,6 +474,24 @@
 	 * Import a form.
 	 */
 	function importForm(plugin, formId, formTitle, useSameShortcode, $btn) {
+		// Get the CRM Form ID from the input field
+		const crmFormId = $('.aicrmform-import-crm-form-id[data-plugin="' + plugin + '"]').val().trim();
+
+		// Validate CRM Form ID
+		if (!crmFormId) {
+			showToast('CRM Form ID is required to import forms.', 'error');
+			$('.aicrmform-import-crm-form-id[data-plugin="' + plugin + '"]').focus();
+			return;
+		}
+
+		// Validate format
+		const pattern = /^FormConfigID-[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
+		if (!pattern.test(crmFormId)) {
+			showToast('Invalid CRM Form ID format. Expected: FormConfigID-xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx', 'error');
+			$('.aicrmform-import-crm-form-id[data-plugin="' + plugin + '"]').focus();
+			return;
+		}
+
 		const originalText = $btn.html();
 		$btn.prop('disabled', true).html(
 			'<span class="spinner is-active" style="float: none; margin: 0;"></span>'
@@ -380,6 +506,7 @@
 				plugin: plugin,
 				form_id: formId,
 				use_same_shortcode: useSameShortcode,
+				crm_form_id: crmFormId,
 			}),
 		})
 			.done(function (response) {
@@ -989,7 +1116,11 @@
 			$('#field-type').val(field.type).trigger('change');
 			$('#field-placeholder').val(field.placeholder || '');
 			$('#field-options').val((field.options || []).join('\n'));
-			$('#field-crm-mapping').val(field.crm_mapping || '');
+			
+			// Convert FieldID to dropdown key if needed
+			const crmMappingKey = getCrmMappingKey(field.crm_mapping);
+			$('#field-crm-mapping').val(crmMappingKey);
+			
 			$('#field-required').prop('checked', field.required);
 
 			// Show editor view directly (no back button for editing)
@@ -1091,17 +1222,33 @@
 			return;
 		}
 
+		// Detect duplicate CRM mappings
+		const mappingCounts = {};
+		formFields.forEach((field) => {
+			if (field.crm_mapping) {
+				const key = field.crm_mapping.toLowerCase();
+				mappingCounts[key] = (mappingCounts[key] || 0) + 1;
+			}
+		});
+
 		let html = '';
 		formFields.forEach((field, index) => {
 			const reqBadge = field.required
 				? '<span class="aicrmform-field-badge required">Required</span>'
 				: '';
-			const crmBadge = field.crm_mapping
-				? `<span class="aicrmform-field-badge crm">${escapeHtml(field.crm_mapping)}</span>`
+			const crmFriendlyName = getCrmFriendlyName(field.crm_mapping);
+			
+			// Check for duplicate mapping
+			const isDuplicate = field.crm_mapping && mappingCounts[field.crm_mapping.toLowerCase()] > 1;
+			const duplicateClass = isDuplicate ? ' duplicate' : '';
+			const duplicateTitle = isDuplicate ? ' title="Warning: This CRM field is mapped to multiple form fields"' : '';
+			
+			const crmBadge = crmFriendlyName
+				? `<span class="aicrmform-field-badge crm${duplicateClass}"${duplicateTitle}>${escapeHtml(crmFriendlyName)}${isDuplicate ? ' <span class="dashicons dashicons-warning"></span>' : ''}</span>`
 				: '';
 
 			html += `
-				<div class="aicrmform-field-item" data-index="${index}" draggable="true">
+				<div class="aicrmform-field-item${isDuplicate ? ' has-warning' : ''}" data-index="${index}" draggable="true">
 					<div class="aicrmform-field-item-drag">
 						<span class="dashicons dashicons-move"></span>
 					</div>
@@ -1525,6 +1672,185 @@
 	}
 
 	/**
+	 * Repair form field mappings.
+	 */
+	function repairMappings(e) {
+		e.preventDefault();
+		e.stopPropagation();
+		
+		const $btn = $(this);
+		const formId = $btn.data('form-id');
+		
+		if (!formId) {
+			console.error('AI CRM Form: No form ID found for repair button');
+			showToast('Error: Form ID not found', 'error');
+			return;
+		}
+		
+		const $card = $btn.closest('.aicrmform-form-card-pro');
+		const formName = $card.find('h3').text() || 'this form';
+
+		// Show confirmation with AI option
+		showRepairConfirm(
+			'Repair Field Mappings',
+			'This will regenerate CRM field mappings for "' + formName + '".\n\nWould you like to use AI to help with ambiguous mappings?',
+			formId
+		);
+	}
+
+	/**
+	 * Show repair confirmation dialog with AI option.
+	 */
+	function showRepairConfirm(title, message, formId) {
+		const hasAiKey = typeof aicrmformAdmin !== 'undefined' && aicrmformAdmin.hasAiKey;
+		const aiDisabled = hasAiKey ? '' : 'disabled';
+		const aiLabel = hasAiKey ? '' : '(AI not configured)';
+		
+		const modalHtml = `
+			<div id="repair-confirm-modal" class="aicrmform-modal-overlay">
+				<div class="aicrmform-modal aicrmform-modal-md">
+					<div class="aicrmform-modal-header">
+						<h3>${title}</h3>
+						<button type="button" class="aicrmform-modal-close" data-action="cancel">
+							<span class="dashicons dashicons-no-alt"></span>
+						</button>
+					</div>
+					<div class="aicrmform-modal-body">
+						<p>${message}</p>
+						<div class="aicrmform-form-row" style="margin-top: 15px;">
+							<label class="aicrmform-checkbox-label">
+								<input type="checkbox" id="repair-use-ai" ${aiDisabled}>
+								<span>Use AI for better mapping suggestions ${aiLabel}</span>
+							</label>
+						</div>
+					</div>
+					<div class="aicrmform-modal-footer">
+						<button type="button" class="button" data-action="cancel">Cancel</button>
+						<button type="button" class="button button-primary" data-action="repair">
+							<span class="dashicons dashicons-admin-tools" style="vertical-align: middle; margin-right: 4px;"></span>
+							Repair Mappings
+						</button>
+					</div>
+				</div>
+			</div>
+		`;
+
+		$('body').append(modalHtml);
+		const $modal = $('#repair-confirm-modal');
+		$modal.css('display', 'flex').hide().fadeIn(200);
+
+		// Handle cancel
+		$modal.find('[data-action="cancel"], .aicrmform-modal-close').on('click', function() {
+			$modal.fadeOut(200, function() {
+				$(this).remove();
+			});
+		});
+
+		// Click outside to close
+		$modal.on('click', function(e) {
+			if ($(e.target).hasClass('aicrmform-modal-overlay')) {
+				$modal.fadeOut(200, function() {
+					$(this).remove();
+				});
+			}
+		});
+
+		// Handle repair
+		$modal.find('[data-action="repair"]').on('click', function() {
+			const useAi = $('#repair-use-ai').is(':checked');
+			const $repairBtn = $(this);
+			
+			$repairBtn.prop('disabled', true).html('<span class="spinner is-active" style="float: none; margin: 0 5px 0 0;"></span> Repairing...');
+
+			$.ajax({
+				url: aicrmformAdmin.restUrl + 'forms/' + formId + '/repair-mappings',
+				method: 'POST',
+				headers: { 'X-WP-Nonce': aicrmformAdmin.nonce },
+				contentType: 'application/json',
+				data: JSON.stringify({ use_ai: useAi }),
+			})
+				.done(function(response) {
+					$modal.fadeOut(200, function() {
+						$(this).remove();
+					});
+
+					if (response.success) {
+						let message = 'Field mappings repaired successfully!';
+						
+						if (response.mapping_changes && response.mapping_changes.length > 0) {
+							message += '\n\nMappings updated:\n• ' + response.mapping_changes.join('\n• ');
+						}
+						
+						if (response.unmapped_fields && response.unmapped_fields.length > 0) {
+							message += '\n\nUnmapped fields (need manual mapping):\n• ' + response.unmapped_fields.join('\n• ');
+						}
+
+						showRepairResult('Repair Complete', message);
+						showToast('Field mappings repaired!', 'success');
+					} else {
+						showToast(response.error || 'Failed to repair mappings.', 'error');
+					}
+				})
+				.fail(function(xhr) {
+					$modal.fadeOut(200, function() {
+						$(this).remove();
+					});
+					const error = xhr.responseJSON?.error || 'Failed to repair mappings.';
+					showToast(error, 'error');
+				});
+		});
+
+		// Close on backdrop click
+		$modal.on('click', function(e) {
+			if ($(e.target).is('.aicrmform-modal')) {
+				$modal.fadeOut(200, function() {
+					$(this).remove();
+				});
+			}
+		});
+	}
+
+	/**
+	 * Show repair result dialog.
+	 */
+	function showRepairResult(title, message) {
+		const modalHtml = `
+			<div id="repair-result-modal" class="aicrmform-modal-overlay">
+				<div class="aicrmform-modal aicrmform-modal-md">
+					<div class="aicrmform-modal-header aicrmform-modal-header-success">
+						<span class="dashicons dashicons-yes-alt"></span>
+						<h3>${title}</h3>
+					</div>
+					<div class="aicrmform-modal-body">
+						<pre style="white-space: pre-wrap; font-family: inherit; margin: 0; background: #f5f5f5; padding: 15px; border-radius: 6px; max-height: 300px; overflow-y: auto; font-size: 13px; line-height: 1.6;">${message}</pre>
+					</div>
+					<div class="aicrmform-modal-footer">
+						<button type="button" class="button button-primary" data-action="ok">OK</button>
+					</div>
+				</div>
+			</div>
+		`;
+
+		$('body').append(modalHtml);
+		const $modal = $('#repair-result-modal');
+		$modal.css('display', 'flex').hide().fadeIn(200);
+
+		$modal.find('[data-action="ok"], .aicrmform-modal-close').on('click', function() {
+			$modal.fadeOut(200, function() {
+				$(this).remove();
+			});
+		});
+
+		$modal.on('click', function(e) {
+			if ($(e.target).hasClass('aicrmform-modal-overlay')) {
+				$modal.fadeOut(200, function() {
+					$(this).remove();
+				});
+			}
+		});
+	}
+
+	/**
 	 * Update form stats after deletion.
 	 */
 	function updateFormStats() {
@@ -1643,22 +1969,44 @@
 		});
 	}
 
+	// Store edit form fields for the edit modal
+	let editFormFields = [];
+	let editingFormId = null;
+
 	function showFormEditModal(form) {
 		const styles = form.form_config?.styles || {};
 		const customCss = form.form_config?.custom_css || '';
 
+		// Initialize edit form fields from form config
+		editFormFields = (form.form_config?.fields || []).map((f) => ({
+			name: f.name || '',
+			label: f.label || '',
+			type: f.type || 'text',
+			placeholder: f.placeholder || '',
+			required: f.required || false,
+			options: f.options || [],
+			crm_mapping: f.field_id || f.crm_mapping || '',
+		}));
+		editingFormId = form.id;
+
 		let html = '<div class="aicrmform-modal-overlay" id="form-edit-modal">';
-		html += '<div class="aicrmform-modal aicrmform-modal-lg" style="max-width: 700px;">';
+		html += '<div class="aicrmform-modal aicrmform-modal-lg" style="max-width: 900px;">';
 		html +=
 			'<div class="aicrmform-modal-header"><h3>Edit: ' +
 			escapeHtml(form.name) +
-			'</h3></div>';
+			'</h3><button type="button" class="aicrmform-modal-close" id="close-edit-modal"><span class="dashicons dashicons-no-alt"></span></button></div>';
 		html += '<div class="aicrmform-modal-body" style="max-height: 70vh; overflow-y: auto;">';
 
-		// Basic Info Section
-		html += '<h4 style="margin: 0 0 12px; color: #374151;">Basic Information</h4>';
-		html +=
-			'<div class="aicrmform-style-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">';
+		// Tabs for Basic Info, Fields, and Styling
+		html += '<div class="aicrmform-edit-tabs">';
+		html += '<button type="button" class="aicrmform-edit-tab active" data-tab="basic">Basic Info</button>';
+		html += '<button type="button" class="aicrmform-edit-tab" data-tab="fields">Fields</button>';
+		html += '<button type="button" class="aicrmform-edit-tab" data-tab="styling">Styling</button>';
+		html += '</div>';
+
+		// Tab Content: Basic Info
+		html += '<div class="aicrmform-edit-tab-content" id="edit-tab-basic">';
+		html += '<div class="aicrmform-style-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px;">';
 		html +=
 			'<div class="aicrmform-form-row"><label>Form Name *</label><input type="text" id="edit-form-name" class="aicrmform-input" value="' +
 			escapeHtml(form.name) +
@@ -1671,13 +2019,34 @@
 			'>Inactive</option></select></div>';
 		html += '</div>';
 		html +=
-			'<div class="aicrmform-form-row" style="margin-bottom: 20px;"><label>CRM Form ID *</label><input type="text" id="edit-crm-form-id" class="aicrmform-input" value="' +
-			escapeHtml(form.crm_form_id) +
+			'<div class="aicrmform-form-row"><label>CRM Form ID *</label><input type="text" id="edit-crm-form-id" class="aicrmform-input" value="' +
+			escapeHtml(form.crm_form_id || '') +
 			'"></div>';
-
-		// Styling Section
 		html +=
-			'<h4 style="margin: 0 0 12px; color: #374151; border-top: 1px solid #e5e7eb; padding-top: 20px;">Styling</h4>';
+			'<div class="aicrmform-form-row" style="margin-top: 16px;"><label>Submit Button Text</label><input type="text" id="edit-submit-text" class="aicrmform-input" value="' +
+			escapeHtml(form.form_config?.submit_button_text || 'Submit') +
+			'"></div>';
+		html +=
+			'<div class="aicrmform-form-row" style="margin-top: 16px;"><label>Success Message</label><textarea id="edit-success-message" class="aicrmform-textarea" rows="2">' +
+			escapeHtml(form.form_config?.success_message || 'Thank you for your submission!') +
+			'</textarea></div>';
+		html +=
+			'<div class="aicrmform-form-row" style="margin-top: 16px;"><label>Error Message</label><textarea id="edit-error-message" class="aicrmform-textarea" rows="2">' +
+			escapeHtml(form.form_config?.error_message || 'Something went wrong. Please try again.') +
+			'</textarea></div>';
+		html += '</div>';
+
+		// Tab Content: Fields
+		html += '<div class="aicrmform-edit-tab-content" id="edit-tab-fields" style="display: none;">';
+		html += '<div class="aicrmform-edit-fields-header">';
+		html += '<p style="margin: 0 0 12px; color: #6b7280;">Drag fields to reorder. Click to edit or add new fields.</p>';
+		html += '<button type="button" class="button button-small" id="edit-add-field-btn"><span class="dashicons dashicons-plus-alt2"></span> Add Field</button>';
+		html += '</div>';
+		html += '<div id="edit-form-fields-container" class="aicrmform-fields-container"></div>';
+		html += '</div>';
+
+		// Tab Content: Styling
+		html += '<div class="aicrmform-edit-tab-content" id="edit-tab-styling" style="display: none;">';
 		html +=
 			'<div class="aicrmform-style-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">';
 
@@ -1808,6 +2177,7 @@
 			'<div class="aicrmform-form-row" style="margin-top: 16px;"><label>Custom CSS</label><textarea id="edit-custom-css" class="aicrmform-textarea" rows="3" placeholder="/* Your custom styles */">' +
 			escapeHtml(customCss) +
 			'</textarea></div>';
+		html += '</div>';
 
 		html += '</div>';
 		html += '<div class="aicrmform-modal-footer">';
@@ -1822,15 +2192,70 @@
 		$modal.data('form-config', form.form_config);
 		$('body').append($modal);
 
-		$modal.on('click', function (e) {
-			if ($(e.target).hasClass('aicrmform-modal-overlay')) $modal.remove();
+		// Render the fields in the edit modal
+		renderEditFormFields();
+
+		// Tab switching
+		$modal.find('.aicrmform-edit-tab').on('click', function () {
+			const tabId = $(this).data('tab');
+			$modal.find('.aicrmform-edit-tab').removeClass('active');
+			$(this).addClass('active');
+			$modal.find('.aicrmform-edit-tab-content').hide();
+			$modal.find('#edit-tab-' + tabId).show();
 		});
-		$modal.find('#cancel-edit').on('click', function () {
+
+		// Add field button
+		$modal.find('#edit-add-field-btn').on('click', function () {
+			openEditFieldModal(-1);
+		});
+
+		// Edit field click
+		$(document).on('click', '#edit-form-fields-container .edit-field-btn', function (e) {
+			e.stopPropagation();
+			const index = $(this).closest('.aicrmform-field-item').data('index');
+			openEditFieldModal(index);
+		});
+
+		// Delete field click
+		$(document).on('click', '#edit-form-fields-container .delete-field-btn', function (e) {
+			e.stopPropagation();
+			const index = $(this).closest('.aicrmform-field-item').data('index');
+			editFormFields.splice(index, 1);
+			renderEditFormFields();
+		});
+
+		// Drag and drop for edit modal
+		initEditDragDrop();
+
+		$modal.on('click', function (e) {
+			if ($(e.target).hasClass('aicrmform-modal-overlay')) {
+				cleanupEditModal();
+				$modal.remove();
+			}
+		});
+		$modal.find('#cancel-edit, #close-edit-modal').on('click', function () {
+			cleanupEditModal();
 			$modal.remove();
 		});
 		$modal.find('#save-edit').on('click', function () {
 			const formId = $(this).data('form-id');
 			let formConfig = $modal.data('form-config') || {};
+
+			// Update fields in form config
+			formConfig.fields = editFormFields.map((field) => ({
+				name: field.name,
+				label: field.label,
+				type: field.type,
+				placeholder: field.placeholder,
+				required: field.required,
+				options: field.options,
+				field_id: field.crm_mapping || '',
+			}));
+
+			// Update messages
+			formConfig.submit_button_text = $modal.find('#edit-submit-text').val() || 'Submit';
+			formConfig.success_message = $modal.find('#edit-success-message').val() || 'Thank you for your submission!';
+			formConfig.error_message = $modal.find('#edit-error-message').val() || 'Something went wrong.';
 
 			// Update styles in form config
 			formConfig.styles = {
@@ -1861,6 +2286,7 @@
 				.done(function (response) {
 					if (response.success) {
 						showToast('Form updated successfully!', 'success');
+						cleanupEditModal();
 						$modal.remove();
 						location.reload();
 					} else {
@@ -1871,6 +2297,335 @@
 					showToast('Failed to update form.', 'error');
 				});
 		});
+	}
+
+	/**
+	 * Cleanup edit modal event handlers.
+	 */
+	function cleanupEditModal() {
+		$(document).off('click', '#edit-form-fields-container .edit-field-btn');
+		$(document).off('click', '#edit-form-fields-container .delete-field-btn');
+		editFormFields = [];
+		editingFormId = null;
+	}
+
+	/**
+	 * Render fields in the edit modal.
+	 */
+	function renderEditFormFields() {
+		const $container = $('#edit-form-fields-container');
+
+		if (editFormFields.length === 0) {
+			$container.html(`
+				<div class="aicrmform-empty-fields" style="padding: 30px; text-align: center;">
+					<span class="dashicons dashicons-forms" style="font-size: 32px; color: #9ca3af;"></span>
+					<p style="margin: 10px 0 0; color: #6b7280;">No fields yet. Click "Add Field" to add your first field.</p>
+				</div>
+			`);
+			return;
+		}
+
+			// Detect duplicate CRM mappings
+		const mappingCounts = {};
+		editFormFields.forEach((field) => {
+			if (field.crm_mapping) {
+				const key = field.crm_mapping.toLowerCase();
+				mappingCounts[key] = (mappingCounts[key] || 0) + 1;
+			}
+		});
+
+		let html = '';
+		editFormFields.forEach((field, index) => {
+			const reqBadge = field.required
+				? '<span class="aicrmform-field-badge required">Required</span>'
+				: '';
+			const crmFriendlyName = getCrmFriendlyName(field.crm_mapping);
+			
+			// Check for duplicate mapping
+			const isDuplicate = field.crm_mapping && mappingCounts[field.crm_mapping.toLowerCase()] > 1;
+			const duplicateClass = isDuplicate ? ' duplicate' : '';
+			const duplicateTitle = isDuplicate ? ' title="Warning: This CRM field is mapped to multiple form fields"' : '';
+			
+			const crmBadge = crmFriendlyName
+				? `<span class="aicrmform-field-badge crm${duplicateClass}"${duplicateTitle}>${escapeHtml(crmFriendlyName)}${isDuplicate ? ' <span class="dashicons dashicons-warning"></span>' : ''}</span>`
+				: '';
+
+			html += `
+				<div class="aicrmform-field-item${isDuplicate ? ' has-warning' : ''}" data-index="${index}" draggable="true">
+					<div class="aicrmform-field-item-drag">
+						<span class="dashicons dashicons-move"></span>
+					</div>
+					<div class="aicrmform-field-item-content">
+						<div class="aicrmform-field-item-label">${escapeHtml(field.label)}</div>
+						<div class="aicrmform-field-item-meta">
+							<span class="aicrmform-field-badge type">${escapeHtml(field.type)}</span>
+							${reqBadge}
+							${crmBadge}
+						</div>
+					</div>
+					<div class="aicrmform-field-item-actions">
+						<button type="button" class="edit-field-btn" title="Edit">
+							<span class="dashicons dashicons-edit"></span>
+						</button>
+						<button type="button" class="delete-field-btn" title="Delete">
+							<span class="dashicons dashicons-trash"></span>
+						</button>
+					</div>
+				</div>
+			`;
+		});
+
+		$container.html(html);
+	}
+
+	/**
+	 * Initialize drag and drop for edit modal.
+	 */
+	function initEditDragDrop() {
+		let editDraggedField = null;
+
+		$(document).on('dragstart', '#edit-form-fields-container .aicrmform-field-item', function (e) {
+			editDraggedField = this;
+			$(this).addClass('dragging');
+			e.originalEvent.dataTransfer.effectAllowed = 'move';
+			e.originalEvent.dataTransfer.setData('text/plain', $(this).data('index'));
+		});
+
+		$(document).on('dragend', '#edit-form-fields-container .aicrmform-field-item', function () {
+			$(this).removeClass('dragging');
+			$('#edit-form-fields-container .aicrmform-field-item').removeClass('drag-over');
+			editDraggedField = null;
+		});
+
+		$(document).on('dragover', '#edit-form-fields-container .aicrmform-field-item', function (e) {
+			e.preventDefault();
+			if (editDraggedField && editDraggedField !== this) {
+				$(this).addClass('drag-over');
+			}
+		});
+
+		$(document).on('dragleave', '#edit-form-fields-container .aicrmform-field-item', function () {
+			$(this).removeClass('drag-over');
+		});
+
+		$(document).on('drop', '#edit-form-fields-container .aicrmform-field-item', function (e) {
+			e.preventDefault();
+			$(this).removeClass('drag-over');
+
+			if (!editDraggedField || editDraggedField === this) return;
+
+			const fromIndex = $(editDraggedField).data('index');
+			const toIndex = $(this).data('index');
+
+			const field = editFormFields.splice(fromIndex, 1)[0];
+			editFormFields.splice(toIndex, 0, field);
+			renderEditFormFields();
+		});
+	}
+
+	/**
+	 * Open field editor modal for editing form fields.
+	 */
+	let editingEditFieldIndex = null;
+
+	function openEditFieldModal(index) {
+		editingEditFieldIndex = index;
+
+		// Build CRM mapping options HTML
+		const crmMappingOptions = getCrmMappingOptionsHtml();
+
+		let html = '<div class="aicrmform-modal-overlay" id="edit-field-modal" style="z-index: 100002;">';
+		html += '<div class="aicrmform-modal aicrmform-modal-md">';
+		html += '<div class="aicrmform-modal-header"><h3>' + (index === -1 ? 'Add Field' : 'Edit Field') + '</h3></div>';
+		html += '<div class="aicrmform-modal-body">';
+		html += '<div class="aicrmform-form-row"><label>Label *</label><input type="text" id="edit-field-label" class="aicrmform-input" placeholder="e.g., Email Address"></div>';
+		html += '<div class="aicrmform-form-row-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">';
+		html += '<div class="aicrmform-form-row"><label>Field ID *</label><input type="text" id="edit-field-name" class="aicrmform-input" placeholder="e.g., email_address"></div>';
+		html += '<div class="aicrmform-form-row"><label>Type</label><select id="edit-field-type" class="aicrmform-input">';
+		html += '<option value="text">Text</option><option value="email">Email</option><option value="tel">Phone</option>';
+		html += '<option value="number">Number</option><option value="textarea">Textarea</option><option value="select">Dropdown</option>';
+		html += '<option value="checkbox">Checkbox</option><option value="radio">Radio</option><option value="date">Date</option>';
+		html += '<option value="url">URL</option><option value="hidden">Hidden</option>';
+		html += '</select></div></div>';
+		html += '<div class="aicrmform-form-row"><label>Placeholder</label><input type="text" id="edit-field-placeholder" class="aicrmform-input"></div>';
+		html += '<div class="aicrmform-form-row" id="edit-field-options-row" style="display: none;"><label>Options</label><textarea id="edit-field-options" class="aicrmform-textarea" rows="3" placeholder="Enter each option on a new line"></textarea></div>';
+		html += '<div class="aicrmform-form-row"><label>CRM Field Mapping</label><select id="edit-field-crm-mapping" class="aicrmform-input">' + crmMappingOptions + '</select></div>';
+		html += '<div class="aicrmform-form-row"><label class="aicrmform-checkbox-inline"><input type="checkbox" id="edit-field-required"><span>Required field</span></label></div>';
+		html += '</div>';
+		html += '<div class="aicrmform-modal-footer">';
+		html += '<button type="button" class="button" id="cancel-edit-field">Cancel</button>';
+		html += '<button type="button" class="button button-primary" id="save-edit-field">' + (index === -1 ? 'Add Field' : 'Save Changes') + '</button>';
+		html += '</div></div></div>';
+
+		const $modal = $(html);
+		$('body').append($modal);
+		$modal.css('display', 'flex').hide().fadeIn(200);
+
+		// If editing existing field, populate values
+		if (index !== -1 && editFormFields[index]) {
+			const field = editFormFields[index];
+			$modal.find('#edit-field-label').val(field.label);
+			$modal.find('#edit-field-name').val(field.name);
+			$modal.find('#edit-field-type').val(field.type);
+			$modal.find('#edit-field-placeholder').val(field.placeholder || '');
+			$modal.find('#edit-field-options').val((field.options || []).join('\n'));
+			
+			// Convert FieldID to dropdown key if needed
+			const crmMappingKey = getCrmMappingKey(field.crm_mapping);
+			$modal.find('#edit-field-crm-mapping').val(crmMappingKey);
+			
+			$modal.find('#edit-field-required').prop('checked', field.required);
+
+			// Show options if needed
+			if (['select', 'checkbox', 'radio'].includes(field.type)) {
+				$modal.find('#edit-field-options-row').show();
+			}
+		}
+
+		// Auto-generate field name from label
+		$modal.find('#edit-field-label').on('input', function () {
+			if (index === -1) {
+				const label = $(this).val();
+				const name = label
+					.toLowerCase()
+					.replace(/[^a-z0-9\s]/g, '')
+					.replace(/\s+/g, '_')
+					.substring(0, 30);
+				$modal.find('#edit-field-name').val(name);
+			}
+		});
+
+		// Show/hide options based on type
+		$modal.find('#edit-field-type').on('change', function () {
+			const type = $(this).val();
+			if (['select', 'checkbox', 'radio'].includes(type)) {
+				$modal.find('#edit-field-options-row').show();
+			} else {
+				$modal.find('#edit-field-options-row').hide();
+			}
+		});
+
+		// Cancel
+		$modal.find('#cancel-edit-field').on('click', function () {
+			$modal.fadeOut(200, function() {
+				$(this).remove();
+			});
+		});
+
+		$modal.on('click', function (e) {
+			if ($(e.target).hasClass('aicrmform-modal-overlay')) {
+				$modal.fadeOut(200, function() {
+					$(this).remove();
+				});
+			}
+		});
+
+		// Save field
+		$modal.find('#save-edit-field').on('click', function () {
+			const label = $modal.find('#edit-field-label').val().trim();
+			const name = $modal.find('#edit-field-name').val().trim();
+
+			if (!label || !name) {
+				showToast('Label and Field ID are required.', 'warning');
+				return;
+			}
+
+			// Check for duplicate names
+			const isDuplicate = editFormFields.some((f, i) => i !== editingEditFieldIndex && f.name === name);
+			if (isDuplicate) {
+				showToast('Field ID must be unique.', 'warning');
+				return;
+			}
+
+			const type = $modal.find('#edit-field-type').val();
+			const optionsText = $modal.find('#edit-field-options').val().trim();
+			const options = optionsText
+				? optionsText.split('\n').map((o) => o.trim()).filter((o) => o)
+				: [];
+
+			const field = {
+				name: name,
+				label: label,
+				type: type,
+				placeholder: $modal.find('#edit-field-placeholder').val().trim(),
+				required: $modal.find('#edit-field-required').is(':checked'),
+				options: options,
+				crm_mapping: $modal.find('#edit-field-crm-mapping').val(),
+			};
+
+			if (editingEditFieldIndex === -1) {
+				editFormFields.push(field);
+			} else {
+				editFormFields[editingEditFieldIndex] = field;
+			}
+
+			$modal.fadeOut(200, function() {
+				$(this).remove();
+				renderEditFormFields();
+				showToast(editingEditFieldIndex === -1 ? 'Field added.' : 'Field updated.', 'success');
+			});
+		});
+	}
+
+	/**
+	 * Get CRM mapping options HTML.
+	 */
+	function getCrmMappingOptionsHtml() {
+		return `
+			<option value="">— None —</option>
+			<optgroup label="Contact">
+				<option value="first_name">First Name</option>
+				<option value="last_name">Last Name</option>
+				<option value="email">Email</option>
+				<option value="phone_number">Phone Number</option>
+				<option value="mobile_phone">Mobile Phone</option>
+				<option value="additional_emails">Additional Emails</option>
+				<option value="tags">Tags</option>
+				<option value="message">Message</option>
+			</optgroup>
+			<optgroup label="Address">
+				<option value="primary_address_line1">Address Line 1</option>
+				<option value="primary_address_line2">Address Line 2</option>
+				<option value="primary_address_city">City</option>
+				<option value="primary_address_state">State</option>
+				<option value="primary_address_postal">Postal Code</option>
+				<option value="primary_address_country">Country</option>
+			</optgroup>
+			<optgroup label="Company">
+				<option value="company_name">Company Name</option>
+				<option value="company_website">Company Website</option>
+				<option value="company_phone">Company Phone</option>
+				<option value="company_address_line1">Company Address</option>
+				<option value="company_address_city">Company City</option>
+				<option value="company_address_state">Company State</option>
+				<option value="company_address_postal">Company Postal Code</option>
+				<option value="company_address_country">Company Country</option>
+				<option value="company_linkedin_url">LinkedIn URL</option>
+				<option value="company_facebook_url">Facebook URL</option>
+				<option value="company_instagram_url">Instagram URL</option>
+				<option value="company_twitter_url">Twitter URL</option>
+			</optgroup>
+			<optgroup label="Lead & Source">
+				<option value="source_name">Source Name</option>
+				<option value="original_source">Original Source</option>
+				<option value="lead_score">Lead Score</option>
+				<option value="lead_quality">Lead Quality</option>
+			</optgroup>
+			<optgroup label="UTM Tracking">
+				<option value="utm_source">UTM Source</option>
+				<option value="utm_medium">UTM Medium</option>
+				<option value="utm_campaign">UTM Campaign</option>
+				<option value="utm_term">UTM Term</option>
+				<option value="utm_content">UTM Content</option>
+				<option value="gclid">Google Click ID</option>
+				<option value="fbclid">Facebook Click ID</option>
+				<option value="msclkid">Microsoft Click ID</option>
+			</optgroup>
+			<optgroup label="Consent">
+				<option value="marketing_email_consent_status">Email Marketing Consent</option>
+				<option value="sms_consent_status">SMS Consent</option>
+			</optgroup>
+		`;
 	}
 
 	function viewSubmission(e) {
