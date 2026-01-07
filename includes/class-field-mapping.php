@@ -426,13 +426,8 @@ class AICRMFORM_Field_Mapping {
 			error_log( 'AI CRM Form: Added empty last_name since only first_name was provided' );
 		}
 
-		// Ensure phone_number exists if we have contact info (some CRM schemas require it).
-		$phone_number_id = self::get_field_id( 'phone_number' );
-		$email_id        = self::get_field_id( 'email' );
-		if ( isset( $mapped_data[ $email_id ] ) && ! isset( $mapped_data[ $phone_number_id ] ) ) {
-			$mapped_data[ $phone_number_id ] = '';
-			error_log( 'AI CRM Form: Added empty phone_number field' );
-		}
+		// Note: We do NOT auto-add empty phone_number as some CRM schemas reject empty values.
+		// If phone_number is required, the form should include a phone field.
 
 		return $mapped_data;
 	}

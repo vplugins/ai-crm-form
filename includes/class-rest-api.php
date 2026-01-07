@@ -947,7 +947,10 @@ class AICRMFORM_REST_API {
 
 		// Include debug info for troubleshooting.
 		$debug_info = [
+			'form_data'       => $form_data,
 			'field_mapping'   => $form->field_mapping,
+			'mapped_data'     => $crm_api->get_last_mapped_data(),
+			'crm_payload'     => $crm_api->get_last_payload(),
 			'crm_form_id'     => $form->crm_form_id,
 			'response_code'   => $result['response_code'] ?? null,
 			'response_body'   => $result['response_body'] ?? null,

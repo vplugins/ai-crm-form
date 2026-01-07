@@ -77,6 +77,9 @@ class AICRMFORM_CRM_API {
 			],
 		];
 
+		// Store payload for debug.
+		$this->last_payload = $payload;
+
 		// Log the payload being sent to CRM API.
 		error_log( sprintf(
 			'AI CRM Form: Sending to CRM API - URL: %s, Payload: %s',
@@ -161,8 +164,43 @@ class AICRMFORM_CRM_API {
 			wp_json_encode( $mapped_data, JSON_PRETTY_PRINT )
 		) );
 
+		// Store mapped data for debug output.
+		$this->last_mapped_data = $mapped_data;
+
 		return $this->submit( $mapped_data, $form_id );
 	}
+
+	/**
+	 * Get last mapped data (for debugging).
+	 *
+	 * @return array|null
+	 */
+	public function get_last_mapped_data() {
+		return $this->last_mapped_data ?? null;
+	}
+
+	/**
+	 * Get last payload sent to CRM API (for debugging).
+	 *
+	 * @return array|null
+	 */
+	public function get_last_payload() {
+		return $this->last_payload ?? null;
+	}
+
+	/**
+	 * Last mapped data for debugging.
+	 *
+	 * @var array|null
+	 */
+	private $last_mapped_data = null;
+
+	/**
+	 * Last payload sent to CRM API.
+	 *
+	 * @var array|null
+	 */
+	private $last_payload = null;
 
 	/**
 	 * Preprocess mapped data to handle special cases.
@@ -175,10 +213,8 @@ class AICRMFORM_CRM_API {
 	 * @return array Preprocessed data.
 	 */
 	private function preprocess_mapped_data( $mapped_data ) {
-		$first_name_id   = AICRMFORM_Field_Mapping::get_field_id( 'first_name' );
-		$last_name_id    = AICRMFORM_Field_Mapping::get_field_id( 'last_name' );
-		$phone_number_id = AICRMFORM_Field_Mapping::get_field_id( 'phone_number' );
-		$email_id        = AICRMFORM_Field_Mapping::get_field_id( 'email' );
+		$first_name_id = AICRMFORM_Field_Mapping::get_field_id( 'first_name' );
+		$last_name_id  = AICRMFORM_Field_Mapping::get_field_id( 'last_name' );
 
 		// If we have first_name but not last_name, handle the name.
 		if ( isset( $mapped_data[ $first_name_id ] ) && ! isset( $mapped_data[ $last_name_id ] ) ) {
@@ -207,10 +243,13 @@ class AICRMFORM_CRM_API {
 			}
 		}
 
-		// Ensure phone_number exists if we have other contact info (many CRM schemas require it).
-		if ( isset( $mapped_data[ $email_id ] ) && ! isset( $mapped_data[ $phone_number_id ] ) ) {
-			$mapped_data[ $phone_number_id ] = '';
-			error_log( 'AI CRM Form: Added empty phone_number field' );
+		// Some CRM schemas require phone_number - add placeholder if missing.
+		// The CRM validates phone format, so we use a numeric placeholder.
+		$phone_number_id = AICRMFORM_Field_Mapping::get_field_id( 'phone_number' );
+		if ( ! isset( $mapped_data[ $phone_number_id ] ) || empty( $mapped_data[ $phone_number_id ] ) ) {
+			// Add placeholder phone number for CRM schemas that require it.
+			$mapped_data[ $phone_number_id ] = '0000000000';
+			error_log( 'AI CRM Form: Added placeholder phone_number "0000000000" (field was missing or empty)' );
 		}
 
 		return $mapped_data;
