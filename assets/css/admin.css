@@ -2619,3 +2619,249 @@
 #edit-field-modal .aicrmform-modal {
 	max-width: 550px;
 }
+
+/* ============================
+   SUBMISSIONS PAGE - FILTERS & EXPORT
+   ============================ */
+
+/* Filters Bar */
+.aicrmform-filters-bar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-end;
+	gap: 16px;
+	padding: 20px;
+	background: #fff;
+	border: 1px solid var(--aicrmform-gray-200);
+	border-radius: var(--aicrmform-radius);
+	margin-bottom: 24px;
+}
+
+.aicrmform-filter-group {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.aicrmform-filter-group label {
+	font-size: 12px;
+	font-weight: 500;
+	color: var(--aicrmform-gray-600);
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+.aicrmform-filter-select,
+.aicrmform-filter-input {
+	min-width: 160px;
+	padding: 8px 12px;
+	border: 1px solid var(--aicrmform-gray-300);
+	border-radius: 6px;
+	font-size: 14px;
+	background: #fff;
+	transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.aicrmform-filter-select:focus,
+.aicrmform-filter-input:focus {
+	outline: none;
+	border-color: var(--aicrmform-primary);
+	box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.aicrmform-filter-actions {
+	display: flex;
+	gap: 8px;
+	margin-left: auto;
+}
+
+.aicrmform-filter-actions .button {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 8px 16px;
+	height: auto;
+}
+
+.aicrmform-filter-actions .button .dashicons {
+	font-size: 16px;
+	width: 16px;
+	height: 16px;
+	line-height: 1;
+}
+
+/* Export Dropdown */
+.aicrmform-export-dropdown {
+	position: relative;
+}
+
+.aicrmform-dropdown-menu {
+	position: absolute;
+	top: 100%;
+	right: 0;
+	margin-top: 4px;
+	min-width: 200px;
+	background: #fff;
+	border: 1px solid var(--aicrmform-gray-200);
+	border-radius: var(--aicrmform-radius);
+	box-shadow: var(--aicrmform-shadow-lg);
+	z-index: 1000;
+	overflow: hidden;
+}
+
+.aicrmform-dropdown-item {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 12px 16px;
+	color: var(--aicrmform-gray-700);
+	text-decoration: none;
+	font-size: 14px;
+	transition: background 0.2s;
+}
+
+.aicrmform-dropdown-item:hover {
+	background: var(--aicrmform-gray-50);
+	color: var(--aicrmform-primary);
+}
+
+.aicrmform-dropdown-item .dashicons {
+	font-size: 18px;
+	width: 18px;
+	height: 18px;
+	color: var(--aicrmform-gray-400);
+}
+
+.aicrmform-dropdown-item:hover .dashicons {
+	color: var(--aicrmform-primary);
+}
+
+/* Results count in card header */
+.aicrmform-card-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.aicrmform-results-count {
+	font-size: 13px;
+	color: var(--aicrmform-gray-500);
+	font-weight: 400;
+}
+
+/* Checkbox column */
+.aicrmform-th-checkbox,
+.aicrmform-td-checkbox {
+	width: 40px;
+	text-align: center;
+}
+
+.aicrmform-td-checkbox input[type="checkbox"],
+.aicrmform-th-checkbox input[type="checkbox"] {
+	width: 16px;
+	height: 16px;
+	cursor: pointer;
+}
+
+/* Pagination */
+.aicrmform-pagination {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 16px 20px;
+	border-top: 1px solid var(--aicrmform-gray-200);
+	background: var(--aicrmform-gray-50);
+}
+
+.aicrmform-pagination-info {
+	font-size: 13px;
+	color: var(--aicrmform-gray-600);
+}
+
+.aicrmform-pagination-controls {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.aicrmform-page-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	padding: 0;
+	border: 1px solid var(--aicrmform-gray-300);
+	border-radius: 6px;
+	background: #fff;
+	cursor: pointer;
+	transition: all 0.2s;
+}
+
+.aicrmform-page-btn:hover:not(:disabled) {
+	background: var(--aicrmform-gray-50);
+	border-color: var(--aicrmform-primary);
+}
+
+.aicrmform-page-btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.aicrmform-page-btn .dashicons {
+	font-size: 18px;
+	width: 18px;
+	height: 18px;
+	color: var(--aicrmform-gray-600);
+}
+
+.aicrmform-page-info {
+	padding: 0 12px;
+	font-size: 13px;
+	color: var(--aicrmform-gray-600);
+}
+
+/* Error status icon */
+.aicrmform-stat-icon-error {
+	background: #fef2f2;
+}
+
+.aicrmform-stat-icon-error .dashicons {
+	color: var(--aicrmform-danger);
+}
+
+.aicrmform-status-pill.error {
+	background: #fef2f2;
+	color: var(--aicrmform-danger);
+}
+
+.aicrmform-status-pill.error .dashicons {
+	color: var(--aicrmform-danger);
+}
+
+/* Responsive filters */
+@media (max-width: 1024px) {
+	.aicrmform-filters-bar {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.aicrmform-filter-group {
+		width: 100%;
+	}
+
+	.aicrmform-filter-select,
+	.aicrmform-filter-input {
+		width: 100%;
+	}
+
+	.aicrmform-filter-actions {
+		margin-left: 0;
+		margin-top: 8px;
+	}
+
+	.aicrmform-pagination {
+		flex-direction: column;
+		gap: 12px;
+	}
+}

@@ -180,6 +180,17 @@ class AICRMFORM_REST_API {
 			]
 		);
 
+		// Export submissions as CSV.
+		register_rest_route(
+			$this->namespace,
+			'/submissions/export',
+			[
+				'methods'             => 'GET',
+				'callback'            => [ $this, 'export_submissions' ],
+				'permission_callback' => [ $this, 'admin_permission_check' ],
+			]
+		);
+
 		// Get available import sources.
 		register_rest_route(
 			$this->namespace,
@@ -1057,6 +1068,123 @@ class AICRMFORM_REST_API {
 			[
 				'success'    => true,
 				'submission' => $submission,
+			],
+			200
+		);
+	}
+
+	/**
+	 * Export submissions as CSV.
+	 *
+	 * @param WP_REST_Request $request The request object.
+	 * @return WP_REST_Response The response with CSV data.
+	 */
+	public function export_submissions( $request ) {
+		$form_id     = $request->get_param( 'form_id' );
+		$status      = $request->get_param( 'status' );
+		$date_from   = $request->get_param( 'date_from' );
+		$date_to     = $request->get_param( 'date_to' );
+		$ids         = $request->get_param( 'ids' );
+
+		$crm_api   = new AICRMFORM_CRM_API();
+		$generator = new AICRMFORM_Form_Generator();
+		$forms     = $generator->get_all_forms();
+
+		// Create form ID to name mapping.
+		$form_names = [];
+		foreach ( $forms as $form ) {
+			$form_names[ (string) $form->id ] = $form->name;
+		}
+
+		// Get all submissions (no limit for export).
+		$submissions = $crm_api->get_all_submissions( 10000, 0 );
+
+		// Apply filters.
+		$filtered = array_filter(
+			$submissions,
+			function ( $sub ) use ( $form_id, $status, $date_from, $date_to, $ids ) {
+				// Filter by specific IDs if provided.
+				if ( $ids ) {
+					$id_array = array_map( 'intval', explode( ',', $ids ) );
+					if ( ! in_array( (int) $sub->id, $id_array, true ) ) {
+						return false;
+					}
+				}
+
+				// Filter by form.
+				if ( $form_id && (string) $sub->form_id !== (string) $form_id ) {
+					return false;
+				}
+
+				// Filter by status.
+				if ( $status && $sub->status !== $status ) {
+					return false;
+				}
+
+				// Filter by date range.
+				$sub_date = gmdate( 'Y-m-d', strtotime( $sub->created_at ) );
+				if ( $date_from && $sub_date < $date_from ) {
+					return false;
+				}
+				if ( $date_to && $sub_date > $date_to ) {
+					return false;
+				}
+
+				return true;
+			}
+		);
+
+		// Collect all unique field names from submission data.
+		$all_fields = [];
+		foreach ( $filtered as $submission ) {
+			$data = json_decode( $submission->submission_data, true );
+			if ( is_array( $data ) ) {
+				foreach ( array_keys( $data ) as $field ) {
+					if ( ! in_array( $field, $all_fields, true ) ) {
+						$all_fields[] = $field;
+					}
+				}
+			}
+		}
+
+		// Build CSV.
+		$headers = array_merge(
+			[ 'ID', 'Form', 'Status', 'IP Address', 'Submitted At' ],
+			$all_fields
+		);
+
+		$rows = [];
+		foreach ( $filtered as $submission ) {
+			$data      = json_decode( $submission->submission_data, true ) ?: [];
+			$form_name = $form_names[ (string) $submission->form_id ] ?? $submission->form_id;
+
+			$row = [
+				$submission->id,
+				$form_name,
+				$submission->status,
+				$submission->ip_address,
+				$submission->created_at,
+			];
+
+			// Add each field value.
+			foreach ( $all_fields as $field ) {
+				$value = $data[ $field ] ?? '';
+				// Handle arrays (like checkboxes).
+				if ( is_array( $value ) ) {
+					$value = implode( ', ', $value );
+				}
+				$row[] = $value;
+			}
+
+			$rows[] = $row;
+		}
+
+		return new WP_REST_Response(
+			[
+				'success' => true,
+				'headers' => $headers,
+				'rows'    => $rows,
+				'count'   => count( $rows ),
 			],
 			200
 		);

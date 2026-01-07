@@ -144,6 +144,9 @@
 		$(document).on('click', '.aicrmform-view-submission', viewSubmission);
 		$(document).on('click', '.aicrmform-repair-mappings', repairMappings);
 
+		// Submissions page functionality
+		initSubmissionsPage();
+
 		// Field group toggles (for any remaining field groups)
 		$('.aicrmform-field-group-toggle').on('click', toggleFieldGroup);
 
@@ -2808,6 +2811,250 @@
 				});
 			}
 		});
+	}
+
+	/**
+	 * Initialize submissions page functionality (filters, export, pagination).
+	 */
+	function initSubmissionsPage() {
+		// Only run on submissions page
+		if (!$('.aicrmform-submissions-page').length) return;
+
+		const $table = $('#submissions-table');
+		const $tbody = $('#submissions-tbody');
+		const $rows = $tbody.find('.submission-row');
+		const perPage = 20;
+		let currentPage = 1;
+		let filteredRows = $rows;
+
+		// Export dropdown toggle
+		$('#export-btn').on('click', function (e) {
+			e.stopPropagation();
+			$('#export-menu').toggle();
+		});
+
+		// Close dropdown when clicking outside
+		$(document).on('click', function () {
+			$('#export-menu').hide();
+		});
+
+		// Export all as CSV
+		$('#export-csv').on('click', function (e) {
+			e.preventDefault();
+			exportToCSV({}, 'all-submissions');
+			$('#export-menu').hide();
+		});
+
+		// Export filtered as CSV (uses IDs from currently filtered rows)
+		$('#export-csv-filtered').on('click', function (e) {
+			e.preventDefault();
+			// Get IDs of currently filtered/visible rows
+			const ids = [];
+			filteredRows.each(function () {
+				const id = $(this).find('.aicrmform-submission-id').text().replace('#', '').trim();
+				if (id) ids.push(id);
+			});
+			
+			if (ids.length === 0) {
+				showToast('No submissions to export with current filters.', 'warning');
+				$('#export-menu').hide();
+				return;
+			}
+			
+			exportToCSV({ ids: ids.join(',') }, 'filtered-submissions');
+			$('#export-menu').hide();
+		});
+
+		// Export selected as CSV (uses IDs from checked checkboxes)
+		$('#export-csv-selected').on('click', function (e) {
+			e.preventDefault();
+			const ids = [];
+			$('.submission-checkbox:checked').each(function () {
+				ids.push($(this).val());
+			});
+			
+			if (ids.length === 0) {
+				showToast('Please select submissions to export.', 'warning');
+				$('#export-menu').hide();
+				return;
+			}
+			
+			exportToCSV({ ids: ids.join(',') }, 'selected-submissions');
+			$('#export-menu').hide();
+		});
+
+		// Apply filters
+		$('#apply-filters').on('click', applyFilters);
+
+		// Clear filters
+		$('#clear-filters').on('click', function () {
+			$('#filter-status').val('');
+			$('#filter-form').val('');
+			$('#filter-date-from').val('');
+			$('#filter-date-to').val('');
+			applyFilters();
+		});
+
+		// Select all checkbox
+		$('#select-all-submissions').on('change', function () {
+			const isChecked = $(this).is(':checked');
+			filteredRows.find('.submission-checkbox').prop('checked', isChecked);
+		});
+
+		// Apply filters function
+		function applyFilters() {
+			const status = $('#filter-status').val();
+			const formId = $('#filter-form').val();
+			const dateFrom = $('#filter-date-from').val();
+			const dateTo = $('#filter-date-to').val();
+
+			filteredRows = $rows.filter(function () {
+				const $row = $(this);
+				const rowStatus = $row.data('status');
+				const rowFormId = String($row.data('form-id'));
+				const rowDate = $row.data('date');
+
+				// Status filter
+				if (status && rowStatus !== status) return false;
+
+				// Form filter
+				if (formId && rowFormId !== formId) return false;
+
+				// Date from filter
+				if (dateFrom && rowDate < dateFrom) return false;
+
+				// Date to filter
+				if (dateTo && rowDate > dateTo) return false;
+
+				return true;
+			});
+
+			currentPage = 1;
+			updateDisplay();
+		}
+
+		// Update display with pagination
+		function updateDisplay() {
+			// Hide all rows
+			$rows.hide();
+
+			// Calculate pagination
+			const totalFiltered = filteredRows.length;
+			const totalPages = Math.ceil(totalFiltered / perPage);
+			const start = (currentPage - 1) * perPage;
+			const end = start + perPage;
+
+			// Show filtered rows for current page
+			filteredRows.slice(start, end).show();
+
+			// Update results count
+			$('#results-count').text('Showing ' + totalFiltered + ' submissions');
+
+			// Update pagination controls
+			updatePagination(totalFiltered, totalPages);
+		}
+
+		// Update pagination controls
+		function updatePagination(total, totalPages) {
+			const $pagination = $('.aicrmform-pagination');
+			
+			if (totalPages <= 1) {
+				$pagination.hide();
+				return;
+			}
+
+			$pagination.show();
+
+			const start = ((currentPage - 1) * perPage) + 1;
+			const end = Math.min(currentPage * perPage, total);
+
+			$pagination.find('.aicrmform-pagination-info').text('Showing ' + start + '-' + end + ' of ' + total);
+			$pagination.find('.aicrmform-page-info').text('Page ' + currentPage + ' of ' + totalPages);
+
+			// Update button states
+			$pagination.find('.aicrmform-page-btn').each(function () {
+				const $btn = $(this);
+				const page = parseInt($btn.data('page'));
+				
+				if ($btn.find('.dashicons-controls-skipback').length || $btn.find('.dashicons-arrow-left-alt2').length) {
+					$btn.prop('disabled', currentPage === 1);
+				} else {
+					$btn.prop('disabled', currentPage === totalPages);
+				}
+			});
+		}
+
+		// Pagination button clicks
+		$(document).on('click', '.aicrmform-page-btn:not(:disabled)', function () {
+			const $btn = $(this);
+			const totalPages = Math.ceil(filteredRows.length / perPage);
+
+			if ($btn.find('.dashicons-controls-skipback').length) {
+				currentPage = 1;
+			} else if ($btn.find('.dashicons-arrow-left-alt2').length) {
+				currentPage = Math.max(1, currentPage - 1);
+			} else if ($btn.find('.dashicons-arrow-right-alt2').length) {
+				currentPage = Math.min(totalPages, currentPage + 1);
+			} else if ($btn.find('.dashicons-controls-skipforward').length) {
+				currentPage = totalPages;
+			}
+
+			updateDisplay();
+		});
+
+		// Export to CSV function (via API to get full submission data)
+		function exportToCSV(filters, filename) {
+			showToast('Preparing export...', 'info');
+
+			// Build query string
+			const params = new URLSearchParams();
+			if (filters.status) params.append('status', filters.status);
+			if (filters.form_id) params.append('form_id', filters.form_id);
+			if (filters.date_from) params.append('date_from', filters.date_from);
+			if (filters.date_to) params.append('date_to', filters.date_to);
+			if (filters.ids) params.append('ids', filters.ids);
+
+			const url = aicrmformAdmin.restUrl + 'submissions/export' + (params.toString() ? '?' + params.toString() : '');
+
+			$.ajax({
+				url: url,
+				method: 'GET',
+				headers: { 'X-WP-Nonce': aicrmformAdmin.nonce }
+			})
+			.done(function (response) {
+				if (response.success && response.rows) {
+					// Create CSV content
+					let csv = response.headers.map(function (h) {
+						return '"' + String(h).replace(/"/g, '""') + '"';
+					}).join(',') + '\n';
+
+					response.rows.forEach(function (row) {
+						csv += row.map(function (cell) {
+							// Escape quotes and wrap all in quotes for safety
+							const escaped = String(cell || '').replace(/"/g, '""');
+							return '"' + escaped + '"';
+						}).join(',') + '\n';
+					});
+
+					// Download
+					const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+					const link = document.createElement('a');
+					link.href = URL.createObjectURL(blob);
+					link.download = filename + '-' + new Date().toISOString().slice(0, 10) + '.csv';
+					link.click();
+
+					showToast('Exported ' + response.count + ' submissions to CSV', 'success');
+				} else {
+					showToast('Export failed: ' + (response.error || 'Unknown error'), 'error');
+				}
+			})
+			.fail(function () {
+				showToast('Export failed. Please try again.', 'error');
+			});
+		}
+
+		// Initial display
+		updateDisplay();
 	}
 
 	// Initialize on document ready
