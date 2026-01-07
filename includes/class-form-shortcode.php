@@ -16,6 +16,24 @@ if ( ! defined( 'ABSPATH' ) ) {
 class AICRMFORM_Form_Shortcode {
 
 	/**
+	 * Shortcode configurations for different form plugins.
+	 *
+	 * @var array
+	 */
+	private $plugin_shortcodes = [
+		'cf7'     => [
+			'tags'        => [ 'contact-form-7', 'contact-form' ],
+			'check_class' => 'WPCF7_ContactForm',
+			'id_attr'     => 'id',
+		],
+		'gravity' => [
+			'tags'        => [ 'gravityform', 'gravityforms' ],
+			'check_class' => 'GFForms',
+			'id_attr'     => 'id',
+		],
+	];
+
+	/**
 	 * Register shortcodes.
 	 */
 	public function register() {
@@ -24,24 +42,36 @@ class AICRMFORM_Form_Shortcode {
 		// Clean up any stale mappings first.
 		$this->cleanup_all_stale_mappings();
 
-		// Check if we have valid CF7 shortcode mappings.
+		// Get shortcode mappings.
 		$shortcode_map = get_option( 'aicrmform_shortcode_map', [] );
-		$has_cf7_maps  = false;
-		foreach ( array_keys( $shortcode_map ) as $key ) {
-			if ( strpos( $key, 'cf7_' ) === 0 ) {
-				$has_cf7_maps = true;
-				break;
-			}
+
+		if ( empty( $shortcode_map ) ) {
+			return;
 		}
 
-		if ( $has_cf7_maps ) {
-			// If CF7 is active, intercept its shortcode output.
-			if ( class_exists( 'WPCF7_ContactForm' ) ) {
-				add_filter( 'do_shortcode_tag', [ $this, 'intercept_cf7_shortcode' ], 10, 4 );
+		// Register interceptors for each plugin type.
+		foreach ( $this->plugin_shortcodes as $plugin_key => $config ) {
+			// Check if we have mappings for this plugin.
+			$has_maps = false;
+			foreach ( array_keys( $shortcode_map ) as $key ) {
+				if ( strpos( $key, $plugin_key . '_' ) === 0 ) {
+					$has_maps = true;
+					break;
+				}
+			}
+
+			if ( ! $has_maps ) {
+				continue;
+			}
+
+			// If the source plugin is active, intercept its shortcode output.
+			if ( class_exists( $config['check_class'] ) ) {
+				add_filter( 'do_shortcode_tag', [ $this, 'intercept_plugin_shortcode' ], 10, 4 );
 			} else {
-				// If CF7 is NOT active, register the shortcode ourselves.
-				add_shortcode( 'contact-form-7', [ $this, 'render_cf7_replacement' ] );
-				add_shortcode( 'contact-form', [ $this, 'render_cf7_replacement' ] );
+				// If the source plugin is NOT active, register the shortcode ourselves.
+				foreach ( $config['tags'] as $tag ) {
+					add_shortcode( $tag, [ $this, 'render_plugin_replacement' ] );
+				}
 			}
 		}
 	}
@@ -74,14 +104,14 @@ class AICRMFORM_Form_Shortcode {
 	}
 
 	/**
-	 * Render replacement for CF7 shortcode when CF7 is deactivated.
+	 * Render replacement for plugin shortcode when source plugin is deactivated.
 	 *
 	 * @param array  $atts    Shortcode attributes.
 	 * @param string $content Shortcode content.
 	 * @param string $tag     Shortcode tag.
 	 * @return string The form HTML or empty string.
 	 */
-	public function render_cf7_replacement( $atts, $content = '', $tag = '' ) {
+	public function render_plugin_replacement( $atts, $content = '', $tag = '' ) {
 		$atts = shortcode_atts(
 			[
 				'id'    => '',
@@ -91,18 +121,25 @@ class AICRMFORM_Form_Shortcode {
 			$tag
 		);
 
-		// Get the CF7 form ID from the shortcode.
-		$cf7_id = $atts['id'];
+		// Determine plugin type from tag.
+		$plugin_key = $this->get_plugin_key_from_tag( $tag );
 
-		if ( empty( $cf7_id ) ) {
-			return $this->get_cf7_not_found_message( $cf7_id );
+		if ( ! $plugin_key ) {
+			return '';
+		}
+
+		// Get the form ID from the shortcode.
+		$source_id = $atts['id'];
+
+		if ( empty( $source_id ) ) {
+			return $this->get_form_not_found_message( $plugin_key, $source_id );
 		}
 
 		// Find our mapped form.
-		$our_form_id = $this->get_mapped_form_id( $cf7_id );
+		$our_form_id = $this->get_mapped_form_id( $plugin_key, $source_id );
 
 		if ( ! $our_form_id ) {
-			return $this->get_cf7_not_found_message( $cf7_id );
+			return $this->get_form_not_found_message( $plugin_key, $source_id );
 		}
 
 		// Check if our form actually exists before rendering.
@@ -111,101 +148,163 @@ class AICRMFORM_Form_Shortcode {
 
 		if ( ! $form ) {
 			// Our form was deleted - clean up the stale mapping.
-			$this->cleanup_stale_mapping( $cf7_id );
-			return $this->get_cf7_not_found_message( $cf7_id );
+			$this->cleanup_stale_mapping( $plugin_key, $source_id );
+			return $this->get_form_not_found_message( $plugin_key, $source_id );
 		}
 
 		return $this->render_form( [ 'id' => $our_form_id ] );
 	}
 
 	/**
-	 * Get message when CF7 form is not found (only when CF7 is deactivated).
+	 * Legacy method for CF7 replacement (backward compatibility).
 	 *
-	 * @param string $cf7_id The CF7 form ID.
+	 * @param array  $atts    Shortcode attributes.
+	 * @param string $content Shortcode content.
+	 * @param string $tag     Shortcode tag.
+	 * @return string The form HTML or empty string.
+	 */
+	public function render_cf7_replacement( $atts, $content = '', $tag = '' ) {
+		return $this->render_plugin_replacement( $atts, $content, $tag );
+	}
+
+	/**
+	 * Get plugin key from shortcode tag.
+	 *
+	 * @param string $tag Shortcode tag.
+	 * @return string|null Plugin key or null.
+	 */
+	private function get_plugin_key_from_tag( $tag ) {
+		foreach ( $this->plugin_shortcodes as $plugin_key => $config ) {
+			if ( in_array( $tag, $config['tags'], true ) ) {
+				return $plugin_key;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Get plugin name from plugin key.
+	 *
+	 * @param string $plugin_key Plugin key.
+	 * @return string Plugin display name.
+	 */
+	private function get_plugin_name( $plugin_key ) {
+		$names = [
+			'cf7'     => 'Contact Form 7',
+			'gravity' => 'Gravity Forms',
+		];
+		return $names[ $plugin_key ] ?? ucfirst( $plugin_key );
+	}
+
+	/**
+	 * Get message when form is not found (only when source plugin is deactivated).
+	 *
+	 * @param string $plugin_key Plugin key.
+	 * @param string $source_id  The source form ID.
 	 * @return string Message HTML (only for admins).
 	 */
-	private function get_cf7_not_found_message( $cf7_id ) {
+	private function get_form_not_found_message( $plugin_key, $source_id ) {
 		// Only show message to admins.
 		if ( ! current_user_can( 'manage_options' ) ) {
 			return '';
 		}
 
 		$shortcode_map = get_option( 'aicrmform_shortcode_map', [] );
+		$plugin_name   = $this->get_plugin_name( $plugin_key );
 
 		// If no mappings exist at all, show a helpful message.
 		if ( empty( $shortcode_map ) ) {
 			return '<div class="aicrmform-admin-notice" style="background: #fef3cd; border: 1px solid #ffc107; padding: 15px; border-radius: 4px; margin: 10px 0;">'
-				. '<strong>AI CRM Form:</strong> Contact Form 7 is deactivated and this form has not been imported.<br>'
-				. '<small style="color: #666;">Activate Contact Form 7 or import this form using AI CRM Form\'s Import feature.</small>'
+				. '<strong>AI CRM Form:</strong> ' . esc_html( $plugin_name ) . ' is deactivated and this form has not been imported.<br>'
+				. '<small style="color: #666;">Activate ' . esc_html( $plugin_name ) . ' or import this form using AI CRM Form\'s Import feature.</small>'
 				. '</div>';
 		}
 
-		$debug_info = 'Looking for: cf7_' . $cf7_id . ' or cf7_hash_' . $cf7_id;
+		$debug_info = 'Looking for: ' . $plugin_key . '_' . $source_id;
 
 		return '<div class="aicrmform-admin-notice" style="background: #fef3cd; border: 1px solid #ffc107; padding: 15px; border-radius: 4px; margin: 10px 0;">'
-			. '<strong>AI CRM Form:</strong> No imported form found for Contact Form 7 ID "' . esc_html( $cf7_id ) . '".<br>'
+			. '<strong>AI CRM Form:</strong> No imported form found for ' . esc_html( $plugin_name ) . ' ID "' . esc_html( $source_id ) . '".<br>'
 			. '<small style="color: #666;">Re-import the form with "Use same shortcode" checked. ' . esc_html( $debug_info ) . '</small>'
 			. '</div>';
 	}
 
 	/**
-	 * Get our form ID from CF7 shortcode ID attribute.
+	 * Legacy method for CF7 not found message (backward compatibility).
 	 *
-	 * @param string $cf7_id The ID from the shortcode (can be post ID or hash).
+	 * @param string $cf7_id The CF7 form ID.
+	 * @return string Message HTML (only for admins).
+	 */
+	private function get_cf7_not_found_message( $cf7_id ) {
+		return $this->get_form_not_found_message( 'cf7', $cf7_id );
+	}
+
+	/**
+	 * Get our form ID from source plugin shortcode ID attribute.
+	 *
+	 * @param string $plugin_key Plugin key (e.g., 'cf7', 'gravity').
+	 * @param string $source_id  The ID from the shortcode (can be post ID or hash).
 	 * @return int|false Our form ID or false.
 	 */
-	private function get_mapped_form_id( $cf7_id ) {
+	private function get_mapped_form_id( $plugin_key, $source_id = null ) {
+		// Handle legacy single-argument calls.
+		if ( null === $source_id ) {
+			$source_id  = $plugin_key;
+			$plugin_key = 'cf7';
+		}
+
 		$shortcode_map = get_option( 'aicrmform_shortcode_map', [] );
 
-		// 1. Check direct mapping: cf7_{id}
-		$map_key = 'cf7_' . $cf7_id;
+		// 1. Check direct mapping: {plugin_key}_{id}.
+		$map_key = $plugin_key . '_' . $source_id;
 		if ( ! empty( $shortcode_map[ $map_key ] ) ) {
 			return (int) $shortcode_map[ $map_key ];
 		}
 
-		// 2. Check hash mapping: cf7_hash_{id}
-		$hash_key = 'cf7_hash_' . $cf7_id;
+		// 2. Check hash mapping: {plugin_key}_hash_{id}.
+		$hash_key = $plugin_key . '_hash_' . $source_id;
 		if ( ! empty( $shortcode_map[ $hash_key ] ) ) {
 			return (int) $shortcode_map[ $hash_key ];
 		}
 
 		// 3. Check if shortcode ID is a PREFIX of a stored hash.
 		// CF7 shortcodes use short hash (7 chars) but we store full hash.
+		$hash_prefix = $plugin_key . '_hash_';
 		foreach ( $shortcode_map as $key => $form_id ) {
-			if ( strpos( $key, 'cf7_hash_' ) === 0 ) {
-				$stored_hash = substr( $key, 9 ); // Remove 'cf7_hash_' prefix.
-				if ( strpos( $stored_hash, $cf7_id ) === 0 ) {
+			if ( strpos( $key, $hash_prefix ) === 0 ) {
+				$stored_hash = substr( $key, strlen( $hash_prefix ) );
+				if ( strpos( $stored_hash, $source_id ) === 0 ) {
 					return (int) $form_id;
 				}
 			}
 		}
 
-		// 4. If it's a hash (not numeric), try to find the post ID from database.
-		if ( ! is_numeric( $cf7_id ) ) {
+		// 4. For CF7: If it's a hash (not numeric), try to find the post ID from database.
+		if ( 'cf7' === $plugin_key && ! is_numeric( $source_id ) ) {
 			global $wpdb;
 
 			// CF7 stores a hash in _hash meta key - check for prefix match.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			$post_id = $wpdb->get_var(
 				$wpdb->prepare(
 					"SELECT post_id FROM {$wpdb->postmeta} WHERE meta_key = '_hash' AND meta_value LIKE %s LIMIT 1",
-					$cf7_id . '%'
+					$source_id . '%'
 				)
 			);
 
 			if ( $post_id ) {
-				$map_key = 'cf7_' . $post_id;
+				$map_key = $plugin_key . '_' . $post_id;
 				if ( ! empty( $shortcode_map[ $map_key ] ) ) {
 					return (int) $shortcode_map[ $map_key ];
 				}
 			}
 		}
 
-		// No mapping found - return false so CF7 can handle it.
+		// No mapping found.
 		return false;
 	}
 
 	/**
-	 * Intercept Contact Form 7 shortcode and render our form if imported.
+	 * Intercept plugin shortcode and render our form if imported.
 	 *
 	 * @param string $output Shortcode output.
 	 * @param string $tag    Shortcode name.
@@ -213,18 +312,24 @@ class AICRMFORM_Form_Shortcode {
 	 * @param array  $m      Regular expression match array.
 	 * @return string Modified output.
 	 */
-	public function intercept_cf7_shortcode( $output, $tag, $attr, $m ) {
-		// Only intercept contact-form-7 shortcode.
-		if ( 'contact-form-7' !== $tag && 'contact-form' !== $tag ) {
+	public function intercept_plugin_shortcode( $output, $tag, $attr, $m ) {
+		// Determine which plugin this shortcode belongs to.
+		$plugin_key = $this->get_plugin_key_from_tag( $tag );
+
+		if ( ! $plugin_key ) {
 			return $output;
 		}
 
-		if ( empty( $attr['id'] ) ) {
+		// Get the ID attribute.
+		$id_attr  = $this->plugin_shortcodes[ $plugin_key ]['id_attr'] ?? 'id';
+		$form_id = $attr[ $id_attr ] ?? '';
+
+		if ( empty( $form_id ) ) {
 			return $output;
 		}
 
 		// Find our mapped form.
-		$our_form_id = $this->get_mapped_form_id( $attr['id'] );
+		$our_form_id = $this->get_mapped_form_id( $plugin_key, $form_id );
 
 		if ( ! $our_form_id ) {
 			return $output;
@@ -235,8 +340,8 @@ class AICRMFORM_Form_Shortcode {
 		$form      = $generator->get_form( $our_form_id );
 
 		if ( ! $form ) {
-			// Our form was deleted - clean up the stale mapping and let CF7 handle it.
-			$this->cleanup_stale_mapping( $attr['id'] );
+			// Our form was deleted - clean up the stale mapping and let original plugin handle it.
+			$this->cleanup_stale_mapping( $plugin_key, $form_id );
 			return $output;
 		}
 
@@ -245,18 +350,38 @@ class AICRMFORM_Form_Shortcode {
 	}
 
 	/**
-	 * Clean up stale CF7 mappings when our form no longer exists.
+	 * Legacy method for CF7 shortcode interception (backward compatibility).
 	 *
-	 * @param string $cf7_id The CF7 form ID.
+	 * @param string $output Shortcode output.
+	 * @param string $tag    Shortcode name.
+	 * @param array  $attr   Shortcode attributes.
+	 * @param array  $m      Regular expression match array.
+	 * @return string Modified output.
 	 */
-	private function cleanup_stale_mapping( $cf7_id ) {
+	public function intercept_cf7_shortcode( $output, $tag, $attr, $m ) {
+		return $this->intercept_plugin_shortcode( $output, $tag, $attr, $m );
+	}
+
+	/**
+	 * Clean up stale mappings when our form no longer exists.
+	 *
+	 * @param string $plugin_key Plugin key.
+	 * @param string $source_id  The source form ID.
+	 */
+	private function cleanup_stale_mapping( $plugin_key, $source_id = null ) {
+		// Handle legacy single-argument calls.
+		if ( null === $source_id ) {
+			$source_id  = $plugin_key;
+			$plugin_key = 'cf7';
+		}
+
 		$shortcode_map = get_option( 'aicrmform_shortcode_map', [] );
 		$changed       = false;
 
-		// Remove any mappings for this CF7 form.
+		// Remove any mappings for this form.
 		$keys_to_remove = [
-			'cf7_' . $cf7_id,
-			'cf7_hash_' . $cf7_id,
+			$plugin_key . '_' . $source_id,
+			$plugin_key . '_hash_' . $source_id,
 		];
 
 		foreach ( $keys_to_remove as $key ) {
@@ -267,10 +392,11 @@ class AICRMFORM_Form_Shortcode {
 		}
 
 		// Also check for hash prefix matches.
+		$hash_prefix = $plugin_key . '_hash_';
 		foreach ( array_keys( $shortcode_map ) as $key ) {
-			if ( strpos( $key, 'cf7_hash_' ) === 0 ) {
-				$stored_hash = substr( $key, 9 );
-				if ( strpos( $stored_hash, $cf7_id ) === 0 ) {
+			if ( strpos( $key, $hash_prefix ) === 0 ) {
+				$stored_hash = substr( $key, strlen( $hash_prefix ) );
+				if ( strpos( $stored_hash, $source_id ) === 0 ) {
 					unset( $shortcode_map[ $key ] );
 					$changed = true;
 				}
