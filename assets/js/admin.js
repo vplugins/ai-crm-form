@@ -347,8 +347,8 @@
 	 * Initialize Form Import.
 	 */
 	function initFormImport() {
-		// Open import modal
-		$('#open-import-modal').on('click', function () {
+		// Open import modal (works on both Forms page and Form Builder page)
+		$('#open-import-modal, #import-form-btn').on('click', function () {
 			$('#import-form-modal').show();
 			loadImportSources();
 		});
