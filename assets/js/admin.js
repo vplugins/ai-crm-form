@@ -539,6 +539,7 @@
 						formId: response.form_id,
 						useSameShortcode: useSameShortcode
 					};
+					console.log('AI CRM Form: Imported from plugin:', plugin, '- Total imported plugins:', Object.keys(importedPlugins));
 
 					// Clear any pending dialog timeout from previous import
 					if (pendingImportDialogTimeout) {
@@ -568,8 +569,10 @@
 
 		// Get list of imported plugins
 		const pluginKeys = Object.keys(importedPlugins);
+		console.log('AI CRM Form: Showing dialog for plugins:', pluginKeys, importedPlugins);
 		
 		if (pluginKeys.length === 0) {
+			console.log('AI CRM Form: No plugins to show dialog for');
 			return;
 		}
 
