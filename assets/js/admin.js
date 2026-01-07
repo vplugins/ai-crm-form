@@ -532,6 +532,9 @@
 					};
 					const pluginDisplayName = pluginNames[plugin] || plugin;
 
+					// If a confirm dialog is currently showing, close it (we'll show a new one with all plugins)
+					$('#aicrmform-confirm-modal').hide();
+					
 					// Track this plugin as imported
 					importedPlugins[plugin] = {
 						key: plugin,
@@ -604,20 +607,18 @@
 
 		// Store the plugins to deactivate (capture in closure)
 		const pluginsToDeactivate = Object.assign({}, importedPlugins);
-		
-		// Clear importedPlugins NOW so subsequent imports start fresh
-		// The pluginsToDeactivate already captured what we need
-		importedPlugins = {};
 
 		showConfirm(
 			title,
 			confirmMsg,
 			function () {
-				// User clicked Yes - deactivate all imported plugins
+				// User clicked Yes - clear tracking and deactivate all imported plugins
+				importedPlugins = {};
 				deactivateMultiplePlugins(pluginsToDeactivate);
 			},
 			function () {
-				// User clicked No - just go to forms page, don't deactivate
+				// User clicked No - clear tracking and go to forms page
+				importedPlugins = {};
 				$('#import-form-modal').hide();
 				window.location.href = aicrmformAdmin.adminUrl + '?page=ai-crm-form-forms';
 			}
@@ -635,13 +636,16 @@
 			return plugins[key].displayName;
 		});
 
+		console.log('AI CRM Form: Deactivating plugins:', pluginKeys, plugins);
 		showToast('Deactivating ' + pluginNames.join(' and ') + '...', 'info');
 
 		// Deactivate plugins one by one
 		let completed = 0;
 		let errors = [];
+		let successes = [];
 
 		pluginKeys.forEach(function(pluginKey) {
+			console.log('AI CRM Form: Sending deactivate request for:', pluginKey);
 			$.ajax({
 				url: aicrmformAdmin.restUrl + 'deactivate-plugin',
 				method: 'POST',
@@ -650,17 +654,23 @@
 				data: JSON.stringify({ plugin: pluginKey }),
 			})
 				.done(function (response) {
-					if (!response.success) {
-						errors.push(plugins[pluginKey].displayName);
+					console.log('AI CRM Form: Deactivate response for', pluginKey, ':', response);
+					if (response.success) {
+						successes.push(plugins[pluginKey].displayName);
+					} else {
+						errors.push(plugins[pluginKey].displayName + ' (' + (response.error || 'unknown error') + ')');
 					}
 				})
-				.fail(function () {
+				.fail(function (xhr, status, error) {
+					console.log('AI CRM Form: Deactivate FAILED for', pluginKey, ':', status, error);
 					errors.push(plugins[pluginKey].displayName);
 				})
 				.always(function () {
 					completed++;
+					console.log('AI CRM Form: Completed', completed, 'of', pluginKeys.length);
 					if (completed === pluginKeys.length) {
 						// All requests completed
+						console.log('AI CRM Form: All deactivations complete. Successes:', successes, 'Errors:', errors);
 						if (errors.length === 0) {
 							showToast(pluginNames.join(' and ') + ' deactivated successfully!', 'success');
 						} else {
