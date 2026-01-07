@@ -237,9 +237,9 @@
 		// Handle toggle change
 		$toggle.on('change', function() {
 			if ($(this).is(':checked')) {
-				$styleOptions.addClass('disabled');
+				$styleOptions.slideUp(200);
 			} else {
-				$styleOptions.removeClass('disabled');
+				$styleOptions.slideDown(200);
 			}
 			updateLivePreview();
 		});
@@ -248,9 +248,9 @@
 		$(document).on('change', '#edit-use-theme-styling', function() {
 			const $editStyleOptions = $('#edit-style-options');
 			if ($(this).is(':checked')) {
-				$editStyleOptions.addClass('disabled');
+				$editStyleOptions.slideUp(200);
 			} else {
-				$editStyleOptions.removeClass('disabled');
+				$editStyleOptions.slideDown(200);
 			}
 		});
 	}
@@ -2230,7 +2230,7 @@
 		html += '<span class="aicrmform-toggle-description">Disable plugin styles and let your theme control the form appearance.</span>';
 		html += '</div></div>';
 
-		html += '<div class="aicrmform-style-options' + (styles.use_theme_styling ? ' disabled' : '') + '" id="edit-style-options">';
+		html += '<div class="aicrmform-style-options" id="edit-style-options"' + (styles.use_theme_styling ? ' style="display: none;"' : '') + '>';
 		html +=
 			'<div class="aicrmform-style-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">';
 
@@ -2376,6 +2376,11 @@
 		const $modal = $(html);
 		$modal.data('form-config', form.form_config);
 		$('body').append($modal);
+
+		// Apply initial theme styling toggle state
+		if (styles.use_theme_styling) {
+			$modal.find('#edit-style-options').hide();
+		}
 
 		// Render the fields in the edit modal
 		renderEditFormFields();
