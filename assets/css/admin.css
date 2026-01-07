@@ -285,13 +285,9 @@
 	line-height: 1.4;
 }
 
-/* Style options wrapper */
-.aicrmform-style-options {
-	transition: opacity 0.3s, max-height 0.3s;
-}
-
-.aicrmform-style-options.hidden {
-	display: none;
+/* Style options wrapper - hide when theme styling is active */
+.aicrmform-theme-styling-active .aicrmform-style-options {
+	display: none !important;
 }
 
 .aicrmform-style-grid {

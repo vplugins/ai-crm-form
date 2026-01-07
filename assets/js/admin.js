@@ -230,27 +230,27 @@
 	 */
 	function initThemeStylingToggle() {
 		const $toggle = $('#use-theme-styling');
-		const $styleOptions = $('#style-options');
+		const $cardBody = $toggle.closest('.aicrmform-card-body');
 		
 		if (!$toggle.length) return;
 
-		// Handle toggle change
+		// Handle toggle change - add class to parent to hide options via CSS
 		$toggle.on('change', function() {
 			if ($(this).is(':checked')) {
-				$styleOptions.slideUp(200);
+				$cardBody.addClass('aicrmform-theme-styling-active');
 			} else {
-				$styleOptions.slideDown(200);
+				$cardBody.removeClass('aicrmform-theme-styling-active');
 			}
 			updateLivePreview();
 		});
 
 		// Also handle in edit form modal
 		$(document).on('change', '#edit-use-theme-styling', function() {
-			const $editStyleOptions = $('#edit-style-options');
+			const $tabContent = $(this).closest('.aicrmform-edit-tab-content');
 			if ($(this).is(':checked')) {
-				$editStyleOptions.slideUp(200);
+				$tabContent.addClass('aicrmform-theme-styling-active');
 			} else {
-				$editStyleOptions.slideDown(200);
+				$tabContent.removeClass('aicrmform-theme-styling-active');
 			}
 		});
 	}
@@ -2379,7 +2379,7 @@
 
 		// Apply initial theme styling toggle state
 		if (styles.use_theme_styling) {
-			$modal.find('#edit-style-options').hide();
+			$modal.find('#edit-tab-styling').addClass('aicrmform-theme-styling-active');
 		}
 
 		// Render the fields in the edit modal
