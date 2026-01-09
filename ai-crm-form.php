@@ -378,6 +378,14 @@ class AI_CRM_Form {
 			AICRMFORM_VERSION
 		);
 
+		// Also enqueue frontend form styles for accurate preview rendering.
+		wp_enqueue_style(
+			'aicrmform-frontend-preview',
+			AICRMFORM_PLUGIN_URL . 'assets/css/form.css',
+			[],
+			AICRMFORM_VERSION
+		);
+
 		wp_enqueue_script(
 			'aicrmform-admin',
 			AICRMFORM_PLUGIN_URL . 'assets/js/admin.js',

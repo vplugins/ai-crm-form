@@ -2073,6 +2073,10 @@
 	}
 
 	function showFormPreviewModal(form) {
+		const styles = form.form_config?.styles || {};
+		const customCss = form.form_config?.custom_css || '';
+		const useThemeStyling = styles.use_theme_styling || false;
+
 		let html = '<div class="aicrmform-modal-overlay" id="form-preview-modal">';
 		html += '<div class="aicrmform-modal aicrmform-modal-lg">';
 		html += '<div class="aicrmform-modal-header"><h3>' + escapeHtml(form.name) + '</h3></div>';
@@ -2084,6 +2088,14 @@
 			form.id +
 			'"]\'><span class="dashicons dashicons-admin-page"></span></button>';
 		html += '</div>';
+
+		// Generate custom styles for this form preview
+		if (!useThemeStyling) {
+			html += '<style id="preview-form-styles">';
+			html += generatePreviewFormStyles(form.id, styles, customCss);
+			html += '</style>';
+		}
+
 		html += '<div class="aicrmform-preview-area" id="modal-form-preview"></div>';
 		html += '</div>';
 		html +=
@@ -2094,7 +2106,27 @@
 		$('body').append($modal);
 
 		if (form.form_config && form.form_config.fields) {
-			let previewHtml = '<form class="aicrmform-form">';
+			// Build wrapper classes
+			let wrapperClasses = 'aicrmform-wrapper aicrmform-wrapper-' + form.id;
+			if (styles.label_position) wrapperClasses += ' aicrmform-labels-' + styles.label_position;
+			if (styles.field_spacing) wrapperClasses += ' aicrmform-spacing-' + styles.field_spacing;
+			if (styles.button_style) wrapperClasses += ' aicrmform-button-' + styles.button_style;
+			if (styles.button_width === 'full') wrapperClasses += ' aicrmform-button-full';
+			if (useThemeStyling) wrapperClasses += ' aicrmform-theme-styled';
+
+			let previewHtml = '<div class="' + wrapperClasses + '">';
+
+			// Add Google Font if specified
+			if (styles.font_family && !useThemeStyling) {
+				const fontSlug = styles.font_family.replace(/ /g, '+');
+				previewHtml =
+					'<link href="https://fonts.googleapis.com/css2?family=' +
+					fontSlug +
+					':wght@400;500;600;700&display=swap" rel="stylesheet">' +
+					previewHtml;
+			}
+
+			previewHtml += '<form class="aicrmform-form">';
 			form.form_config.fields.forEach(function (field) {
 				previewHtml += renderPreviewFieldStatic(field);
 			});
@@ -2103,12 +2135,134 @@
 				escapeHtml(form.form_config.submit_button_text || 'Submit') +
 				'</button></div>';
 			previewHtml += '</form>';
+			previewHtml += '</div>';
 			$modal.find('#modal-form-preview').html(previewHtml);
 		}
 
 		$modal.on('click', function (e) {
 			if ($(e.target).hasClass('aicrmform-modal-overlay')) $modal.remove();
 		});
+	}
+
+	/**
+	 * Generate custom CSS styles for form preview (matches PHP generate_custom_styles)
+	 */
+	function generatePreviewFormStyles(formId, styles, customCss) {
+		let css = '';
+		const selector = '.aicrmform-wrapper-' + formId;
+
+		// Font family
+		if (styles.font_family) {
+			css += selector + ' { font-family: "' + styles.font_family + '", sans-serif !important; }';
+			css +=
+				selector +
+				' *, ' +
+				selector +
+				' input, ' +
+				selector +
+				' select, ' +
+				selector +
+				' textarea, ' +
+				selector +
+				' button { font-family: inherit !important; }';
+		}
+
+		// Font size
+		if (styles.font_size) {
+			css += selector + ' { font-size: ' + styles.font_size + ' !important; }';
+			css += selector + ' .aicrmform-field label { font-size: ' + styles.font_size + ' !important; }';
+			css +=
+				selector +
+				' .aicrmform-field input, ' +
+				selector +
+				' .aicrmform-field select, ' +
+				selector +
+				' .aicrmform-field textarea { font-size: ' +
+				styles.font_size +
+				' !important; }';
+		}
+
+		// Form width
+		if (styles.form_width) {
+			css += selector + ' .aicrmform-form { max-width: ' + styles.form_width + '; }';
+		}
+
+		// Background color
+		if (styles.background_color && styles.background_color !== '#ffffff') {
+			css +=
+				selector +
+				' .aicrmform-form { background-color: ' +
+				styles.background_color +
+				' !important; padding: 24px !important; border-radius: 8px !important; }';
+		}
+
+		// Text color
+		if (styles.text_color && styles.text_color !== '#333333') {
+			css += selector + ' { color: ' + styles.text_color + ' !important; }';
+			css += selector + ' .aicrmform-field label { color: ' + styles.text_color + ' !important; }';
+		}
+
+		// Border color
+		if (styles.border_color && styles.border_color !== '#dddddd') {
+			css +=
+				selector +
+				' .aicrmform-field input, ' +
+				selector +
+				' .aicrmform-field select, ' +
+				selector +
+				' .aicrmform-field textarea { border-color: ' +
+				styles.border_color +
+				' !important; }';
+		}
+
+		// Border radius
+		if (styles.border_radius && styles.border_radius !== '4px') {
+			css +=
+				selector +
+				' .aicrmform-field input, ' +
+				selector +
+				' .aicrmform-field select, ' +
+				selector +
+				' .aicrmform-field textarea, ' +
+				selector +
+				' .aicrmform-button { border-radius: ' +
+				styles.border_radius +
+				' !important; }';
+		}
+
+		// Primary/Button color
+		if (styles.primary_color && styles.primary_color !== '#0073aa') {
+			css +=
+				selector +
+				' .aicrmform-button { background-color: ' +
+				styles.primary_color +
+				' !important; background-image: none !important; border-color: ' +
+				styles.primary_color +
+				' !important; }';
+			css +=
+				selector +
+				' .aicrmform-button:hover { background-color: ' +
+				adjustBrightness(styles.primary_color, -20) +
+				' !important; }';
+		}
+
+		// Append custom CSS
+		if (customCss) {
+			css += customCss.replace(/\.aicrmform-form/g, selector + ' .aicrmform-form');
+		}
+
+		return css;
+	}
+
+	/**
+	 * Adjust hex color brightness (helper for button hover)
+	 */
+	function adjustBrightness(hex, steps) {
+		hex = hex.replace('#', '');
+		const r = Math.max(0, Math.min(255, parseInt(hex.substring(0, 2), 16) + steps));
+		const g = Math.max(0, Math.min(255, parseInt(hex.substring(2, 4), 16) + steps));
+		const b = Math.max(0, Math.min(255, parseInt(hex.substring(4, 6), 16) + steps));
+		return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
 	}
 
 	function renderPreviewFieldStatic(field) {
