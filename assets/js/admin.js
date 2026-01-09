@@ -1031,9 +1031,6 @@
 			});
 		});
 
-		// Log all tracked plugins
-		console.log('All available plugins for deactivation:', allAvailablePlugins);
-
 		// Check if any plugins are missing CRM Form ID
 		if (pluginsWithoutCrmId.length > 0) {
 			showToast(
@@ -1207,11 +1204,8 @@
 
 		// Get list of imported plugins
 		const pluginKeys = Object.keys(importedPlugins);
-		console.log('Showing deactivation dialog for plugins:', importedPlugins);
-		console.log('Plugin keys:', pluginKeys);
 
 		if (pluginKeys.length === 0) {
-			console.log('No plugins to deactivate');
 			return;
 		}
 
@@ -1285,7 +1279,6 @@
 		function deactivateNext() {
 			if (currentIndex >= pluginKeys.length) {
 				// All done
-				console.log('All deactivation requests completed. Errors:', errors);
 				if (errors.length === 0) {
 					showToast(pluginNames.join(' and ') + ' deactivated successfully!', 'success');
 				} else {
@@ -1297,10 +1290,6 @@
 			}
 
 			const pluginKey = pluginKeys[currentIndex];
-			console.log(
-				'Deactivating plugin ' + (currentIndex + 1) + '/' + pluginKeys.length + ':',
-				pluginKey
-			);
 
 			$.ajax({
 				url: aicrmformAdmin.restUrl + 'deactivate-plugin',
@@ -1310,7 +1299,6 @@
 				data: JSON.stringify({ plugin: pluginKey }),
 			})
 				.done(function (response) {
-					console.log('Deactivate response for ' + pluginKey + ':', response);
 					if (!response.success) {
 						errors.push(
 							plugins[pluginKey].displayName +
@@ -1320,8 +1308,7 @@
 						);
 					}
 				})
-				.fail(function (xhr, status, error) {
-					console.error('Deactivate failed for ' + pluginKey + ':', status, error);
+				.fail(function () {
 					errors.push(plugins[pluginKey].displayName + ' (Request failed)');
 				})
 				.always(function () {
