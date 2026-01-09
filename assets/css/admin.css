@@ -2748,6 +2748,11 @@
 	z-index: 100002;
 }
 
+/* Confirm modal - highest z-index to always appear on top */
+#aicrmform-confirm-modal {
+	z-index: 100003;
+}
+
 #edit-field-modal .aicrmform-modal {
 	max-width: 550px;
 }
