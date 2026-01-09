@@ -31,6 +31,11 @@ class AICRMFORM_Form_Shortcode {
 			'check_class' => 'GFForms',
 			'id_attr'     => 'id',
 		],
+		'wpforms' => [
+			'tags'        => [ 'wpforms' ],
+			'check_class' => 'WPForms',
+			'id_attr'     => 'id',
+		],
 	];
 
 	/**
@@ -192,6 +197,7 @@ class AICRMFORM_Form_Shortcode {
 		$names = [
 			'cf7'     => 'Contact Form 7',
 			'gravity' => 'Gravity Forms',
+			'wpforms' => 'WPForms',
 		];
 		return $names[ $plugin_key ] ?? ucfirst( $plugin_key );
 	}
