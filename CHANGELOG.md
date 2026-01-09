@@ -16,6 +16,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Nothing yet
 
+## [1.5.0] - 2025-01-09
+
+### Added
+- **WPForms Integration** - Import forms from WPForms plugin (Lite & Pro support)
+- **Global Import All Forms** - Import all forms from all plugins with one click
+- **Per-Plugin Import All** - Import all forms from a specific plugin with progress indicator
+- **Delete Submissions** - Individual and bulk delete with confirmation dialog
+- Import progress bar showing real-time status and form count
+- Confirmation modal on submissions page for delete actions
+
+### Changed
+- Import modal width increased to 600px for better readability
+- Preview popup now applies form design styles (colors, fonts, background)
+- Plugin deactivation now happens sequentially to prevent race conditions
+- Deactivation dialog now offers all source plugins, not just newly imported ones
+- Submissions page now loads all submissions (removed 20 item limit)
+
+### Fixed
+- WPForms shortcode interception now working correctly
+- Preview and frontend styling consistency (removed automatic dark mode)
+- Confirm modal z-index to appear on top of import modal
+- Submissions count and pagination updates correctly after deletion
+- Select All checkbox only affects visible rows on current page
+
+### Removed
+- Unused "Enable Plugin" toggle from settings page
+
 ## [1.4.1] - 2025-01-07
 
 ### Fixed
