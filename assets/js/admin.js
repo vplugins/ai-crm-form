@@ -414,7 +414,7 @@
 			importForm(plugin, formId, formTitle, useSameShortcode, $btn);
 		});
 
-		// Import All button click
+		// Import All button click (per plugin)
 		$(document).on('click', '.aicrmform-import-all-btn', function () {
 			const $btn = $(this);
 			const plugin = $btn.data('plugin');
@@ -436,6 +436,25 @@
 					' new forms in AI CRM Form.',
 				function () {
 					importAllForms(plugin, pluginName, useSameShortcode, $btn);
+				}
+			);
+		});
+
+		// Import All from All Plugins button click
+		$(document).on('click', '.aicrmform-import-all-global-btn', function () {
+			const $btn = $(this);
+			const totalForms = $btn.data('total-forms');
+
+			// Confirm before importing all
+			showConfirm(
+				'Import All Forms from All Plugins?',
+				'Are you sure you want to import all ' +
+					totalForms +
+					' forms from all plugins? This will create ' +
+					totalForms +
+					' new forms in AI CRM Form.\n\nNote: Each plugin must have a CRM Form ID configured.',
+				function () {
+					importAllFormsFromAllPlugins($btn);
 				}
 			);
 		});
@@ -475,9 +494,65 @@
 	function renderImportSources(sources) {
 		let hasActiveSources = false;
 		let html = '';
+		let totalForms = 0;
+		let activePlugins = [];
 
 		// Get default CRM Form ID from settings or form builder page if available
 		const defaultCrmFormId = $('#crm-form-id').val() || aicrmformAdmin.defaultCrmFormId || '';
+
+		// First pass: count total forms and collect active plugins
+		for (const [key, source] of Object.entries(sources)) {
+			if (source.active && source.forms && source.forms.length > 0) {
+				totalForms += source.forms.length;
+				activePlugins.push({ key: key, name: source.name, formCount: source.forms.length });
+			}
+		}
+
+		// Add global "Import All from All Plugins" section if multiple plugins or many forms
+		if (activePlugins.length > 0 && totalForms > 0) {
+			// Build plugin summary list
+			const pluginSummary = activePlugins
+				.map(function (p) {
+					return p.name + ' (' + p.formCount + ')';
+				})
+				.join(' • ');
+
+			html +=
+				'<div class="aicrmform-import-all-global" style="margin-bottom: 24px; padding: 20px; background: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 100%); border-radius: 10px; color: #fff; box-shadow: 0 4px 15px rgba(30, 58, 95, 0.3);">';
+			html +=
+				'<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">';
+			html += '<div style="flex: 1; min-width: 200px;">';
+			html +=
+				'<div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">';
+			html +=
+				'<span class="dashicons dashicons-database-import" style="font-size: 24px; width: 24px; height: 24px; background: rgba(255,255,255,0.2); padding: 8px; border-radius: 8px;"></span>';
+			html +=
+				'<h4 style="margin: 0; font-size: 18px; font-weight: 600; color: #fff;">Import All Forms</h4>';
+			html += '</div>';
+			html +=
+				'<p style="margin: 0 0 6px 0; font-size: 14px; color: rgba(255,255,255,0.95);"><strong>' +
+				totalForms +
+				' forms</strong> available from <strong>' +
+				activePlugins.length +
+				' plugin' +
+				(activePlugins.length > 1 ? 's' : '') +
+				'</strong></p>';
+			html +=
+				'<p style="margin: 0; font-size: 12px; color: rgba(255,255,255,0.7);">' +
+				escapeHtml(pluginSummary) +
+				'</p>';
+			html += '</div>';
+			html +=
+				'<button type="button" class="button aicrmform-import-all-global-btn" style="background: #fff; color: #1e3a5f; border: none; font-weight: 600; padding: 12px 24px; font-size: 14px; border-radius: 6px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); transition: transform 0.2s, box-shadow 0.2s;" ';
+			html += 'data-total-forms="' + totalForms + '">';
+			html +=
+				'<span class="dashicons dashicons-download" style="margin-right: 6px; margin-top: 3px;"></span>Import All ' +
+				totalForms +
+				' Forms';
+			html += '</button>';
+			html += '</div>';
+			html += '</div>';
+		}
 
 		for (const [key, source] of Object.entries(sources)) {
 			if (source.active && source.forms && source.forms.length > 0) {
@@ -842,6 +917,190 @@
 				})
 				.always(function () {
 					completed++;
+					// Import next form
+					importNext(index + 1);
+				});
+		}
+
+		// Start importing
+		importNext(0);
+	}
+
+	/**
+	 * Import all forms from all plugins.
+	 *
+	 * @param {jQuery} $btn The global import button element.
+	 */
+	function importAllFormsFromAllPlugins($btn) {
+		const pattern =
+			/^FormConfigID-[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
+
+		// Collect all plugins and their forms with CRM Form IDs
+		const allPluginForms = [];
+		const pluginsWithoutCrmId = [];
+
+		$('.aicrmform-import-source').each(function () {
+			const $source = $(this);
+			const $crmInput = $source.find('.aicrmform-import-crm-form-id');
+			const plugin = $crmInput.data('plugin');
+			const crmFormId = $crmInput.val().trim();
+			const useSameShortcode = $source.find('.use-same-shortcode-all').is(':checked');
+
+			// Get plugin name from header
+			const pluginName = $source.find('h4').text().trim();
+
+			// Validate CRM Form ID
+			if (!crmFormId || !pattern.test(crmFormId)) {
+				pluginsWithoutCrmId.push(pluginName);
+				return;
+			}
+
+			// Get all form buttons for this plugin
+			$source.find('.aicrmform-import-form-btn').each(function () {
+				const $formBtn = $(this);
+				// Skip already imported forms
+				if ($formBtn.hasClass('button-primary')) {
+					return;
+				}
+				allPluginForms.push({
+					plugin: plugin,
+					pluginName: pluginName,
+					formId: $formBtn.data('form-id'),
+					formTitle: $formBtn.data('form-title'),
+					crmFormId: crmFormId,
+					useSameShortcode: useSameShortcode,
+					$btn: $formBtn,
+				});
+			});
+		});
+
+		// Check if any plugins are missing CRM Form ID
+		if (pluginsWithoutCrmId.length > 0) {
+			showToast(
+				'Missing or invalid CRM Form ID for: ' +
+					pluginsWithoutCrmId.join(', ') +
+					'. Please configure CRM Form IDs for all plugins.',
+				'error'
+			);
+			return;
+		}
+
+		if (allPluginForms.length === 0) {
+			showToast('All forms have already been imported!', 'info');
+			return;
+		}
+
+		const originalText = $btn.html();
+		$btn.prop('disabled', true).html(
+			'<span class="spinner is-active" style="float: none; margin: 0; vertical-align: middle;"></span> Importing...'
+		);
+
+		// Disable all import buttons
+		$('.aicrmform-import-form-btn, .aicrmform-import-all-btn').prop('disabled', true);
+
+		let successCount = 0;
+		let errorCount = 0;
+		const totalForms = allPluginForms.length;
+		const pluginsImported = {};
+
+		// Import forms sequentially
+		function importNext(index) {
+			if (index >= allPluginForms.length) {
+				// All done
+				$btn.html(
+					'<span class="dashicons dashicons-yes" style="margin-top: 3px;"></span> Imported ' +
+						successCount +
+						' forms'
+				);
+				if (errorCount > 0) {
+					showToast(
+						'Imported ' +
+							successCount +
+							' of ' +
+							totalForms +
+							' forms. ' +
+							errorCount +
+							' failed.',
+						'warning'
+					);
+				} else {
+					showToast('Successfully imported all ' + successCount + ' forms!', 'success');
+				}
+
+				// Track all imported plugins
+				const pluginNames = {
+					cf7: 'Contact Form 7',
+					gravity: 'Gravity Forms',
+					wpforms: 'WPForms',
+				};
+				for (const pluginKey in pluginsImported) {
+					importedPlugins[pluginKey] = {
+						key: pluginKey,
+						displayName: pluginNames[pluginKey] || pluginKey,
+						formId: 'multiple',
+						useSameShortcode: true,
+					};
+				}
+
+				// Show deactivate dialog after a short delay
+				if (pendingImportDialogTimeout) {
+					clearTimeout(pendingImportDialogTimeout);
+				}
+				pendingImportDialogTimeout = setTimeout(function () {
+					showImportCompleteDialog();
+				}, 1500);
+
+				return;
+			}
+
+			const formData = allPluginForms[index];
+			const $formBtn = formData.$btn;
+			$formBtn.html(
+				'<span class="spinner is-active" style="float: none; margin: 0;"></span>'
+			);
+
+			// Update main button progress
+			$btn.html(
+				'<span class="spinner is-active" style="float: none; margin: 0; vertical-align: middle;"></span> Importing ' +
+					(index + 1) +
+					' of ' +
+					totalForms +
+					'...'
+			);
+
+			$.ajax({
+				url: aicrmformAdmin.restUrl + 'import',
+				method: 'POST',
+				headers: { 'X-WP-Nonce': aicrmformAdmin.nonce },
+				contentType: 'application/json',
+				data: JSON.stringify({
+					plugin: formData.plugin,
+					form_id: formData.formId,
+					use_same_shortcode: formData.useSameShortcode,
+					crm_form_id: formData.crmFormId,
+				}),
+			})
+				.done(function (response) {
+					if (response.success) {
+						successCount++;
+						pluginsImported[formData.plugin] = true;
+						$formBtn
+							.html('<span class="dashicons dashicons-yes"></span> Imported!')
+							.addClass('button-primary');
+					} else {
+						errorCount++;
+						$formBtn
+							.html('<span class="dashicons dashicons-no"></span> Failed')
+							.addClass('button-link-delete');
+					}
+				})
+				.fail(function () {
+					errorCount++;
+					$formBtn
+						.html('<span class="dashicons dashicons-no"></span> Failed')
+						.addClass('button-link-delete');
+				})
+				.always(function () {
 					// Import next form
 					importNext(index + 1);
 				});
