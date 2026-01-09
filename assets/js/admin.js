@@ -981,6 +981,7 @@
 		// Collect all plugins and their forms with CRM Form IDs
 		const allPluginForms = [];
 		const pluginsWithoutCrmId = [];
+		const allAvailablePlugins = {}; // Track all plugins for deactivation offer
 
 		$('.aicrmform-import-source').each(function () {
 			const $source = $(this);
@@ -991,6 +992,19 @@
 
 			// Get plugin name from header
 			const pluginName = $source.find('h4').text().trim();
+
+			// Track this plugin as available for deactivation
+			const pluginDisplayNames = {
+				cf7: 'Contact Form 7',
+				gravity: 'Gravity Forms',
+				wpforms: 'WPForms',
+			};
+			allAvailablePlugins[plugin] = {
+				key: plugin,
+				displayName: pluginDisplayNames[plugin] || pluginName,
+				formId: 'multiple',
+				useSameShortcode: useSameShortcode,
+			};
 
 			// Validate CRM Form ID
 			if (!crmFormId || !pattern.test(crmFormId)) {
@@ -1062,7 +1076,6 @@
 		let successCount = 0;
 		let errorCount = 0;
 		const totalForms = allPluginForms.length;
-		const pluginsImported = {};
 
 		// Update progress UI
 		function updateProgress(current, formTitle) {
@@ -1086,19 +1099,9 @@
 						' forms'
 				);
 
-				// Track all imported plugins
-				const pluginNames = {
-					cf7: 'Contact Form 7',
-					gravity: 'Gravity Forms',
-					wpforms: 'WPForms',
-				};
-				for (const pluginKey in pluginsImported) {
-					importedPlugins[pluginKey] = {
-						key: pluginKey,
-						displayName: pluginNames[pluginKey] || pluginKey,
-						formId: 'multiple',
-						useSameShortcode: true,
-					};
+				// Track ALL available plugins for deactivation (not just newly imported)
+				for (const pluginKey in allAvailablePlugins) {
+					importedPlugins[pluginKey] = allAvailablePlugins[pluginKey];
 				}
 
 				// Close the import modal and show deactivate dialog
@@ -1167,7 +1170,6 @@
 				.done(function (response) {
 					if (response.success) {
 						successCount++;
-						pluginsImported[formData.plugin] = true;
 						$formBtn
 							.html('<span class="dashicons dashicons-yes"></span> Imported!')
 							.addClass('button-primary');
