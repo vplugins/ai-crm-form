@@ -15,6 +15,10 @@
 .settings/
 *.code-workspace
 
+# Cursor AI
+.cursorrules
+.cursorignore
+
 # OS files
 .DS_Store
 .DS_Store?
