@@ -801,6 +801,24 @@
 		}
 
 		const originalText = $btn.html();
+		const $source = $btn.closest('.aicrmform-import-source');
+
+		// Add progress indicator
+		$source.find('.aicrmform-plugin-progress').remove();
+		$btn.after(
+			'<div class="aicrmform-plugin-progress" style="margin-top: 8px; margin-bottom: 8px;">' +
+				'<div style="display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 12px; color: #666;">' +
+				'<span class="progress-text">Starting...</span>' +
+				'<span class="progress-count">0 / ' +
+				forms.length +
+				'</span>' +
+				'</div>' +
+				'<div style="background: #e0e0e0; border-radius: 3px; height: 6px; overflow: hidden;">' +
+				'<div class="progress-bar" style="background: #2271b1; height: 100%; width: 0%; transition: width 0.3s ease;"></div>' +
+				'</div>' +
+				'</div>'
+		);
+
 		$btn.prop('disabled', true).html(
 			'<span class="spinner is-active" style="float: none; margin: 0;"></span> Importing...'
 		);
@@ -813,36 +831,34 @@
 		let errorCount = 0;
 		const totalForms = forms.length;
 
+		// Update progress UI
+		function updatePluginProgress(current, formTitle) {
+			const percent = Math.round((current / totalForms) * 100);
+			$source.find('.aicrmform-plugin-progress .progress-bar').css('width', percent + '%');
+			$source
+				.find('.aicrmform-plugin-progress .progress-count')
+				.text(current + ' / ' + totalForms);
+			$source
+				.find('.aicrmform-plugin-progress .progress-text')
+				.text('Importing: ' + formTitle);
+		}
+
 		// Import forms sequentially to avoid overwhelming the server
 		function importNext(index) {
 			if (index >= forms.length) {
+				// Update progress to complete
+				$source.find('.aicrmform-plugin-progress .progress-bar').css('width', '100%');
+				$source.find('.aicrmform-plugin-progress .progress-text').text('Complete!');
+				$source
+					.find('.aicrmform-plugin-progress .progress-count')
+					.text(successCount + ' imported');
+
 				// All done
 				$btn.html(
 					'<span class="dashicons dashicons-yes"></span> Imported ' +
 						successCount +
 						' forms'
 				);
-				if (errorCount > 0) {
-					showToast(
-						'Imported ' +
-							successCount +
-							' of ' +
-							totalForms +
-							' forms. ' +
-							errorCount +
-							' failed.',
-						'warning'
-					);
-				} else {
-					showToast(
-						'Successfully imported all ' +
-							successCount +
-							' forms from ' +
-							pluginName +
-							'!',
-						'success'
-					);
-				}
 
 				// Track plugin as imported
 				const pluginNames = {
@@ -857,31 +873,58 @@
 					useSameShortcode: useSameShortcode,
 				};
 
-				// Show deactivate dialog after a short delay
+				// Close modal and show deactivate dialog
 				if (pendingImportDialogTimeout) {
 					clearTimeout(pendingImportDialogTimeout);
 				}
 				pendingImportDialogTimeout = setTimeout(function () {
+					// Hide import modal first
+					$('#import-form-modal').hide();
+
+					if (errorCount > 0) {
+						showToast(
+							'Imported ' +
+								successCount +
+								' of ' +
+								totalForms +
+								' forms. ' +
+								errorCount +
+								' failed.',
+							'warning'
+						);
+					} else {
+						showToast(
+							'Successfully imported all ' +
+								successCount +
+								' forms from ' +
+								pluginName +
+								'!',
+							'success'
+						);
+					}
+
 					showImportCompleteDialog();
-				}, 1500);
+				}, 1000);
 
 				return;
 			}
 
 			const form = forms[index];
 			const $formBtn = form.$btn;
-			const formOriginalText = $formBtn.html();
+
+			// Update progress
+			updatePluginProgress(index + 1, form.title);
+
 			$formBtn.html(
 				'<span class="spinner is-active" style="float: none; margin: 0;"></span>'
 			);
 
 			// Update main button progress
 			$btn.html(
-				'<span class="spinner is-active" style="float: none; margin: 0;"></span> Importing ' +
+				'<span class="spinner is-active" style="float: none; margin: 0;"></span> ' +
 					(index + 1) +
-					' of ' +
-					totalForms +
-					'...'
+					'/' +
+					totalForms
 			);
 
 			$.ajax({
@@ -991,6 +1034,24 @@
 		}
 
 		const originalText = $btn.html();
+		const $globalSection = $btn.closest('.aicrmform-import-all-global');
+
+		// Add progress indicator below the button
+		$globalSection.find('.aicrmform-import-progress').remove();
+		$globalSection.append(
+			'<div class="aicrmform-import-progress" style="margin-top: 12px;">' +
+				'<div style="display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px; color: rgba(255,255,255,0.9);">' +
+				'<span class="progress-text">Starting import...</span>' +
+				'<span class="progress-count">0 / ' +
+				allPluginForms.length +
+				'</span>' +
+				'</div>' +
+				'<div style="background: rgba(255,255,255,0.3); border-radius: 4px; height: 8px; overflow: hidden;">' +
+				'<div class="progress-bar" style="background: #fff; height: 100%; width: 0%; transition: width 0.3s ease;"></div>' +
+				'</div>' +
+				'</div>'
+		);
+
 		$btn.prop('disabled', true).html(
 			'<span class="spinner is-active" style="float: none; margin: 0; vertical-align: middle;"></span> Importing...'
 		);
@@ -1003,29 +1064,27 @@
 		const totalForms = allPluginForms.length;
 		const pluginsImported = {};
 
+		// Update progress UI
+		function updateProgress(current, formTitle) {
+			const percent = Math.round((current / totalForms) * 100);
+			$globalSection.find('.progress-bar').css('width', percent + '%');
+			$globalSection.find('.progress-count').text(current + ' / ' + totalForms);
+			$globalSection.find('.progress-text').text('Importing: ' + formTitle);
+		}
+
 		// Import forms sequentially
 		function importNext(index) {
 			if (index >= allPluginForms.length) {
-				// All done
+				// All done - update progress to complete
+				$globalSection.find('.progress-bar').css('width', '100%');
+				$globalSection.find('.progress-text').text('Import complete!');
+				$globalSection.find('.progress-count').text(successCount + ' imported');
+
 				$btn.html(
 					'<span class="dashicons dashicons-yes" style="margin-top: 3px;"></span> Imported ' +
 						successCount +
 						' forms'
 				);
-				if (errorCount > 0) {
-					showToast(
-						'Imported ' +
-							successCount +
-							' of ' +
-							totalForms +
-							' forms. ' +
-							errorCount +
-							' failed.',
-						'warning'
-					);
-				} else {
-					showToast('Successfully imported all ' + successCount + ' forms!', 'success');
-				}
 
 				// Track all imported plugins
 				const pluginNames = {
@@ -1042,30 +1101,55 @@
 					};
 				}
 
-				// Show deactivate dialog after a short delay
+				// Close the import modal and show deactivate dialog
 				if (pendingImportDialogTimeout) {
 					clearTimeout(pendingImportDialogTimeout);
 				}
 				pendingImportDialogTimeout = setTimeout(function () {
+					// Hide import modal first
+					$('#import-form-modal').hide();
+
+					if (errorCount > 0) {
+						showToast(
+							'Imported ' +
+								successCount +
+								' of ' +
+								totalForms +
+								' forms. ' +
+								errorCount +
+								' failed.',
+							'warning'
+						);
+					} else {
+						showToast(
+							'Successfully imported all ' + successCount + ' forms!',
+							'success'
+						);
+					}
+
+					// Show the deactivate plugins dialog
 					showImportCompleteDialog();
-				}, 1500);
+				}, 1000);
 
 				return;
 			}
 
 			const formData = allPluginForms[index];
 			const $formBtn = formData.$btn;
+
+			// Update progress UI
+			updateProgress(index + 1, formData.formTitle);
+
 			$formBtn.html(
 				'<span class="spinner is-active" style="float: none; margin: 0;"></span>'
 			);
 
 			// Update main button progress
 			$btn.html(
-				'<span class="spinner is-active" style="float: none; margin: 0; vertical-align: middle;"></span> Importing ' +
+				'<span class="spinner is-active" style="float: none; margin: 0; vertical-align: middle;"></span> ' +
 					(index + 1) +
-					' of ' +
-					totalForms +
-					'...'
+					'/' +
+					totalForms
 			);
 
 			$.ajax({
