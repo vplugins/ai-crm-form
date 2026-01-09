@@ -220,17 +220,7 @@ class AICRMFORM_Admin_Settings {
 								</div>
 							</div>
 							<div class="aicrmform-card-body">
-								<div class="aicrmform-toggle-row">
-									<div class="aicrmform-toggle-content">
-										<label><?php esc_html_e( 'Enable Plugin', 'ai-crm-form' ); ?></label>
-										<p><?php esc_html_e( 'Enable AI CRM Form functionality on your site.', 'ai-crm-form' ); ?></p>
-									</div>
-									<label class="aicrmform-switch">
-										<input type="checkbox" id="enabled" name="enabled" value="1" <?php checked( $settings['enabled'] ?? false ); ?>>
-										<span class="aicrmform-switch-slider"></span>
-									</label>
-								</div>
-								<div class="aicrmform-form-row" style="margin-top: 20px;">
+								<div class="aicrmform-form-row">
 									<label for="auto_delete_submissions"><?php esc_html_e( 'Auto-delete Submissions After (Days)', 'ai-crm-form' ); ?></label>
 									<select id="auto_delete_submissions" name="auto_delete_submissions" class="aicrmform-input">
 										<option value="0" <?php selected( $settings['auto_delete_submissions'] ?? '0', '0' ); ?>><?php esc_html_e( 'Never (Keep Forever)', 'ai-crm-form' ); ?></option>
@@ -390,7 +380,6 @@ class AICRMFORM_Admin_Settings {
 			'form_id'                   => $form_id,
 			'default_success_message'   => sanitize_textarea_field( wp_unslash( $_POST['default_success_message'] ?? '' ) ),
 			'default_error_message'     => sanitize_textarea_field( wp_unslash( $_POST['default_error_message'] ?? '' ) ),
-			'enabled'                   => ! empty( $_POST['enabled'] ),
 			'auto_delete_submissions'   => absint( $_POST['auto_delete_submissions'] ?? 0 ),
 			'default_font_family'       => sanitize_text_field( wp_unslash( $_POST['default_font_family'] ?? '' ) ),
 			'default_font_size'         => sanitize_text_field( wp_unslash( $_POST['default_font_size'] ?? '16px' ) ),
@@ -1388,6 +1377,11 @@ class AICRMFORM_Admin_Settings {
 				</div>
 				<?php if ( ! empty( $submissions ) ) : ?>
 				<div class="aicrmform-page-header-actions">
+					<button type="button" id="delete-selected-btn" class="button button-secondary button-large" style="display: none; margin-right: 8px; color: #d63638; border-color: #d63638;">
+						<span class="dashicons dashicons-trash"></span>
+						<?php esc_html_e( 'Delete Selected', 'ai-crm-form' ); ?>
+						<span id="delete-selected-count"></span>
+					</button>
 					<div class="aicrmform-export-dropdown">
 						<button type="button" id="export-btn" class="button button-secondary button-large">
 							<span class="dashicons dashicons-download"></span>
@@ -1593,11 +1587,14 @@ class AICRMFORM_Admin_Settings {
 										<span class="aicrmform-date"><?php echo esc_html( gmdate( 'M j, Y', strtotime( $submission->created_at ) ) ); ?></span>
 										<span class="aicrmform-time"><?php echo esc_html( gmdate( 'g:i A', strtotime( $submission->created_at ) ) ); ?></span>
 									</td>
-									<td class="aicrmform-td-actions">
-										<button type="button" class="aicrmform-action-btn aicrmform-view-submission" data-submission-id="<?php echo esc_attr( $submission->id ); ?>" title="<?php esc_attr_e( 'View Details', 'ai-crm-form' ); ?>">
-											<span class="dashicons dashicons-visibility"></span>
-										</button>
-									</td>
+								<td class="aicrmform-td-actions">
+									<button type="button" class="aicrmform-action-btn aicrmform-view-submission" data-submission-id="<?php echo esc_attr( $submission->id ); ?>" title="<?php esc_attr_e( 'View Details', 'ai-crm-form' ); ?>">
+										<span class="dashicons dashicons-visibility"></span>
+									</button>
+									<button type="button" class="aicrmform-action-btn aicrmform-delete-submission" data-submission-id="<?php echo esc_attr( $submission->id ); ?>" title="<?php esc_attr_e( 'Delete', 'ai-crm-form' ); ?>">
+										<span class="dashicons dashicons-trash"></span>
+									</button>
+								</td>
 								</tr>
 							<?php endforeach; ?>
 						</tbody>
@@ -1643,6 +1640,22 @@ class AICRMFORM_Admin_Settings {
 
 		<!-- Toast Notification -->
 		<div id="aicrmform-toast" class="aicrmform-toast"></div>
+
+		<!-- Confirmation Modal -->
+		<div id="aicrmform-confirm-modal" class="aicrmform-modal-overlay" style="display: none;">
+			<div class="aicrmform-modal aicrmform-modal-sm">
+				<div class="aicrmform-modal-header">
+					<h3 id="aicrmform-confirm-title"><?php esc_html_e( 'Confirm Action', 'ai-crm-form' ); ?></h3>
+				</div>
+				<div class="aicrmform-modal-body">
+					<p id="aicrmform-confirm-message"></p>
+				</div>
+				<div class="aicrmform-modal-footer">
+					<button type="button" class="button button-secondary" id="aicrmform-confirm-cancel"><?php esc_html_e( 'Cancel', 'ai-crm-form' ); ?></button>
+					<button type="button" class="button button-primary" id="aicrmform-confirm-ok"><?php esc_html_e( 'Confirm', 'ai-crm-form' ); ?></button>
+				</div>
+			</div>
+		</div>
 		<?php
 	}
 }

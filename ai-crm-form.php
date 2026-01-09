@@ -3,7 +3,7 @@
  * Plugin Name: AI CRM Form
  * Plugin URI: https://github.com/rajanvijayan/ai-crm-form
  * Description: AI-powered form generator that submits to CRM API. Generate dynamic forms using AI and capture leads seamlessly.
- * Version: 1.4.1
+ * Version: 1.5.0
  * Author: Rajan Vijayan
  * Author URI: https://rajanvijayan.com
  * License: GPL v2 or later
@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Define plugin constants.
-define( 'AICRMFORM_VERSION', '1.4.1' );
+define( 'AICRMFORM_VERSION', '1.5.0' );
 define( 'AICRMFORM_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'AICRMFORM_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'AICRMFORM_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
@@ -94,6 +94,7 @@ class AI_CRM_Form {
 		// Load specific integrations.
 		require_once AICRMFORM_PLUGIN_DIR . 'includes/integrations/contact-form-7/class-cf7-integration.php';
 		require_once AICRMFORM_PLUGIN_DIR . 'includes/integrations/gravity-forms/class-gravity-forms-integration.php';
+		require_once AICRMFORM_PLUGIN_DIR . 'includes/integrations/wpforms/class-wpforms-integration.php';
 
 		// Load integration manager.
 		require_once AICRMFORM_PLUGIN_DIR . 'includes/integrations/class-integration-manager.php';
@@ -373,6 +374,14 @@ class AI_CRM_Form {
 		wp_enqueue_style(
 			'aicrmform-admin',
 			AICRMFORM_PLUGIN_URL . 'assets/css/admin.css',
+			[],
+			AICRMFORM_VERSION
+		);
+
+		// Also enqueue frontend form styles for accurate preview rendering.
+		wp_enqueue_style(
+			'aicrmform-frontend-preview',
+			AICRMFORM_PLUGIN_URL . 'assets/css/form.css',
 			[],
 			AICRMFORM_VERSION
 		);

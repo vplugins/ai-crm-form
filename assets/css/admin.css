@@ -846,7 +846,7 @@
 }
 
 .aicrmform-modal-md {
-	width: 480px;
+	width: 600px;
 }
 
 .aicrmform-modal-lg {
@@ -1521,7 +1521,8 @@
 	height: 18px;
 }
 
-.aicrmform-action-btn-danger:hover {
+.aicrmform-action-btn-danger:hover,
+.aicrmform-delete-submission:hover {
 	background: #fef2f2;
 	border-color: #fecaca;
 	color: #dc2626;
@@ -1625,12 +1626,20 @@
 }
 
 .aicrmform-th-actions {
-	width: 80px;
+	width: 100px;
 	text-align: center;
 }
 
 .aicrmform-td-actions {
 	text-align: center;
+}
+
+.aicrmform-td-actions .aicrmform-action-btn {
+	display: inline-flex;
+	width: 32px;
+	height: 32px;
+	padding: 0;
+	margin: 0 2px;
 }
 
 .aicrmform-submission-id {
@@ -2700,8 +2709,14 @@
 }
 
 @keyframes fadeIn {
-	from { opacity: 0; transform: translateY(-5px); }
-	to { opacity: 1; transform: translateY(0); }
+	from {
+		opacity: 0;
+		transform: translateY(-5px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
 }
 
 .aicrmform-edit-fields-header {
@@ -2740,6 +2755,11 @@
 /* Edit field modal - higher z-index */
 #edit-field-modal {
 	z-index: 100002;
+}
+
+/* Confirm modal - highest z-index to always appear on top */
+#aicrmform-confirm-modal {
+	z-index: 100003;
 }
 
 #edit-field-modal .aicrmform-modal {
@@ -2785,7 +2805,9 @@
 	border-radius: 6px;
 	font-size: 14px;
 	background: #fff;
-	transition: border-color 0.2s, box-shadow 0.2s;
+	transition:
+		border-color 0.2s,
+		box-shadow 0.2s;
 }
 
 .aicrmform-filter-select:focus,
@@ -3178,7 +3200,7 @@
 	padding: 16px;
 	border-radius: 8px;
 	font-size: 12px;
-	font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+	font-family: "SF Mono", "Monaco", "Inconsolata", "Fira Code", monospace;
 	overflow-x: auto;
 	max-height: 200px;
 	margin: 0;

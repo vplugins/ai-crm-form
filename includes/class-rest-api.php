@@ -223,6 +223,17 @@ class AICRMFORM_REST_API {
 				'permission_callback' => [ $this, 'admin_permission_check' ],
 			]
 		);
+
+		// Delete submission(s).
+		register_rest_route(
+			$this->namespace,
+			'/submissions/delete',
+			[
+				'methods'             => 'POST',
+				'callback'            => [ $this, 'delete_submissions' ],
+				'permission_callback' => [ $this, 'admin_permission_check' ],
+			]
+		);
 	}
 
 	/**
@@ -1251,7 +1262,13 @@ class AICRMFORM_REST_API {
 		$plugin_files = [
 			'cf7'     => 'contact-form-7/wp-contact-form-7.php',
 			'gravity' => 'gravityforms/gravityforms.php',
+			'wpforms' => 'wpforms-lite/wpforms.php',
 		];
+
+		// Check for WPForms Pro if Lite is not the target.
+		if ( 'wpforms' === $plugin_key && ! file_exists( WP_PLUGIN_DIR . '/wpforms-lite/wpforms.php' ) ) {
+			$plugin_files['wpforms'] = 'wpforms/wpforms.php';
+		}
 
 		if ( empty( $plugin_key ) || ! isset( $plugin_files[ $plugin_key ] ) ) {
 			return new WP_REST_Response(
@@ -1294,6 +1311,82 @@ class AICRMFORM_REST_API {
 			[
 				'success' => true,
 				'message' => __( 'Plugin deactivated successfully.', 'ai-crm-form' ),
+			],
+			200
+		);
+	}
+
+	/**
+	 * Delete submission(s).
+	 *
+	 * @param WP_REST_Request $request The request object.
+	 * @return WP_REST_Response The response.
+	 */
+	public function delete_submissions( $request ) {
+		global $wpdb;
+
+		$ids = $request->get_param( 'ids' );
+
+		if ( empty( $ids ) || ! is_array( $ids ) ) {
+			return new WP_REST_Response(
+				[
+					'success' => false,
+					'error'   => __( 'No submission IDs provided.', 'ai-crm-form' ),
+				],
+				400
+			);
+		}
+
+		// Sanitize IDs.
+		$ids = array_map( 'absint', $ids );
+		$ids = array_filter( $ids ); // Remove zeros.
+
+		if ( empty( $ids ) ) {
+			return new WP_REST_Response(
+				[
+					'success' => false,
+					'error'   => __( 'Invalid submission IDs.', 'ai-crm-form' ),
+				],
+				400
+			);
+		}
+
+		$table_name   = $wpdb->prefix . 'aicrmform_submissions';
+		$placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+		$deleted = $wpdb->query(
+			$wpdb->prepare(
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"DELETE FROM {$table_name} WHERE id IN ({$placeholders})",
+				...$ids
+			)
+		);
+
+		if ( false === $deleted ) {
+			return new WP_REST_Response(
+				[
+					'success' => false,
+					'error'   => __( 'Failed to delete submissions.', 'ai-crm-form' ),
+				],
+				500
+			);
+		}
+
+		return new WP_REST_Response(
+			[
+				'success' => true,
+				'deleted' => $deleted,
+				'message' => sprintf(
+					/* translators: %d: number of deleted submissions */
+					_n(
+						'%d submission deleted.',
+						'%d submissions deleted.',
+						$deleted,
+						'ai-crm-form'
+					),
+					$deleted
+				),
 			],
 			200
 		);

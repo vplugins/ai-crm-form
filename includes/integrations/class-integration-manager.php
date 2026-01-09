@@ -62,6 +62,10 @@ class AICRMFORM_Integration_Manager {
 		$gravity = new AICRMFORM_Gravity_Forms_Integration();
 		$this->register_integration( $gravity );
 
+		// Load WPForms integration.
+		$wpforms = new AICRMFORM_WPForms_Integration();
+		$this->register_integration( $wpforms );
+
 		/**
 		 * Allow third-party plugins to register their own integrations.
 		 *
