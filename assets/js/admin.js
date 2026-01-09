@@ -3844,10 +3844,16 @@
 
 		const $table = $('#submissions-table');
 		const $tbody = $('#submissions-tbody');
-		const $rows = $tbody.find('.submission-row');
+		let $rows = $tbody.find('.submission-row');
 		const perPage = 20;
 		let currentPage = 1;
 		let filteredRows = $rows;
+
+		// Function to refresh row references after deletion
+		function refreshRows() {
+			$rows = $tbody.find('.submission-row');
+			filteredRows = $rows;
+		}
 
 		// Export dropdown toggle
 		$('#export-btn').on('click', function (e) {
@@ -3917,10 +3923,15 @@
 			applyFilters();
 		});
 
-		// Select all checkbox
+		// Select all checkbox - only select visible rows on current page
 		$('#select-all-submissions').on('change', function () {
 			const isChecked = $(this).is(':checked');
-			filteredRows.find('.submission-checkbox').prop('checked', isChecked);
+			// Only select checkboxes in visible rows
+			$('#submissions-tbody .submission-row:visible .submission-checkbox').prop(
+				'checked',
+				isChecked
+			);
+			updateDeleteButtonState();
 		});
 
 		// Apply filters function
@@ -3957,8 +3968,8 @@
 
 		// Update display with pagination
 		function updateDisplay() {
-			// Hide all rows
-			$rows.hide();
+			// Hide all rows and uncheck hidden checkboxes
+			$rows.hide().find('.submission-checkbox').prop('checked', false);
 
 			// Calculate pagination
 			const totalFiltered = filteredRows.length;
@@ -3974,6 +3985,10 @@
 
 			// Update pagination controls
 			updatePagination(totalFiltered, totalPages);
+
+			// Reset select all checkbox and delete button
+			$('#select-all-submissions').prop('checked', false);
+			updateDeleteButtonState();
 		}
 
 		// Update pagination controls
@@ -4089,6 +4104,107 @@
 				})
 				.fail(function () {
 					showToast('Export failed. Please try again.', 'error');
+				});
+		}
+
+		// Track checkbox changes to show/hide bulk delete button
+		$(document).on('change', '.submission-checkbox, #select-all-submissions', function () {
+			updateDeleteButtonState();
+		});
+
+		// Update delete button state - only count visible checked rows
+		function updateDeleteButtonState() {
+			const selectedCount = $(
+				'#submissions-tbody .submission-row:visible .submission-checkbox:checked'
+			).length;
+			const $deleteBtn = $('#delete-selected-btn');
+
+			if (selectedCount > 0) {
+				$deleteBtn.show();
+				$('#delete-selected-count').text('(' + selectedCount + ')');
+			} else {
+				$deleteBtn.hide();
+			}
+		}
+
+		// Individual delete button
+		$(document).on('click', '.aicrmform-delete-submission', function (e) {
+			e.preventDefault();
+			const submissionId = $(this).data('submission-id');
+			const $row = $(this).closest('tr');
+
+			showConfirm(
+				'Delete Submission?',
+				'Are you sure you want to delete submission #' +
+					submissionId +
+					'? This action cannot be undone.',
+				function () {
+					deleteSubmissions([submissionId], $row);
+				}
+			);
+		});
+
+		// Bulk delete button
+		$('#delete-selected-btn').on('click', function (e) {
+			e.preventDefault();
+			e.stopPropagation();
+
+			const ids = [];
+			// Only get IDs from visible checked rows
+			$('#submissions-tbody .submission-row:visible .submission-checkbox:checked').each(
+				function () {
+					ids.push($(this).val());
+				}
+			);
+
+			if (ids.length === 0) {
+				showToast('Please select submissions to delete.', 'warning');
+				return;
+			}
+
+			showConfirm(
+				'Delete ' + ids.length + ' Submissions?',
+				'Are you sure you want to delete ' +
+					ids.length +
+					' submission(s)? This action cannot be undone.',
+				function () {
+					deleteSubmissions(ids);
+				}
+			);
+		});
+
+		// Delete submissions function
+		function deleteSubmissions(ids, $singleRow) {
+			showToast('Deleting...', 'info');
+
+			$.ajax({
+				url: aicrmformAdmin.restUrl + 'submissions/delete',
+				method: 'POST',
+				headers: { 'X-WP-Nonce': aicrmformAdmin.nonce },
+				contentType: 'application/json',
+				data: JSON.stringify({ ids: ids }),
+			})
+				.done(function (response) {
+					if (response.success) {
+						showToast(response.message, 'success');
+
+						// Remove deleted rows with animation
+						const rowsToRemove = $singleRow
+							? $singleRow
+							: $('.submission-checkbox:checked').closest('tr');
+
+						rowsToRemove.fadeOut(300);
+
+						// Reload page after short delay to update stats
+						setTimeout(function () {
+							window.location.reload();
+						}, 500);
+					} else {
+						showToast(response.error || 'Failed to delete submissions.', 'error');
+					}
+				})
+				.fail(function () {
+					showToast('Failed to delete submissions. Please try again.', 'error');
 				});
 		}
 

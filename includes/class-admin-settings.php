@@ -1377,6 +1377,11 @@ class AICRMFORM_Admin_Settings {
 				</div>
 				<?php if ( ! empty( $submissions ) ) : ?>
 				<div class="aicrmform-page-header-actions">
+					<button type="button" id="delete-selected-btn" class="button button-secondary button-large" style="display: none; margin-right: 8px; color: #d63638; border-color: #d63638;">
+						<span class="dashicons dashicons-trash"></span>
+						<?php esc_html_e( 'Delete Selected', 'ai-crm-form' ); ?>
+						<span id="delete-selected-count"></span>
+					</button>
 					<div class="aicrmform-export-dropdown">
 						<button type="button" id="export-btn" class="button button-secondary button-large">
 							<span class="dashicons dashicons-download"></span>
@@ -1582,11 +1587,14 @@ class AICRMFORM_Admin_Settings {
 										<span class="aicrmform-date"><?php echo esc_html( gmdate( 'M j, Y', strtotime( $submission->created_at ) ) ); ?></span>
 										<span class="aicrmform-time"><?php echo esc_html( gmdate( 'g:i A', strtotime( $submission->created_at ) ) ); ?></span>
 									</td>
-									<td class="aicrmform-td-actions">
-										<button type="button" class="aicrmform-action-btn aicrmform-view-submission" data-submission-id="<?php echo esc_attr( $submission->id ); ?>" title="<?php esc_attr_e( 'View Details', 'ai-crm-form' ); ?>">
-											<span class="dashicons dashicons-visibility"></span>
-										</button>
-									</td>
+								<td class="aicrmform-td-actions">
+									<button type="button" class="aicrmform-action-btn aicrmform-view-submission" data-submission-id="<?php echo esc_attr( $submission->id ); ?>" title="<?php esc_attr_e( 'View Details', 'ai-crm-form' ); ?>">
+										<span class="dashicons dashicons-visibility"></span>
+									</button>
+									<button type="button" class="aicrmform-action-btn aicrmform-delete-submission" data-submission-id="<?php echo esc_attr( $submission->id ); ?>" title="<?php esc_attr_e( 'Delete', 'ai-crm-form' ); ?>">
+										<span class="dashicons dashicons-trash"></span>
+									</button>
+								</td>
 								</tr>
 							<?php endforeach; ?>
 						</tbody>
@@ -1632,6 +1640,22 @@ class AICRMFORM_Admin_Settings {
 
 		<!-- Toast Notification -->
 		<div id="aicrmform-toast" class="aicrmform-toast"></div>
+
+		<!-- Confirmation Modal -->
+		<div id="aicrmform-confirm-modal" class="aicrmform-modal-overlay" style="display: none;">
+			<div class="aicrmform-modal aicrmform-modal-sm">
+				<div class="aicrmform-modal-header">
+					<h3 id="aicrmform-confirm-title"><?php esc_html_e( 'Confirm Action', 'ai-crm-form' ); ?></h3>
+				</div>
+				<div class="aicrmform-modal-body">
+					<p id="aicrmform-confirm-message"></p>
+				</div>
+				<div class="aicrmform-modal-footer">
+					<button type="button" class="button button-secondary" id="aicrmform-confirm-cancel"><?php esc_html_e( 'Cancel', 'ai-crm-form' ); ?></button>
+					<button type="button" class="button button-primary" id="aicrmform-confirm-ok"><?php esc_html_e( 'Confirm', 'ai-crm-form' ); ?></button>
+				</div>
+			</div>
+		</div>
 		<?php
 	}
 }

@@ -447,14 +447,23 @@ class AICRMFORM_CRM_API {
 	/**
 	 * Get all submissions.
 	 *
-	 * @param int $limit  Number of results to return.
+	 * @param int $limit  Number of results to return. Use 0 or -1 for no limit.
 	 * @param int $offset Offset for pagination.
 	 * @return array Array of submission objects.
 	 */
-	public function get_all_submissions( $limit = 20, $offset = 0 ) {
+	public function get_all_submissions( $limit = 0, $offset = 0 ) {
 		global $wpdb;
 
 		$table_name = $wpdb->prefix . 'aicrmform_submissions';
+
+		// If no limit specified, get all submissions.
+		if ( $limit <= 0 ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			return $wpdb->get_results(
+				// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"SELECT * FROM {$table_name} ORDER BY created_at DESC"
+			);
+		}
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 		return $wpdb->get_results(

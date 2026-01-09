@@ -1521,7 +1521,8 @@
 	height: 18px;
 }
 
-.aicrmform-action-btn-danger:hover {
+.aicrmform-action-btn-danger:hover,
+.aicrmform-delete-submission:hover {
 	background: #fef2f2;
 	border-color: #fecaca;
 	color: #dc2626;
@@ -1625,12 +1626,20 @@
 }
 
 .aicrmform-th-actions {
-	width: 80px;
+	width: 100px;
 	text-align: center;
 }
 
 .aicrmform-td-actions {
 	text-align: center;
+}
+
+.aicrmform-td-actions .aicrmform-action-btn {
+	display: inline-flex;
+	width: 32px;
+	height: 32px;
+	padding: 0;
+	margin: 0 2px;
 }
 
 .aicrmform-submission-id {
