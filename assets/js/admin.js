@@ -1031,6 +1031,9 @@
 			});
 		});
 
+		// Log all tracked plugins
+		console.log('All available plugins for deactivation:', allAvailablePlugins);
+
 		// Check if any plugins are missing CRM Form ID
 		if (pluginsWithoutCrmId.length > 0) {
 			showToast(
@@ -1204,8 +1207,11 @@
 
 		// Get list of imported plugins
 		const pluginKeys = Object.keys(importedPlugins);
+		console.log('Showing deactivation dialog for plugins:', importedPlugins);
+		console.log('Plugin keys:', pluginKeys);
 
 		if (pluginKeys.length === 0) {
+			console.log('No plugins to deactivate');
 			return;
 		}
 
@@ -1272,11 +1278,30 @@
 
 		showToast('Deactivating ' + pluginNames.join(' and ') + '...', 'info');
 
-		// Deactivate plugins in parallel
-		let completed = 0;
+		// Deactivate plugins SEQUENTIALLY to avoid race conditions with WordPress active_plugins option
 		let errors = [];
+		let currentIndex = 0;
 
-		pluginKeys.forEach(function (pluginKey) {
+		function deactivateNext() {
+			if (currentIndex >= pluginKeys.length) {
+				// All done
+				console.log('All deactivation requests completed. Errors:', errors);
+				if (errors.length === 0) {
+					showToast(pluginNames.join(' and ') + ' deactivated successfully!', 'success');
+				} else {
+					showToast('Failed to deactivate: ' + errors.join(', '), 'error');
+				}
+				$('#import-form-modal').hide();
+				window.location.href = aicrmformAdmin.adminUrl + '?page=ai-crm-form-forms';
+				return;
+			}
+
+			const pluginKey = pluginKeys[currentIndex];
+			console.log(
+				'Deactivating plugin ' + (currentIndex + 1) + '/' + pluginKeys.length + ':',
+				pluginKey
+			);
+
 			$.ajax({
 				url: aicrmformAdmin.restUrl + 'deactivate-plugin',
 				method: 'POST',
@@ -1285,30 +1310,29 @@
 				data: JSON.stringify({ plugin: pluginKey }),
 			})
 				.done(function (response) {
+					console.log('Deactivate response for ' + pluginKey + ':', response);
 					if (!response.success) {
-						errors.push(plugins[pluginKey].displayName);
+						errors.push(
+							plugins[pluginKey].displayName +
+								' (' +
+								(response.error || 'Unknown error') +
+								')'
+						);
 					}
 				})
-				.fail(function () {
-					errors.push(plugins[pluginKey].displayName);
+				.fail(function (xhr, status, error) {
+					console.error('Deactivate failed for ' + pluginKey + ':', status, error);
+					errors.push(plugins[pluginKey].displayName + ' (Request failed)');
 				})
 				.always(function () {
-					completed++;
-					if (completed === pluginKeys.length) {
-						// All requests completed
-						if (errors.length === 0) {
-							showToast(
-								pluginNames.join(' and ') + ' deactivated successfully!',
-								'success'
-							);
-						} else {
-							showToast('Failed to deactivate: ' + errors.join(', '), 'error');
-						}
-						$('#import-form-modal').hide();
-						window.location.href = aicrmformAdmin.adminUrl + '?page=ai-crm-form-forms';
-					}
+					currentIndex++;
+					// Small delay between deactivations to ensure WordPress processes each one
+					setTimeout(deactivateNext, 200);
 				});
-		});
+		}
+
+		// Start deactivating
+		deactivateNext();
 	}
 
 	/**
