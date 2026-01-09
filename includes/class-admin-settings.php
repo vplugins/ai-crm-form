@@ -220,17 +220,7 @@ class AICRMFORM_Admin_Settings {
 								</div>
 							</div>
 							<div class="aicrmform-card-body">
-								<div class="aicrmform-toggle-row">
-									<div class="aicrmform-toggle-content">
-										<label><?php esc_html_e( 'Enable Plugin', 'ai-crm-form' ); ?></label>
-										<p><?php esc_html_e( 'Enable AI CRM Form functionality on your site.', 'ai-crm-form' ); ?></p>
-									</div>
-									<label class="aicrmform-switch">
-										<input type="checkbox" id="enabled" name="enabled" value="1" <?php checked( $settings['enabled'] ?? false ); ?>>
-										<span class="aicrmform-switch-slider"></span>
-									</label>
-								</div>
-								<div class="aicrmform-form-row" style="margin-top: 20px;">
+								<div class="aicrmform-form-row">
 									<label for="auto_delete_submissions"><?php esc_html_e( 'Auto-delete Submissions After (Days)', 'ai-crm-form' ); ?></label>
 									<select id="auto_delete_submissions" name="auto_delete_submissions" class="aicrmform-input">
 										<option value="0" <?php selected( $settings['auto_delete_submissions'] ?? '0', '0' ); ?>><?php esc_html_e( 'Never (Keep Forever)', 'ai-crm-form' ); ?></option>
@@ -390,7 +380,6 @@ class AICRMFORM_Admin_Settings {
 			'form_id'                   => $form_id,
 			'default_success_message'   => sanitize_textarea_field( wp_unslash( $_POST['default_success_message'] ?? '' ) ),
 			'default_error_message'     => sanitize_textarea_field( wp_unslash( $_POST['default_error_message'] ?? '' ) ),
-			'enabled'                   => ! empty( $_POST['enabled'] ),
 			'auto_delete_submissions'   => absint( $_POST['auto_delete_submissions'] ?? 0 ),
 			'default_font_family'       => sanitize_text_field( wp_unslash( $_POST['default_font_family'] ?? '' ) ),
 			'default_font_size'         => sanitize_text_field( wp_unslash( $_POST['default_font_size'] ?? '16px' ) ),
