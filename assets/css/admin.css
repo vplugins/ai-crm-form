@@ -2700,8 +2700,14 @@
 }
 
 @keyframes fadeIn {
-	from { opacity: 0; transform: translateY(-5px); }
-	to { opacity: 1; transform: translateY(0); }
+	from {
+		opacity: 0;
+		transform: translateY(-5px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
 }
 
 .aicrmform-edit-fields-header {
@@ -2785,7 +2791,9 @@
 	border-radius: 6px;
 	font-size: 14px;
 	background: #fff;
-	transition: border-color 0.2s, box-shadow 0.2s;
+	transition:
+		border-color 0.2s,
+		box-shadow 0.2s;
 }
 
 .aicrmform-filter-select:focus,
@@ -3178,7 +3186,7 @@
 	padding: 16px;
 	border-radius: 8px;
 	font-size: 12px;
-	font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+	font-family: "SF Mono", "Monaco", "Inconsolata", "Fira Code", monospace;
 	overflow-x: auto;
 	max-height: 200px;
 	margin: 0;
