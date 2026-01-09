@@ -94,6 +94,7 @@ class AI_CRM_Form {
 		// Load specific integrations.
 		require_once AICRMFORM_PLUGIN_DIR . 'includes/integrations/contact-form-7/class-cf7-integration.php';
 		require_once AICRMFORM_PLUGIN_DIR . 'includes/integrations/gravity-forms/class-gravity-forms-integration.php';
+		require_once AICRMFORM_PLUGIN_DIR . 'includes/integrations/wpforms/class-wpforms-integration.php';
 
 		// Load integration manager.
 		require_once AICRMFORM_PLUGIN_DIR . 'includes/integrations/class-integration-manager.php';
