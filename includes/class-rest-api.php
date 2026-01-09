@@ -1251,7 +1251,13 @@ class AICRMFORM_REST_API {
 		$plugin_files = [
 			'cf7'     => 'contact-form-7/wp-contact-form-7.php',
 			'gravity' => 'gravityforms/gravityforms.php',
+			'wpforms' => 'wpforms-lite/wpforms.php',
 		];
+
+		// Check for WPForms Pro if Lite is not the target.
+		if ( 'wpforms' === $plugin_key && ! file_exists( WP_PLUGIN_DIR . '/wpforms-lite/wpforms.php' ) ) {
+			$plugin_files['wpforms'] = 'wpforms/wpforms.php';
+		}
 
 		if ( empty( $plugin_key ) || ! isset( $plugin_files[ $plugin_key ] ) ) {
 			return new WP_REST_Response(
